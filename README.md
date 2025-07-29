@@ -103,8 +103,8 @@ Go to **Settings → Module Settings → PF2e Threat Tracker** to adjust:
 
 - **Threat Table Styles**
   Maybe a menu like FFXIV where all the combat participants shows up in the table ([like this old module](https://foundryvtt.com/packages/mmo-hud)) and if enemy token is selected shows bars of who is having the attention on below a minitoken image/name text.
-  <img width="268" height="380" alt="image" src="https://github.com/user-attachments/assets/817fbed5-0595-4592-a864-2308ca83d0dc" />
   Image from [this reddit post](https://www.reddit.com/r/ffxiv/comments/zg72ta/til_that_if_your_current_health_is_less_than_your)
+  <img width="268" height="380" alt="image" src="https://github.com/user-attachments/assets/817fbed5-0595-4592-a864-2308ca83d0dc" />
 
 
 ---
