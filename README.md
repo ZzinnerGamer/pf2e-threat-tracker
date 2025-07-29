@@ -106,8 +106,11 @@ Go to **Settings → Module Settings → PF2e Threat Tracker** to adjust:
   Image from [this reddit post](https://www.reddit.com/r/ffxiv/comments/zg72ta/til_that_if_your_current_health_is_less_than_your)
   <img width="268" height="380" alt="image" src="https://github.com/user-attachments/assets/817fbed5-0595-4592-a864-2308ca83d0dc" />
 
-
 ---
+
+### Known Issues
+
+- Healing will generate more threat to targets that has more hit points, ex, Target has 90/100HP if target is healed 1HP will generate +90 Threat, if Target has 1/100 HP and is healed 99HP will generate +1 threat. 
 
 ### Credits
 
