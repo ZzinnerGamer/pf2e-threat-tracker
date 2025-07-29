@@ -107,10 +107,3 @@ Go to **Settings → Module Settings → PF2e Threat Tracker** to adjust:
 
 Contributions and feedback are welcome!  
 Feel free to open issues or pull requests via GitHub.
-
----
-
-## 📄 License
-
-This project is licensed under the **MIT License**.  
-See the `LICENSE` file for full terms.
