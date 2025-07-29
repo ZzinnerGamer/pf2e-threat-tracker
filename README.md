@@ -55,16 +55,16 @@
 
 Go to **Settings → Module Settings → PF2e Threat Tracker** to adjust:
 
-1. **Trait / Vulnerability Editor**  
+1. **Trait / Vulnerability Editor**  (Not yet fully implemented)
    Opens a GUI to configure threat multipliers per trait and weaknesses per trait tag.
 
-2. **Panel Options**  
-   Control the position, size, and number of top entries shown on the threat panel.
+2. **Panel Options**  (Not yet fully implemented)
+   Control the position. Panel size and number of top entries shown on the threat panel is WIP.
 
 3. **Sequencer Integration**  
    Toggle on/off the use of Sequencer visual effects.
 
-4. **Logging & Thresholds**  
+4. **Logging & Thresholds**  (Not yet fully implemented)
    Set thresholds or verbosity for when effects or logs are triggered.
 
 ---
@@ -101,12 +101,18 @@ Go to **Settings → Module Settings → PF2e Threat Tracker** to adjust:
 - **More Threat Triggers**  
   Expand beyond damage/healing to include auras, saves, special actions, etc.
 
+- **Styles for the threat table**
+  Maybe a menu like FFXIV where all the combat participants shows up in the table ([like this old module](https://foundryvtt.com/packages/mmo-hud)) and if enemy token is selected shows bars of who is having the attention on below a minitoken image/name text.
+<img width="268" height="380" alt="image" src="https://github.com/user-attachments/assets/817fbed5-0595-4592-a864-2308ca83d0dc" />
+  Image from [this reddit post](https://www.reddit.com/r/ffxiv/comments/zg72ta/til_that_if_your_current_health_is_less_than_your)
+
+
 ---
 
 ### Credits
 
 - Wasp for creating Sequencer
-- Chasarooni for being a wondeful person
+- Chasarooni for being a wondeful person (he made the sequencer macro!!!)
 - TheJoester for almost making me cry
 - The whole pathfinder community ♥
 - Foundry Team for making me use its program since v9 (2021 lmao)
