@@ -31,7 +31,7 @@ Zinneryte’s configurable options can be found in the Foundry Settings → Modu
 3. Logging & Thresholds: Adjust logging verbosity or define thresholds (e.g. only display an effect when threat changes by a certain amount).
 4. Sequencer Integration: Toggle whether the module uses the Sequencer module for threat animations
 
-###Roadmap
+### Roadmap
 Partially Implemented Features
 - Trait Multipliers (basic): Initial support for trait-based threat multipliers is in place. Some traits can be configured, but edge cases or additional traits may be added later.
 - Vulnerability Settings: Core vulnerability adjustments exist, but more nuanced stacking rules or exceptions may be refined in future.
