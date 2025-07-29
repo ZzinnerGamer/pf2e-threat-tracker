@@ -59,7 +59,7 @@ export class ThreatTrackerConfig extends FormApplication {
 }
 
 }
-
+// Lo de la localización es un coñazo y lo odio, sí pongo esta noda, no es necesaria LO SÉ ALGÚN PROBLEMA estoy desvariando mientras pienso y escribo esto, no sé si lo estoy haciendo bíen AH ESPERA | Ya está, se me ocurrió lo de las debilidades de los traits, por qué sigo escribiendo? porque tengo que pensar más lo que estoy haciendo, y tengo que seguir escibiendo o mi mente no es capaz de funcionar HOSTIA SON ALS 11 DE LA MAÑANA tengo que desayunar y eso, epro paso y uhhhh sí, esta nota es absura, luego la borro | no la borré y no voy a hacerlo XD
 Hooks.once('init', async () => {
   console.log(`[${MODULE}] Inicializado`);
 
