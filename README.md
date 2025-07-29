@@ -103,6 +103,13 @@ Go to **Settings → Module Settings → PF2e Threat Tracker** to adjust:
 
 ---
 
+### Credits
+
+Wasp for creating Sequencer
+@ChasarooniZ for being a wondeful person
+TheJoester for almos making me cry
+The whole pathfinder community ♥
+
 ## 🙌 Contributing
 
 Contributions and feedback are welcome!  
