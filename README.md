@@ -111,8 +111,8 @@ Go to **Settings → Module Settings → PF2e Threat Tracker** to adjust:
 
 ### Credits
 
-- Wasp for creating Sequencer
-- Chasarooni for being a wondeful person (he made the sequencer macro!!!)
+- Wasp for creating [Sequencer](https://foundryvtt.com/packages/sequencer)
+- Chasarooni for being a wondeful person (he made the sequencer macro! and here is one of his [wonderful modules ♥](https://foundryvtt.com/packages/pf2e-rpg-numbers))
 - TheJoester for almost making me cry
 - The whole pathfinder community ♥
 - Foundry Team for making me use its program since v9 (2021 lmao)
