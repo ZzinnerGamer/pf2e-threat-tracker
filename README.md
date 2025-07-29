@@ -109,6 +109,7 @@ Go to **Settings → Module Settings → PF2e Threat Tracker** to adjust:
 - Chasarooni for being a wondeful person
 - TheJoester for almost making me cry
 - The whole pathfinder community ♥
+- Foundry Team for making me use its program since v9 (2021 lmao)
 
 ## 🙌 Contributing
 
