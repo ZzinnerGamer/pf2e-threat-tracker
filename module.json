@@ -1,0 +1,31 @@
+{
+  "id": "pf2e-threat-tracker",
+  "title": "PF2e Threat Tracker",
+  "version": "1.0.0",
+  "compatibility": {
+    "minimum": "12",
+    "verified": "13"
+  },
+  "flags": {
+  "threat-tracker": {
+    "threatTable": {
+      "type": "object",
+      "default": {}
+    }
+  }
+},
+  "description": "",
+  "esmodules": ["script.js"],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    },
+    {
+      "lang": "es",
+      "name": "Español",
+      "path": "lang/es.json"
+    }
+	]
+}
