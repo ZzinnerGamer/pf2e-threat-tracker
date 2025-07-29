@@ -55,16 +55,16 @@
 
 Go to **Settings → Module Settings → PF2e Threat Tracker** to adjust:
 
-1. **Trait / Vulnerability Editor**  (Not yet fully implemented)
+1. **Trait / Vulnerability Editor**  *(Not yet fully implemented)*
    Opens a GUI to configure threat multipliers per trait and weaknesses per trait tag.
 
-2. **Panel Options**  (Not yet fully implemented)
+3. **Panel Options**  *(Not yet fully implemented)*
    Control the position. Panel size and number of top entries shown on the threat panel is WIP.
 
-3. **Sequencer Integration**  
+4. **Sequencer Integration**
    Toggle on/off the use of Sequencer visual effects.
 
-4. **Logging & Thresholds**  (Not yet fully implemented)
+6. **Logging & Thresholds**  (Not yet fully implemented)
    Set thresholds or verbosity for when effects or logs are triggered.
 
 ---
