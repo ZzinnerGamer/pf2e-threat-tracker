@@ -1,5 +1,5 @@
 /*
-  Módulo completo de sistema de amenaza para Foundry VTT (PF2e)
+  Here's a disclaimer, I HAVE NO IDEA O WHAT THE HELL I AM WRITTING SORRY also, my notes are in spanish, so uhhhh TOROS PAELLA OLÉ OLÉ
 */
 const MODULE = 'pf2e-threat-tracker';
 const { ApplicationV2 } = foundry.applications.api;
@@ -98,7 +98,7 @@ Hooks.once('init', async () => {
     default: { top: 10, left: 10 },
     type: Object,
   });
-
+	
   game.settings.register(MODULE, 'decayEnabled', {
     name: game.i18n.localize("pf2e-threat-tracker.settings.decayEnabled.name"),
     hint: game.i18n.localize("pf2e-threat-tracker.settings.decayEnabled.hint"),
@@ -116,7 +116,6 @@ Hooks.once('init', async () => {
      type: Number,
    default: 10
   });
-
 
   game.settings.register(MODULE, 'baseHealThreat', {
     name: game.i18n.localize("pf2e-threat-tracker.settings.baseHealThreat.name"),
@@ -220,7 +219,7 @@ function isImmuneToThreat(enemy, actionTraits) {
   }
   return false;
 }
-
+// chatMessage es la única manera que se me ocurre, no sé cómo haccer funcionar esto de otra manera, además pilla todos los mensajes así que uhhhh mala mía
 Hooks.on('createChatMessage', async (msg) => {
   console.log(`[${MODULE}] createChatMessage hook ejecutado`);
   const context = msg.flags.pf2e?.context;
@@ -254,7 +253,7 @@ Hooks.on('createChatMessage', async (msg) => {
   const targets = [...game.user.targets].map(t => t.id);
 
   let threatGlobal = 0;
-
+// ESO HA SIDO FÁCIL YAY
   if (isAttack) {
     const outcome = context.outcome ?? 'failure';
     const level = actor.system.details.level.value;
@@ -267,6 +266,7 @@ Hooks.on('createChatMessage', async (msg) => {
       default: threatGlobal = base;
     }
     console.log(`[${MODULE}] Ataque detectado: amenaza base=${threatGlobal}`);
+	  // ME QUIERO PEGAR UN TIRO EN LOS OVARIOS
   } else if (isHeal) {
     const baseHeal = game.settings.get(MODULE, 'baseHealThreat');
     for (const tgtId of targets) {
@@ -316,6 +316,7 @@ Hooks.on('createChatMessage', async (msg) => {
       _updateFloatingPanel();
     }
     return;
+	  // AHORA NO SÉ QUÉ ERA PEOR ESTO O LO DE LAS CURAS
   } else if (isTaunt) {
     const domains = context.domains ?? [];
     const options = context.options ?? [];
@@ -409,7 +410,6 @@ function getDistanceThreatMultiplier(tokenTarget, tokenSource) {
   return 0.5;
 }
 
-
 function _updateFloatingPanel() {
   if (!game.settings.get(MODULE, 'enableThreatPanel')) return;
   if (!game.user.isGM) return;
@@ -421,8 +421,8 @@ function _updateFloatingPanel() {
     return;
   }
 
-  const savedPos = game.settings.get(MODULE, 'panelPosition') ?? { top: 10, left: 10 };
-
+  const savedPos = game.settings.get(MODULE, 'panelPosition') ?? { top: 100, left: 100 };
+// Qué feo es coño, tengo que ponerlo bonito qwq | además, tendría que mirar cómo meter el estilo de la APPv2 porque dudo muchísimo que esté haciéndolo bien en absoluto, y la api me confunde, ayuda no sé leerla
   if (!panel) {
     panel = document.createElement('div');
     panel.id = id;
@@ -507,7 +507,7 @@ function _updateFloatingPanel() {
   configBtn.addEventListener('click', () => new ThreatTrackerConfig().render(true));
   panel.appendChild(configBtn);
 }
-
+// Si una persona ajena está leyendo esto, sí, necesito 3 millones de logs porque si no no sé lo que estoy haciendo
 Hooks.once("ready", () => {
   Hooks.on("createItem", async (item) => {
     if (item.type !== "effect") return;
@@ -572,7 +572,7 @@ Hooks.on('controlToken', async (token, controlled) => {
     return;
   }
 
-  // Solo aplicamos esto si el token NO es de jugador (enemigo) y el GM está activo
+  // Solo aplica esto si el token NO es de jugador (enemigo) y el GM está activo
   if (token.actor.hasPlayerOwner) return;
 
   const threatTable = token.document.flags[MODULE]?.threatTable ?? {};
@@ -607,7 +607,7 @@ if (!topTokenId || !topThreatValue) {
   const effectPath = game.settings.get(MODULE, 'topThreatEffect');
   console.log(`[${MODULE}] Aplicando efecto '${effectPath}' a ${topToken.name} (${topToken.id}) con amenaza ${topThreatValue}`);
 
-  // Crear el efecto sobre el token con mayor amenaza
+  // Crear el efecto sobre el token con mayor amenaza GRACIAS CHASSY!!!! TE AMO
   new Sequence()
     .effect()
     .file(effectPath)
@@ -623,14 +623,14 @@ if (!topTokenId || !topThreatValue) {
 });
 
 
-// También limpia el efecto si deseleccionas el token
+// Limpia el efecto si deseleccionas el token
 Hooks.on('controlToken', (token, controlled) => {
   if (!controlled) {
     Sequencer.EffectManager.endEffects({ name: `top-threat-${token.id}` });
   }
 });
 
-
+// Toda esta cosa no sé si es necesaria, la pongo por si acaso, además, se rompen cosas si no las pongo jeje
 Hooks.on('canvasReady', _updateFloatingPanel);
 Hooks.on('canvasPan', _updateFloatingPanel);
 Hooks.on('updateToken', _updateFloatingPanel);
@@ -638,7 +638,7 @@ Hooks.on('deleteCombat', async () => {
   for (const tok of canvas.tokens.placeables) await tok.document.unsetFlag(MODULE, 'threatTable');
   _updateFloatingPanel();
 });
-
+// Esto no funciona XDDDDDDDDDD
 Hooks.on('getTokenHUDButtons', (hud, buttons) => {
   if (!game.user.isGM) return;
   buttons.unshift({
@@ -653,7 +653,7 @@ Hooks.on('getTokenHUDButtons', (hud, buttons) => {
     }
   });
 });
-
+// Esto lo hace por turno de CAD token, no del turno global, tengo que cambiarlo
 Hooks.on('combatTurn', async () => {
   if (!game.settings.get(MODULE, 'decayEnabled')) return;
   for (const tok of canvas.tokens.placeables) {
