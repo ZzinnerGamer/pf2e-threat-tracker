@@ -38,7 +38,7 @@
 ## ⚔️ Usage
 
 - **Opening the Threat Panel**  
-  The Threat Tracker panel opens automatically at the start of combat. It can also be toggled manually if needed.
+  The Threat Tracker panel opens automatically at the start of combat. It can also be toggled manually if needed (this is planned but not available now).
 
 - **Monitoring Threat**  
   During combat, any time a PC or allied token deals damage, heals, or uses a defined taunt or ability, their threat value increases against the relevant enemy. The panel displays the **top 3 threat-holders** per enemy so the GM knows who is most likely to be targeted.
