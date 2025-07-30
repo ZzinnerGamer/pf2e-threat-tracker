@@ -28,7 +28,7 @@
 
 ## 🚀 Installation
 
-1. Copy the **Manifest URL** for PF2e Threat Tracker (must end in `module.json`).
+1. Copy the **Manifest URL** for PF2e Threat Tracker (https://github.com/ZzinnerGamer/pf2e-threat-tracker/releases/latest/download/module.json).
 2. In Foundry VTT, go to **Add-on Modules → Install Module**.
 3. Paste the URL into the **Manifest URL** field and click **Install**.
 4. Enable the module in **Manage Modules**, then click **Save Module Settings**.
