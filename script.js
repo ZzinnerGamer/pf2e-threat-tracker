@@ -1,6 +1,3 @@
-/*
-  Here's a disclaimer, I HAVE NO IDEA O WHAT THE HELL I AM WRITTING SORRY also, my notes are in spanish, so uhhhh TOROS PAELLA OLÉ OLÉ
-*/
 const MODULE = 'pf2e-threat-tracker';
 const { ApplicationV2 } = foundry.applications.api;
 const HandlebarsApplicationMixin = foundry.applications.api.HandlebarsApplicationMixin;
@@ -57,10 +54,9 @@ export class ThreatTrackerConfig extends FormApplication {
             });
         });
     }
-}
 
 }
-// Lo de la localización es un coñazo y lo odio, sí pongo esta noda, no es necesaria LO SÉ ALGÚN PROBLEMA estoy desvariando mientras pienso y escribo esto, no sé si lo estoy haciendo bíen AH ESPERA | Ya está, se me ocurrió lo de las debilidades de los traits, por qué sigo escribiendo? porque tengo que pensar más lo que estoy haciendo, y tengo que seguir escibiendo o mi mente no es capaz de funcionar HOSTIA SON ALS 11 DE LA MAÑANA tengo que desayunar y eso, epro paso y uhhhh sí, esta nota es absura, luego la borro | no la borré y no voy a hacerlo XD | me acabo de dar cuenta de las faltas de hortografía, no voy a editarlas JE JE JE JE
+
 Hooks.once('init', async() => {
     console.log(`[${MODULE}] Inicializado`);
 
@@ -278,13 +274,12 @@ function isImmuneToThreat(enemy, actionTraits) {
     }
     return false;
 }
-// chatMessage es la única manera que se me ocurre, no sé cómo haccer funcionar esto de otra manera, además pilla todos los mensajes así que uhhhh mala mía
+
+// EL CÁNCER
 
 Hooks.on('createChatMessage', async(msg) => {
     console.log(`[${MODULE}] createChatMessage hook ejecutado`);
-    const context = msg.flags.pf2e?.context;
-    if (!context)
-        return;
+    const context = msg.flags.pf2e?.context ?? {};
     const actor = msg.actor;
     if (!actor || !msg.author || !msg.flags?.pf2e)
         return;
@@ -301,15 +296,12 @@ Hooks.on('createChatMessage', async(msg) => {
     console.log(`[${MODULE}] Token responsable: ${responsibleToken.name}`);
     console.log(`[${MODULE}] Contexto:`, context);
 
-    let traits = [];
-    if (Array.isArray(context.traits)) {
-        traits = context.traits.map(t => t.toLowerCase());
-    } else if (Array.isArray(msg.flags.pf2e.traits)) {
-        traits = msg.flags.pf2e.traits.map(t => t.toLowerCase());
-    } else if (origin) {
-        traits = origin.system?.traits?.value?.map(t => t.toLowerCase()) ?? [];
-    }
-	
+    const traits = Array.isArray(context.traits)
+         ? context.traits.map(t => t.toLowerCase())
+         : Array.isArray(msg.flags.pf2e?.traits)
+         ? msg.flags.pf2e.traits.map(t => t.toLowerCase())
+         : origin?.system?.traits?.value?.map(t => t.toLowerCase()) ?? [];
+
     const ATTACK_SKILLS = new Set([
                 "disarm", "escape", "force-open", "grapple", "reposition", "shove", "trip"
             ])
@@ -322,7 +314,7 @@ Hooks.on('createChatMessage', async(msg) => {
     console.log(`[${MODULE}] Has generic 'attack' flag in options?`, hasAttackFlag);
 
     const isAttack = context.type === 'attack-roll';
-    const isSkillAttack = context.type === 'skill-check' && ATTACK_SKILLS.has(actionSlug) && context.traits?.includes("attack");
+    const isSkillAttack = context.type === 'skill-check' && ATTACK_SKILLS.has(actionSlug) && Array.isArray(context.traits) && context.traits?.includes("attack");
     const isDamageRoll = context.type === 'damage-roll';
     const isDamageTaken = context.type === 'damage-taken';
     const isDamage = isDamageRoll || isDamageTaken;
@@ -332,7 +324,12 @@ Hooks.on('createChatMessage', async(msg) => {
 
     const isSpellCast = context.type === 'spell-cast' || context.type === 'cast-spell';
     const isHeal = Array.isArray(context.domains) && context.domains.includes('healing-received');
-    const isTaunt = context.type === 'skill-check' && traits.some(t => TAUNT_TRAITS.has(t));
+
+    const tauntNoContext = Object.keys(context).length === 0;
+    const tauntActionSlug = msg.flags?.pf2e?.itemSlug ?? msg.flags?.core?.slug;
+
+    const isTaunt = context.type === "skill-check" && traits?.some(t => TAUNT_TRAITS.has(t));
+
     const targets = [...game.user.targets].map(t => t.id);
 
     // Logs
@@ -345,10 +342,84 @@ Hooks.on('createChatMessage', async(msg) => {
     console.log(`[${MODULE}] isDamageRoll: ${isDamageRoll}, isDamageTaken: ${isDamageTaken}, isDamage: ${isDamage}`);
     console.log(`[${MODULE}] isWeaponDamage: ${isWeaponDamage}, isSpellDamage: ${isSpellDamage}`);
     console.log(`[${MODULE}] isSpellCast: ${isSpellCast}, isHeal: ${isHeal}, isTaunt: ${isTaunt}`);
+    console.log(`[${MODULE}] isTaunt: ${isTaunt}`);
     console.log(`[${MODULE}] Targets: ${targets}`);
 
     let threatGlobal = 0;
-	
+
+    // ACCIONES SIN CONTEXT
+
+    if (Object.keys(context).length === 0) {
+        console.log(`[${MODULE}] Contexto vacío, buscando taunt por título`);
+
+        const tauntActionSlug =
+            msg.flags?.pf2e?.itemSlug ??
+            msg.flags?.core?.slug ??
+            (() => {
+                const rawContent = msg.content ?? "";
+                console.log(`[${MODULE}] msg.content:`, rawContent);
+
+                let title;
+                const h3Match = rawContent.match(/<h3>(.*?)<\/h3>/i);
+                if (h3Match) {
+                    const rawTitle = h3Match[1].replace(/<.*?>/g, "").trim();
+                    title = rawTitle;
+                    console.log(`[${MODULE}] Título extraído de <h3>: "${title}"`);
+                } else {
+                    const strongMatch = rawContent.match(/<strong>(.*?)<\/strong>/i);
+                    if (strongMatch) {
+                        title = strongMatch[1].trim();
+                        console.log(`[${MODULE}] Título extraído de <strong>: "${title}"`);
+                    } else {
+                        console.log(`[${MODULE}] No se encontró <strong>...</strong> ni <h3>...</h3>`);
+                        return undefined;
+                    }
+                }
+
+                console.log(`[${MODULE}] Título extraído: "${title}"`);
+
+                const slugified = title
+                    .toLowerCase()
+                    .normalize("NFD")
+                    .replace(/[\u0300-\u036f]/g, "")
+                    .replace(/[^\w\s]/g, "")
+                    .replace(/\s+/g, "-");
+
+                const cleanedSlug = slugified.replace(/-[a-z]{1,6}$/, "");
+
+                console.log(`[${MODULE}] Slug generado: "${cleanedSlug}"`);
+                return cleanedSlug;
+            })();
+
+        if (tauntActionSlug) {
+            console.log(`[${MODULE}] Slug final obtenido: ${tauntActionSlug}`);
+        } else {
+            console.log(`[${MODULE}] No se pudo obtener un slug para este mensaje`);
+        }
+
+        if (tauntActionSlug && globalThis.ACTION_THREAT?.[tauntActionSlug] !== undefined) {
+            const base = game.settings.get(MODULE, "baseAttackThreat") || 0;
+            const bonus = globalThis.ACTION_THREAT[tauntActionSlug];
+            const threatGlobal = base + bonus;
+
+            console.log(`[${MODULE}] Chat Taunt detectado: slug='${tauntActionSlug}' → base=${base}, bonus=${bonus}, total=${threatGlobal}`);
+
+            for (const enemy of canvas.tokens.placeables.filter(t =>
+                    t.inCombat &&
+                    t.document.disposition !== responsibleToken.document.disposition &&
+                    !t.actor.hasPlayerOwner)) {
+
+                console.log(`[${MODULE}] Burla a ${enemy.name}: +${threatGlobal}`);
+                await _applyThreat(enemy, responsibleToken.id, responsibleToken.name, threatGlobal);
+            }
+
+            _updateFloatingPanel();
+            return;
+        } else {
+            console.log(`[${MODULE}] Slug '${tauntActionSlug}' no está definido en ACTION_THREAT`);
+        }
+    }
+
     // GUARDADO DE PUNTOS DE GOLPE PREVIOS AL CASTEAR UN CONJURO
 
     if (isSpellCast) {
@@ -389,8 +460,7 @@ Hooks.on('createChatMessage', async(msg) => {
         default:
             threatGlobal = base;
         }
-        console.log(
-`[${MODULE}] Skill-Attack '${actionSlug}' (${outcome}) → threatGlobal = ${threatGlobal}`);
+        console.log(`[${MODULE}] Skill-Attack '${actionSlug}' (${outcome}) → threatGlobal = ${threatGlobal}`);
         await _applyThreat(primaryTarget, responsibleToken.id, responsibleToken.name, threatGlobal);
 
         _updateFloatingPanel();
@@ -499,21 +569,32 @@ Hooks.on('createChatMessage', async(msg) => {
 
     // ACCIONES ACTION-THREATS.JSON
     if (isTaunt) {
+        let threatGlobal = 0;
+
+        const domains = context.domains ?? [];
+        const allTraits = [...new Set([...domains, ...options].filter(t => TAUNT_TRAITS.has(t)))];
+        const baseTraitThreat = allTraits.reduce((sum, tr) => sum + (globalThis.TRAIT_THREAT[tr] || 0), 0);
+        console.log(`[${MODULE}] Amenaza por traits: ${baseTraitThreat} (${allTraits.join(', ')})`);
+
         const outcome = context.outcome ?? 'failure';
-        const bonus = outcome === 'success'
+        const outcomeBonus = outcome === 'success'
              ? game.settings.get(MODULE, 'tauntSuccessBonus')
              : outcome === 'criticalSuccess'
-             ? game.settings.get(MODULE, 'tauntCritBonus') : 0;
-        const base = traits.reduce((sum, t) => sum + (globalThis.TRAIT_THREAT[t] || 0), 0);
-        const total = base + bonus;
+             ? game.settings.get(MODULE, 'tauntCritBonus')
+             : 0;
+
+        threatGlobal = baseTraitThreat + outcomeBonus;
+        console.log(`[${MODULE}] Taunt (skill-check): traits=${baseTraitThreat} + bonus=${outcomeBonus} => amenaza=${threatGlobal}`);
 
         for (const enemy of canvas.tokens.placeables.filter(t =>
                 t.inCombat &&
                 t.document.disposition !== responsibleToken.document.disposition &&
                 !t.actor.hasPlayerOwner)) {
-            console.log(`[${MODULE}] Burla a ${enemy.name}: +${total}`);
-            await _applyThreat(enemy, responsibleToken.id, responsibleToken.name, total);
+
+            console.log(`[${MODULE}] Burla aplicada a ${enemy.name}: +${threatGlobal}`);
+            await _applyThreat(enemy, responsibleToken.id, responsibleToken.name, threatGlobal);
         }
+
         _updateFloatingPanel();
     }
 
@@ -915,7 +996,6 @@ Hooks.on('controlToken', async(token, controlled) => {
     .play();
 });
 
-// Toda esta cosa no sé si es necesaria, la pongo por si acaso, además, se rompen cosas si no las pongo jeje
 Hooks.on('canvasReady', _updateFloatingPanel);
 Hooks.on('canvasPan', _updateFloatingPanel);
 Hooks.on('updateToken', _updateFloatingPanel);
@@ -946,10 +1026,10 @@ Hooks.on('getTokenHUDButtons', (hud, buttons) => {
 Hooks.on('combatTurn', async() => {
     for (const token of canvas.tokens.placeables.filter(t => t.inCombat)) {
         await token.document.unsetFlag(MODULE, 'preHP');
-		console.log(`[${MODULE}] → unsetFlag preHP on ${token.name} (${token.id})`);
+        console.log(`[${MODULE}] → unsetFlag preHP on ${token.name} (${token.id})`);
         await token.document.unsetFlag(MODULE, 'attackThreat');
-		console.log(`[${MODULE}] → unsetFlag attackThreat on ${token.name} (${token.id})`);
-		console.log(`[${MODULE}] Flags limpiados para ${token.name}`);
+        console.log(`[${MODULE}] → unsetFlag attackThreat on ${token.name} (${token.id})`);
+        console.log(`[${MODULE}] Flags limpiados para ${token.name}`);
     }
     _updateFloatingPanel();
 });
@@ -983,3 +1063,5 @@ Hooks.on('combatRound', async() => {
 
     _updateFloatingPanel();
 });
+
+console.log(`[${MODULE}] Cargado`);
