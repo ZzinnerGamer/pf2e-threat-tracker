@@ -1,4 +1,5 @@
 # CHANGELOG
+All notable changes to this project will be documented in this file.
 
 ## [beta2] - 2025-8-1
 UPDATE YAY
