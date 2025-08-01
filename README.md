@@ -14,6 +14,9 @@
 - **Threat Panel**  
   A floating UI panel lists every enemy token in the scene along with their top threat-generators. It updates in real time during combat and shows the top 3 sources of threat per enemy.
 
+- **Distance-Based Threat Modifiers**  
+  Scale down threat based on how far the attacker is from the enemy (relative to their speed).
+
 - **Trait & Vulnerability Configuration** *(WIP)*  
   Configure trait-based multipliers and vulnerabilities through a GUI. For example, if an enemy is vulnerable to fire, attacks with the `fire` trait will generate more threat. These settings dynamically affect threat calculation.
 
@@ -91,9 +94,6 @@ Go to **Settings → Module Settings → PF2e Threat Tracker** to adjust:
   Add hotkeys and UI affordances for faster toggling or panel movement.
 
 ### 💡 Future Ideas
-
-- **Distance-Based Threat Modifiers**  
-  Scale threat based on how far the attacker is from the enemy (relative to their speed).
 
 - **Extra VFX Options**  
   Use Sequencer to flash icons or mark the top-threat character more clearly.
