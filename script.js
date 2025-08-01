@@ -577,54 +577,6 @@ async function storePreHP(token, threat = null) {
     }
 }
 
-// OBTENER TOKENS EN TEMPLATES
-function getTokensInTemplate(template) {
-    const shape = getTemplateShape(template);
-    if (!shape)
-        return [];
-
-    return canvas.tokens.placeables.filter(token => {
-        const cx = token.center.x;
-        const cy = token.center.y;
-        return shape.contains(cx, cy);
-    });
-}
-
-function getTemplateShape(template) {
-    const { t, distance, width, x, y, direction, angle } = template.document;
-
-    switch (t) {
-    case "circle":
-        return new PIXI.Circle(x, y, canvas.grid.size * (distance / canvas.grid.distance));
-    case "cone":
-        return new PIXI.Polygon(
-            constructConePoints(x, y, distance, direction, angle));
-    case "rect":
-        return new PIXI.Rectangle(
-            x - (canvas.grid.size * (width / canvas.grid.distance)) / 2,
-            y - (canvas.grid.size * (distance / canvas.grid.distance)) / 2,
-            canvas.grid.size * (width / canvas.grid.distance),
-            canvas.grid.size * (distance / canvas.grid.distance));
-    default:
-        return null;
-    }
-}
-
-function constructConePoints(originX, originY, distance, direction, angle) {
-    const points = [originX, originY];
-    const step = 5;
-    const radAngle = angle * Math.PI / 180;
-    const radDirection = direction * (Math.PI / 180);
-    const startAngle = radDirection - radAngle / 2;
-    const endAngle = radDirection + radAngle / 2;
-    for (let a = startAngle; a <= endAngle; a += radAngle / step) {
-        const dx = originX + Math.cos(a) * (distance * canvas.grid.size / canvas.grid.distance);
-        const dy = originY + Math.sin(a) * (distance * canvas.grid.size / canvas.grid.distance);
-        points.push(dx, dy);
-    }
-    return points;
-}
-
 // APLICAR AMENAZA EN LA TABLITA
 async function _applyThreat(enemy, srcId, srcName, amount) {
     const raw = enemy.document.getFlag(MODULE, 'threatTable') ?? {};
