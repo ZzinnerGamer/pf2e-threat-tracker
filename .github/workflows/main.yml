@@ -116,6 +116,7 @@ jobs:
             `# The name of the output file`      \
              ./module.zip                        \
             `# The files that will be included.` \
+            script.js                            \
             module.json                          \
             README.md                            \
             CHANGELOG.md                         \
