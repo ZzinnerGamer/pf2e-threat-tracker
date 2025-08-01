@@ -285,12 +285,6 @@ Hooks.on('createChatMessage', async(msg) => {
     const context = msg.flags.pf2e?.context;
     if (!context)
         return;
-    /*
-    if (context?.type === 'damage-roll' && context?.sourceType === 'attack') {
-    console.log(`[${MODULE}] Ignorando damage-roll redundante tras ataque.`);
-    return;
-    }
-     */
     const actor = msg.actor;
     if (!actor || !msg.author || !msg.flags?.pf2e)
         return;
@@ -315,8 +309,20 @@ Hooks.on('createChatMessage', async(msg) => {
     } else if (origin) {
         traits = origin.system?.traits?.value?.map(t => t.toLowerCase()) ?? [];
     }
+	
+    const ATTACK_SKILLS = new Set([
+                "disarm", "escape", "force-open", "grapple", "reposition", "shove", "trip"
+            ])
+
+        const actionOpt = context.options?.find(o => typeof o === "string" && o.startsWith("action:"));
+    const actionSlug = actionOpt?.split(":")[1];
+    console.log(`[${MODULE}] Detected actionSlug: ${actionSlug}`);
+
+    const hasAttackFlag = context.options?.includes("attack");
+    console.log(`[${MODULE}] Has generic 'attack' flag in options?`, hasAttackFlag);
 
     const isAttack = context.type === 'attack-roll';
+    const isSkillAttack = context.type === 'skill-check' && ATTACK_SKILLS.has(actionSlug) && context.traits?.includes("attack");
     const isDamageRoll = context.type === 'damage-roll';
     const isDamageTaken = context.type === 'damage-taken';
     const isDamage = isDamageRoll || isDamageTaken;
@@ -333,7 +339,9 @@ Hooks.on('createChatMessage', async(msg) => {
     console.log(`[${MODULE}] sourceType: ${context.sourceType}`, {
         domains: context.domains
     });
-    console.log(`[${MODULE}] isAttack: ${isAttack}`);
+    console.log(`[${MODULE}] actionSlug: ${actionSlug}`);
+    console.log(`[${MODULE}] isSkillAttack: ${isSkillAttack}`);
+    console.log(`[${MODULE}] => isAttack: ${isAttack}`);
     console.log(`[${MODULE}] isDamageRoll: ${isDamageRoll}, isDamageTaken: ${isDamageTaken}, isDamage: ${isDamage}`);
     console.log(`[${MODULE}] isWeaponDamage: ${isWeaponDamage}, isSpellDamage: ${isSpellDamage}`);
     console.log(`[${MODULE}] isSpellCast: ${isSpellCast}, isHeal: ${isHeal}, isTaunt: ${isTaunt}`);
@@ -353,6 +361,39 @@ Hooks.on('createChatMessage', async(msg) => {
                 }
             }
         }
+    }
+
+    // ATAQUES DE SKILLS
+    if (isSkillAttack) {
+        const outcome = context.outcome ?? "failure";
+        const level = actor.system.details.level.value;
+        const base = game.settings.get(MODULE, "baseAttackThreat");
+        let threatGlobal;
+
+        const primaryTarget = canvas.tokens.get(targets[0]);
+        console.log(`[${MODULE}] Primary target: ${primaryTarget?.name}`);
+
+        switch (outcome) {
+        case "criticalFailure":
+            threatGlobal = 0;
+            break;
+        case "failure":
+            threatGlobal = base;
+            break;
+        case "success":
+            threatGlobal = base + 10 * level;
+            break;
+        case "criticalSuccess":
+            threatGlobal = base + 20 * level;
+            break;
+        default:
+            threatGlobal = base;
+        }
+        console.log(
+`[${MODULE}] Skill-Attack '${actionSlug}' (${outcome}) → threatGlobal = ${threatGlobal}`);
+        await _applyThreat(primaryTarget, responsibleToken.id, responsibleToken.name, threatGlobal);
+
+        _updateFloatingPanel();
     }
 
     // ATAQUES SIRVEN LOS CONJUROS TAMBIÉN
