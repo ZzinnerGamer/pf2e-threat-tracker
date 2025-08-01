@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [Beta2.1] - 2025-8-1
+* Automated Releases by @ChasarooniZ in https://github.com/ZzinnerGamer/pf2e-threat-tracker/pull/1
+* Actually support for non skill actions
+
 ## [beta2] - 2025-8-1
 UPDATE YAY
 
