@@ -385,7 +385,7 @@ Hooks.on('createChatMessage', async(msg) => {
                     .replace(/[^\w\s]/g, "")
                     .replace(/\s+/g, "-");
 
-                const cleanedSlug = slugified.replace(/-[a-z]{1,6}$/, "");
+                const cleanedSlug = slugified.replace(/-\w+$/, "");
 
                 console.log(`[${MODULE}] Slug generado: "${cleanedSlug}"`);
                 return cleanedSlug;
@@ -422,17 +422,47 @@ Hooks.on('createChatMessage', async(msg) => {
 
     // GUARDADO DE PUNTOS DE GOLPE PREVIOS AL CASTEAR UN CONJURO
 
-    if (isSpellCast) {
-        for (const token of canvas.tokens.placeables) {
-            if (token.inCombat && token.document.disposition !== responsibleToken.document.disposition && !token.actor.hasPlayerOwner) {
-                const hp = token.actor.system.attributes.hp?.value;
-                if (typeof hp === 'number') {
-                    await token.document.setFlag(MODULE, 'preHP', hp);
-                    console.log(`[${MODULE}] HP previo guardado para ${token.name}: ${hp}`);
-                }
-            }
-        }
+if (isSpellCast) {
+  for (const token of canvas.tokens.placeables) {
+    if (
+      token.inCombat &&
+      token.document.disposition !== responsibleToken.document.disposition &&
+      !token.actor.hasPlayerOwner
+    ) {
+      const hp = token.actor.system.attributes.hp?.value;
+      if (typeof hp === 'number') {
+        await token.document.setFlag(MODULE, 'preHP', hp);
+        console.log(`[${MODULE}] HP previo guardado para ${token.name}: ${hp}`);
+      }
     }
+  }
+
+  // APLICAR AMENAZA GLOBAL POR CONJURO LANZADO
+  const spellSlug = context?.options?.find(opt => opt.startsWith("item:slug:"))?.split(":")[2];
+  if (spellSlug && globalThis.ACTION_THREAT?.[spellSlug] !== undefined) {
+    const base = game.settings.get(MODULE, 'baseAttackThreat') || 0;
+    const bonus = globalThis.ACTION_THREAT[spellSlug];
+    const threatGlobal = base + bonus;
+
+    console.log(
+      `[${MODULE}] Conjuro lanzado: slug='${spellSlug}' → base=${base}, bonus=${bonus}, total=${threatGlobal}`
+    );
+
+    for (const enemy of canvas.tokens.placeables.filter(t =>
+      t.inCombat &&
+      t.document.disposition !== responsibleToken.document.disposition &&
+      !t.actor.hasPlayerOwner
+    )) {
+      console.log(`[${MODULE}] Amenaza global aplicada a ${enemy.name}: +${threatGlobal}`);
+      await _applyThreat(enemy, responsibleToken.id, responsibleToken.name, threatGlobal);
+    }
+
+    _updateFloatingPanel();
+  } else {
+    console.log(`[${MODULE}] Conjuro lanzado pero slug '${spellSlug}' no tiene amenaza definida`);
+  }
+}
+
 
     // ATAQUES DE SKILLS
     if (isSkillAttack) {
