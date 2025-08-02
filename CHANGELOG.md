@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## [Beta3] - 2025-8-2
+
+New Features
+* Non-offensive spells now generates threat plus spells generate threat to all creatures in combat
+* All Effects from Compendium.pf2e.equipment-effects, Compendium.pf2e.feat-effects and Compendium.pf2e.spell-effects are parsed (might revisit every single one of them to set the correct values)
+
+Fixed
+* Saving module configuration actually works
+* Floating Panel position configuration
+* Vulnerabilities by trait option now shows the document
+
 ## [Beta2.1] - 2025-8-1
 * Automated Releases by @ChasarooniZ in https://github.com/ZzinnerGamer/pf2e-threat-tracker/pull/1
 * Actually support for non skill actions
