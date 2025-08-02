@@ -80,7 +80,7 @@ Hooks.once('init', async() => {
             globalThis[globalKey] = data;
         }
     };
-
+	
     await Promise.all([
             loadJSONSetting('trait-threat.json', 'traitThreats', 'TRAIT_THREAT'),
             loadJSONSetting('trait-vulnerability.json', 'traitVulnerabilities', 'TRAIT_VULNERABILITY'),
@@ -88,15 +88,22 @@ Hooks.once('init', async() => {
             loadJSONSetting('effects-threats.json', null, 'EFFECTS_THREAT'),
         ]);
 
-    game.settings.register(MODULE, 'panelPosition', {
-        name: game.i18n.localize("pf2e-threat-tracker.settings.panelPosition.name"),
+    game.settings.register(MODULE, 'xFactor', {
+        name: game.i18n.localize("pf2e-threat-tracker.settings.xFactor.name"),
+        hint: game.i18n.localize("pf2e-threat-tracker.settings.xFactor.hint"),
         scope: 'client',
         config: true,
-    default: {
-            top: 10,
-            left: 10
-        },
-        type: Object,
+        default: 10,
+        type: Number
+        });
+
+    game.settings.register(MODULE, 'yFactor', {
+        name: game.i18n.localize("pf2e-threat-tracker.settings.yFactor.name"),
+        hint: game.i18n.localize("pf2e-threat-tracker.settings.yFactor.hint"),
+        scope: 'client',
+        config: true,
+        default: 10,
+        type: Number
     });
 
     game.settings.register(MODULE, 'decayEnabled', {
@@ -104,9 +111,8 @@ Hooks.once('init', async() => {
         hint: game.i18n.localize("pf2e-threat-tracker.settings.decayEnabled.hint"),
         scope: 'world',
         config: true,
-    default:
-        true,
-        type: Boolean,
+        default: true,
+        type: Boolean
     });
 
     game.settings.register(MODULE, 'decayFactor', {
@@ -115,13 +121,8 @@ Hooks.once('init', async() => {
         scope: 'world',
         config: true,
         type: Number,
-        range: {
-            min: 0,
-            max: 1,
-            step: 0.01
-        },
-    default:
-        0.9,
+        range: {min: 0, max: 1, step: 0.01},
+        default: 0.9,
         onChange: value => {
             ui.notifications.error(game.i18n.localize("pf2e-threat-tracker.notifications.decayFactor"));
         }
@@ -132,8 +133,7 @@ Hooks.once('init', async() => {
         scope: 'world',
         config: true,
         type: Number,
-    default:
-        10
+        default: 10
     });
 
     game.settings.register(MODULE, 'baseHealThreat', {
@@ -141,9 +141,8 @@ Hooks.once('init', async() => {
         hint: game.i18n.localize("pf2e-threat-tracker.settings.baseHealThreat.hint"),
         scope: 'world',
         config: true,
-    default:
-        30,
-        type: Number,
+        default: 30,
+        type: Number
     });
 
     game.settings.register(MODULE, 'tauntSuccessBonus', {
@@ -151,9 +150,8 @@ Hooks.once('init', async() => {
         hint: game.i18n.localize("pf2e-threat-tracker.settings.tauntSuccessBonus.hint"),
         scope: 'world',
         config: true,
-    default:
-        10,
-        type: Number,
+        default: 10,
+        type: Number
     });
 
     game.settings.register(MODULE, 'tauntCritBonus', {
@@ -161,9 +159,8 @@ Hooks.once('init', async() => {
         hint: game.i18n.localize("pf2e-threat-tracker.settings.tauntCritBonus.hint"),
         scope: 'world',
         config: true,
-    default:
-        20,
-        type: Number,
+        default: 20,
+        type: Number
     });
 
     game.settings.register(MODULE, 'traitThreats', {
@@ -171,9 +168,8 @@ Hooks.once('init', async() => {
         hint: game.i18n.localize("pf2e-threat-tracker.settings.traitThreats.hint"),
         scope: 'world',
         config: false,
-    default:
-        JSON.stringify(globalThis.TRAIT_THREAT || {}, null, 2),
-        type: String,
+        default: JSON.stringify(globalThis.TRAIT_THREAT || {}),
+        type: String
     });
 
     game.settings.register(MODULE, 'traitVulnerabilities', {
@@ -181,8 +177,7 @@ Hooks.once('init', async() => {
         hint: game.i18n.localize("pf2e-threat-tracker.settings.traitVulnerabilities.hint"),
         scope: 'world',
         config: true,
-    default:
-        JSON.stringify(globalThis.TRAIT_VULNERABILITY || {}, null, 2),
+        default: JSON.stringify(globalThis.TRAIT_VULNERABILITY || {}),
         type: String,
         onChange: value => {
             try {
@@ -191,7 +186,7 @@ Hooks.once('init', async() => {
             } catch {
                 ui.notifications.error(game.i18n.localize("pf2e-threat-tracker.notifications.traitVulnerabilities.invalid"));
             }
-        },
+        }
     });
 
     game.settings.register(MODULE, 'enableThreatPanel', {
@@ -199,8 +194,7 @@ Hooks.once('init', async() => {
         hint: game.i18n.localize("pf2e-threat-tracker.settings.enableThreatPanel.hint"),
         scope: 'client',
         config: true,
-    default:
-        true,
+        default: true,
         type: Boolean,
         onChange: () => {
             ui.notifications.info(game.i18n.localize("pf2e-threat-tracker.notifications.enableThreatPanel.updated"));
@@ -213,8 +207,7 @@ Hooks.once('init', async() => {
         hint: game.i18n.localize("pf2e-threat-tracker.settings.enableTopThreatEffect.hint"),
         scope: "client",
         config: true,
-    default:
-        true,
+        default: true,
         type: Boolean
     });
 
@@ -223,13 +216,20 @@ Hooks.once('init', async() => {
         hint: game.i18n.localize("pf2e-threat-tracker.settings.topThreatEffect.hint"),
         scope: 'world',
         config: true,
-    default:
-        'jb2a.icon.skull.dark_red',
+        default: 'jb2a.icon.skull.dark_red',
         type: String
     });
 
     globalThis.TRAIT_THREAT = JSON.parse(game.settings.get(MODULE, 'traitThreats') || '{}');
     globalThis.TRAIT_VULNERABILITY = JSON.parse(game.settings.get(MODULE, 'traitVulnerabilities') || '{}');
+	
+	console.log(`[${MODULE}] Settings registrados:`);
+[...game.settings.settings.entries()]
+  .filter(([key]) => key.startsWith(`${MODULE}.`))
+  .forEach(([key, setting]) => {
+    console.log(`→ ${key}: type=${setting.type?.name}, default=${setting.default}, config=${setting.config}`);
+  });
+
 });
 
 const TAUNT_TRAITS = new Set(['auditory', 'concentrate', 'emotion', 'linguistic', 'mental']);
@@ -779,10 +779,10 @@ function _updateFloatingPanel() {
         return;
     }
 
-    const savedPos = game.settings.get(MODULE, 'panelPosition') ?? {
-        top: 10,
-        left: 10
-    };
+const savedPos = {
+  left: game.settings.get(MODULE, 'xFactor'),
+  top: game.settings.get(MODULE, 'yFactor')
+};
 
     if (!panel) {
         panel = document.createElement('div');
@@ -821,11 +821,9 @@ function _updateFloatingPanel() {
 
         window.addEventListener('mouseup', () => {
             if (isDragging) {
-                game.settings.set(MODULE, 'panelPosition', {
-                    top: panel.offsetTop,
-                    left: panel.offsetLeft
-                });
-            }
+        game.settings.set(MODULE, 'xFactor', panel.offsetLeft);
+        game.settings.set(MODULE, 'yFactor', panel.offsetTop);
+    }
             isDragging = false;
             document.body.style.userSelect = '';
         });
