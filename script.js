@@ -1,8 +1,17 @@
+// ===========================
+// 1. CONSTANTES Y DEPENDENCIAS
+// ===========================
 const MODULE = 'pf2e-threat-tracker';
 const { ApplicationV2 } = foundry.applications.api;
 const HandlebarsApplicationMixin = foundry.applications.api.HandlebarsApplicationMixin;
 
-export class ThreatTrackerConfig extends FormApplication {
+const TAUNT_TRAITS = new Set(['auditory', 'concentrate', 'emotion', 'linguistic', 'mental']);
+const ATTACK_SKILLS = new Set(["disarm", "escape", "force-open", "grapple", "reposition", "shove", "trip"])
+
+    // ===========================
+    // 2. CLASE DE CONFIGURACIÓN
+    // ===========================
+    export class ThreatTrackerConfig extends FormApplication {
     static get defaultOptions() {
         return mergeObject(super.defaultOptions, {
             id: "threat-tracker-config",
@@ -57,6 +66,9 @@ export class ThreatTrackerConfig extends FormApplication {
 
 }
 
+// ===========================
+// 3. HOOK INIT: CARGA JSON + REGISTRO DE SETTINGS
+// ===========================
 Hooks.once('init', async() => {
     console.log(`[${MODULE}] Inicializado`);
 
@@ -80,12 +92,13 @@ Hooks.once('init', async() => {
             globalThis[globalKey] = data;
         }
     };
-	
+
     await Promise.all([
             loadJSONSetting('trait-threat.json', 'traitThreats', 'TRAIT_THREAT'),
             loadJSONSetting('trait-vulnerability.json', 'traitVulnerabilities', 'TRAIT_VULNERABILITY'),
             loadJSONSetting('action-threats.json', null, 'ACTION_THREAT'),
             loadJSONSetting('effects-threats.json', null, 'EFFECTS_THREAT'),
+            loadJSONSetting('threat-immunity.json', null, 'THREAT_IMMUNITY')
         ]);
 
     game.settings.register(MODULE, 'xFactor', {
@@ -93,16 +106,18 @@ Hooks.once('init', async() => {
         hint: game.i18n.localize("pf2e-threat-tracker.settings.xFactor.hint"),
         scope: 'client',
         config: true,
-        default: 10,
+    default:
+        10,
         type: Number
-        });
+    });
 
     game.settings.register(MODULE, 'yFactor', {
         name: game.i18n.localize("pf2e-threat-tracker.settings.yFactor.name"),
         hint: game.i18n.localize("pf2e-threat-tracker.settings.yFactor.hint"),
         scope: 'client',
         config: true,
-        default: 10,
+    default:
+        10,
         type: Number
     });
 
@@ -111,7 +126,8 @@ Hooks.once('init', async() => {
         hint: game.i18n.localize("pf2e-threat-tracker.settings.decayEnabled.hint"),
         scope: 'world',
         config: true,
-        default: true,
+    default:
+        true,
         type: Boolean
     });
 
@@ -121,8 +137,13 @@ Hooks.once('init', async() => {
         scope: 'world',
         config: true,
         type: Number,
-        range: {min: 0, max: 1, step: 0.01},
-        default: 0.9,
+        range: {
+            min: 0,
+            max: 1,
+            step: 0.01
+        },
+    default:
+        0.5,
         onChange: value => {
             ui.notifications.error(game.i18n.localize("pf2e-threat-tracker.notifications.decayFactor"));
         }
@@ -133,7 +154,28 @@ Hooks.once('init', async() => {
         scope: 'world',
         config: true,
         type: Number,
-        default: 10
+    default:
+        10
+    });
+
+    game.settings.register(MODULE, 'baseSpellThreat', {
+        name: game.i18n.localize("pf2e-threat-tracker.settings.baseSpellThreat.name"),
+        hint: game.i18n.localize("pf2e-threat-tracker.settings.baseSpellThreat.hint"),
+        scope: 'world',
+        config: true,
+    default:
+        20,
+        type: Number
+    });
+
+    game.settings.register(MODULE, 'threatPerSpellRank', {
+        name: game.i18n.localize("pf2e-threat-tracker.settings.threatPerSpellRank.name"),
+        hint: game.i18n.localize("pf2e-threat-tracker.settings.threatPerSpellRank.hint"),
+        scope: 'world',
+        config: true,
+    default:
+        10,
+        type: Number
     });
 
     game.settings.register(MODULE, 'baseHealThreat', {
@@ -141,7 +183,8 @@ Hooks.once('init', async() => {
         hint: game.i18n.localize("pf2e-threat-tracker.settings.baseHealThreat.hint"),
         scope: 'world',
         config: true,
-        default: 30,
+    default:
+        30,
         type: Number
     });
 
@@ -150,7 +193,8 @@ Hooks.once('init', async() => {
         hint: game.i18n.localize("pf2e-threat-tracker.settings.tauntSuccessBonus.hint"),
         scope: 'world',
         config: true,
-        default: 10,
+    default:
+        40,
         type: Number
     });
 
@@ -159,7 +203,8 @@ Hooks.once('init', async() => {
         hint: game.i18n.localize("pf2e-threat-tracker.settings.tauntCritBonus.hint"),
         scope: 'world',
         config: true,
-        default: 20,
+    default:
+        40,
         type: Number
     });
 
@@ -168,7 +213,8 @@ Hooks.once('init', async() => {
         hint: game.i18n.localize("pf2e-threat-tracker.settings.traitThreats.hint"),
         scope: 'world',
         config: false,
-        default: JSON.stringify(globalThis.TRAIT_THREAT || {}),
+    default:
+        JSON.stringify(globalThis.TRAIT_THREAT || {}),
         type: String
     });
 
@@ -177,7 +223,8 @@ Hooks.once('init', async() => {
         hint: game.i18n.localize("pf2e-threat-tracker.settings.traitVulnerabilities.hint"),
         scope: 'world',
         config: true,
-        default: JSON.stringify(globalThis.TRAIT_VULNERABILITY || {}),
+    default:
+        JSON.stringify(globalThis.TRAIT_VULNERABILITY || {}),
         type: String,
         onChange: value => {
             try {
@@ -194,7 +241,8 @@ Hooks.once('init', async() => {
         hint: game.i18n.localize("pf2e-threat-tracker.settings.enableThreatPanel.hint"),
         scope: 'client',
         config: true,
-        default: true,
+    default:
+        true,
         type: Boolean,
         onChange: () => {
             ui.notifications.info(game.i18n.localize("pf2e-threat-tracker.notifications.enableThreatPanel.updated"));
@@ -207,7 +255,8 @@ Hooks.once('init', async() => {
         hint: game.i18n.localize("pf2e-threat-tracker.settings.enableTopThreatEffect.hint"),
         scope: "client",
         config: true,
-        default: true,
+    default:
+        true,
         type: Boolean
     });
 
@@ -216,27 +265,116 @@ Hooks.once('init', async() => {
         hint: game.i18n.localize("pf2e-threat-tracker.settings.topThreatEffect.hint"),
         scope: 'world',
         config: true,
-        default: 'jb2a.icon.skull.dark_red',
+    default:
+        'jb2a.icon.skull.dark_red',
         type: String
     });
 
     globalThis.TRAIT_THREAT = JSON.parse(game.settings.get(MODULE, 'traitThreats') || '{}');
     globalThis.TRAIT_VULNERABILITY = JSON.parse(game.settings.get(MODULE, 'traitVulnerabilities') || '{}');
-	
-	console.log(`[${MODULE}] Settings registrados:`);
-[...game.settings.settings.entries()]
-  .filter(([key]) => key.startsWith(`${MODULE}.`))
-  .forEach(([key, setting]) => {
-    console.log(`→ ${key}: type=${setting.type?.name}, default=${setting.default}, config=${setting.config}`);
-  });
+
+    console.log(`[${MODULE}] Settings registrados:`);
+    [...game.settings.settings.entries()]
+    .filter(([key]) => key.startsWith(`${MODULE}.`))
+    .forEach(([key, setting]) => {
+        console.log(`→ ${key}: type=${setting.type?.name}, default=${setting.default}, config=${setting.config}`);
+    });
 
 });
 
-const TAUNT_TRAITS = new Set(['auditory', 'concentrate', 'emotion', 'linguistic', 'mental']);
+// ===========================
+// 4. HELPER FUNCTIONS (CORE)
+// ===========================
 
-// La vulnerabilidad e inmunidades tengo que hacerla también por daño recibido, a veces un actor que es resistente al fuego puede seguir recibiendo daño al fuego
+// APLICAR AMENAZA EN LA TABLITA
+async function _applyThreat(enemy, srcId, srcName, amount) {
+    const raw = enemy.document.getFlag(MODULE, 'threatTable') ?? {};
+    const current = Object.entries(raw).reduce((acc, [id, v]) => {
+        acc[id] = typeof v === 'object' ? {
+            ...v
+        }
+         : {
+            name: canvas.tokens.get(id)?.name ?? '???',
+            value: v
+        };
+        return acc;
+    }, {});
+    if (!current[srcId])
+        current[srcId] = {
+            name: srcName,
+            value: 0
+        };
+    current[srcId].value += amount;
+    await enemy.document.setFlag(MODULE, 'threatTable', current);
+}
 
-// VULNERABILIDAD DE TRAITS
+function getThreatModifierByTraits(enemy, traits = []) {
+    const immunities = enemy.actor.system.attributes.immunities ?? [];
+    const resistances = enemy.actor.system.attributes.resistances ?? [];
+    const vulnerabilities = enemy.actor.system.attributes.vulnerabilities ?? [];
+
+    const thunk = {};
+    for (let k of Object.keys(THREAT_IMMUNITY || {}))
+        thunk[k] = THREAT_IMMUNITY[k];
+
+    let modifier = 1;
+
+    for (const trait of traits.map(t => t.toLowerCase())) {
+        // Inmunidades anulan la amenaza completamente (a menos que haya excepciones)
+        for (const immunity of immunities) {
+            if (immunity.type === trait) {
+                const excepts = immunity.exceptions?.map(e => e.toLowerCase()) ?? [];
+                if (!excepts.includes(trait)) {
+                    return 0;
+                }
+            }
+        }
+
+        // Vulnerabilidades multiplican
+        for (const vuln of vulnerabilities) {
+            if (vuln.type === trait && typeof vuln.value === "number") {
+                modifier *= vuln.value;
+            }
+        }
+
+        // Resistencias dividen
+        for (const resist of resistances) {
+            if (resist.type === trait && typeof resist.value === "number") {
+                modifier *= (1 / resist.value);
+            }
+        }
+    }
+
+    return modifier;
+}
+
+async function applyThreatToEnemies(responsibleToken, baseThreat, traits = []) {
+    for (const enemy of canvas.tokens.placeables) {
+        if (!enemy.inCombat)
+            continue;
+        if (enemy.document.disposition === responsibleToken.document.disposition)
+            continue;
+        if (enemy.actor.hasPlayerOwner)
+            continue;
+        if (!Array.isArray(traits)) {
+            traits = traits != null ? [traits] : [];
+        }
+
+        traits = traits.map(t => t.toLowerCase());
+
+        const modifier = getThreatModifierByTraits(enemy, traits);
+        const finalThreat = Math.floor(baseThreat * modifier);
+
+        if (finalThreat > 0) {
+            console.log(`[${MODULE}] Aplicando ${finalThreat} amenaza a ${enemy.name} (mod=${modifier})`);
+            await _applyThreat(enemy, responsibleToken.id, responsibleToken.name, finalThreat);
+        } else {
+            console.log(`[${MODULE}] ${enemy.name} es inmune a la amenaza (${traits.join(", ")})`);
+        }
+    }
+
+    _updateFloatingPanel();
+}
 
 function getVulnerabilityMultiplier(enemy, traits) {
     const types = enemy?.actor?.system?.traits?.value ?? [];
@@ -275,8 +413,176 @@ function isImmuneToThreat(enemy, actionTraits) {
     return false;
 }
 
-// EL CÁNCER
+// OBTENER PUNTOS DE GOLPE Y ATACANTE RESPONSABLE
 
+async function storePreHP(token, threat = null, responsibleToken = null) {
+    const hp = token.actor.system.attributes.hp?.value;
+    if (typeof hp === 'number') {
+        const data = {
+            hp
+        };
+        if (threat !== null)
+            data.baseThreat = threat;
+        if (responsibleToken)
+            data.attackerId = responsibleToken.id, data.attackerName = responsibleToken.name;
+
+        await token.document.setFlag(MODULE, 'preHP', data);
+        console.log(`[${MODULE}] HP previo guardado para ${token.name}: ${hp}, threat=${threat}, attacker=${responsibleToken?.name}`);
+    }
+}
+
+// TOP DE AMENAZA
+function getTopThreatTarget(enemyToken) {
+    const threatTable = enemyToken.document.getFlag(MODULE, 'threatTable') || {};
+    if (!Object.keys(threatTable).length)
+        return null;
+
+    // Obtener el ID con más amenaza solo en ESTE enemigo
+    const sorted = Object.entries(threatTable).sort((a, b) => b[1] - a[1]);
+    const [topTokenId, value] = sorted[0];
+
+    const topToken = canvas.tokens.get(topTokenId);
+    if (!topToken)
+        return null;
+
+    return {
+        token: topToken,
+        amount: value
+    };
+}
+
+// VELOCIDAD MÁXIMA DEL ENEMIGO
+function getHighestSpeed(actor) {
+    const speeds = actor.system.attributes.speed.otherSpeeds || [];
+    const landSpeed = actor.system.attributes.speed.value || 0;
+    const allSpeeds = [landSpeed, ...speeds.map(s => s.value)];
+    return Math.max(...allSpeeds);
+}
+
+function getDistanceThreatMultiplier(tokenTarget, tokenSource) {
+    const maxSpeed = getHighestSpeed(tokenTarget.actor);
+    const adjustedSpeed = Math.max(0, maxSpeed - 5);
+    const distance = canvas.grid.measureDistance(tokenSource, tokenTarget);
+
+    if (distance <= 5)
+        return 1.0;
+    if (distance <= adjustedSpeed)
+        return 0.9;
+    if (distance <= adjustedSpeed * 2)
+        return 0.8;
+    if (distance <= adjustedSpeed * 3)
+        return 0.7;
+    return 0.5;
+}
+
+// UPDATE DE LA TABLITA
+function _updateFloatingPanel() {
+    if (!game.settings.get(MODULE, 'enableThreatPanel'))
+        return;
+    if (!game.user.isGM)
+        return;
+    const combat = game.combats.active;
+    const id = 'threat-tracker-panel';
+    let panel = document.getElementById(id);
+    if (!combat) {
+        panel?.remove();
+        return;
+    }
+
+    const savedPos = {
+        left: game.settings.get(MODULE, 'xFactor'),
+        top: game.settings.get(MODULE, 'yFactor')
+    };
+
+    if (!panel) {
+        panel = document.createElement('div');
+        panel.id = id;
+        Object.assign(panel.style, {
+            position: 'absolute',
+            top: savedPos.top + 'px',
+            left: savedPos.left + 'px',
+            zIndex: '100',
+            background: 'rgba(0,0,0,0.7)',
+            color: 'white',
+            padding: '8px',
+            borderRadius: '6px',
+            maxHeight: '80vh',
+            overflow: 'auto',
+            cursor: 'move',
+            width: '200px',
+            userSelect: 'none'
+        });
+
+        const header = document.createElement('div');
+        header.style.cssText = 'font-weight: bold; margin-bottom: 8px; cursor: move;';
+        header.textContent = 'Threat Tracker';
+        panel.appendChild(header);
+
+        let isDragging = false;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+
+        header.addEventListener('mousedown', e => {
+            isDragging = true;
+            dragOffsetX = e.clientX - panel.offsetLeft;
+            dragOffsetY = e.clientY - panel.offsetTop;
+            document.body.style.userSelect = 'none';
+        });
+
+        window.addEventListener('mouseup', () => {
+            if (isDragging) {
+                game.settings.set(MODULE, 'xFactor', panel.offsetLeft);
+                game.settings.set(MODULE, 'yFactor', panel.offsetTop);
+            }
+            isDragging = false;
+            document.body.style.userSelect = '';
+        });
+
+        window.addEventListener('mousemove', e => {
+            if (!isDragging)
+                return;
+            let x = e.clientX - dragOffsetX;
+            let y = e.clientY - dragOffsetY;
+            const maxX = window.innerWidth - panel.offsetWidth;
+            const maxY = window.innerHeight - panel.offsetHeight;
+            x = Math.min(Math.max(0, x), maxX);
+            y = Math.min(Math.max(0, y), maxY);
+            panel.style.left = `${x}px`;
+            panel.style.top = `${y}px`;
+        });
+
+        document.body.appendChild(panel);
+    } else if (!panel.querySelector('div')) {
+        const newHeader = document.createElement('div');
+        newHeader.style.cssText = 'font-weight: bold; margin-bottom: 8px; cursor: move;';
+        newHeader.textContent = 'Threat Tracker';
+        panel.prepend(newHeader);
+    }
+
+    while (panel.childNodes.length > 1)
+        panel.removeChild(panel.lastChild);
+
+    for (const tok of canvas.tokens.placeables) {
+        const table = tok.document.getFlag(MODULE, 'threatTable');
+        if (!table || Object.keys(table).length === 0)
+            continue;
+        const sorted = Object.entries(table).sort((a, b) => b[1].value - a[1].value).slice(0, 3);
+        const rows = sorted.map(([_, o]) => `<div>${o.name}: ${o.value}</div>`).join('');
+        const block = document.createElement('div');
+        block.style.marginBottom = '0.5em';
+        block.innerHTML = `<strong>${tok.name}</strong><br>${rows}`;
+        panel.appendChild(block);
+    }
+
+    const configBtn = document.createElement('button');
+    configBtn.textContent = game.i18n.localize('pf2e-threat-tracker.ui.configureTraits');
+    configBtn.addEventListener('click', () => new ThreatTrackerConfig().render(true));
+    panel.appendChild(configBtn);
+}
+
+// ===========================
+// 5. HOOK createChatMessage (FLUJO PRINCIPAL)
+// ===========================
 Hooks.on('createChatMessage', async(msg) => {
     console.log(`[${MODULE}] createChatMessage hook ejecutado`);
     const context = msg.flags.pf2e?.context ?? {};
@@ -319,6 +625,8 @@ Hooks.on('createChatMessage', async(msg) => {
     const isDamageTaken = context.type === 'damage-taken';
     const isDamage = isDamageRoll || isDamageTaken;
 
+    const isSavingThrow = context.type === 'saving-throw' && !(context.options?.includes('item:type:spell'));
+
     const isWeaponDamage = isDamage && context.sourceType === 'attack';
     const isSpellDamage = isDamage && context.sourceType === 'spell';
 
@@ -336,13 +644,18 @@ Hooks.on('createChatMessage', async(msg) => {
     console.log(`[${MODULE}] sourceType: ${context.sourceType}`, {
         domains: context.domains
     });
-    console.log(`[${MODULE}] actionSlug: ${actionSlug}`);
-    console.log(`[${MODULE}] isSkillAttack: ${isSkillAttack}`);
-    console.log(`[${MODULE}] => isAttack: ${isAttack}`);
-    console.log(`[${MODULE}] isDamageRoll: ${isDamageRoll}, isDamageTaken: ${isDamageTaken}, isDamage: ${isDamage}`);
-    console.log(`[${MODULE}] isWeaponDamage: ${isWeaponDamage}, isSpellDamage: ${isSpellDamage}`);
-    console.log(`[${MODULE}] isSpellCast: ${isSpellCast}, isHeal: ${isHeal}, isTaunt: ${isTaunt}`);
-    console.log(`[${MODULE}] isTaunt: ${isTaunt}`);
+    console.log(`[${MODULE}] Has Slug: ${actionSlug}`);
+    console.log(`[${MODULE}] Is Skill Attack: ${isSkillAttack}`);
+    console.log(`[${MODULE}] Is Attack: ${isAttack}`);
+    console.log(`[${MODULE}] Is Damage Roll: ${isDamageRoll}`);
+    console.log(`[${MODULE}] Is Damage Taken: ${isDamageTaken}`);
+    console.log(`[${MODULE}] Is Damage: ${isDamage}`);
+    console.log(`[${MODULE}] Is Weapon Damage: ${isWeaponDamage}`);
+    console.log(`[${MODULE}] Is Spell Damage: ${isSpellDamage}`);
+    console.log(`[${MODULE}] Is Spell Cast: ${isSpellCast}`);
+    console.log(`[${MODULE}] Is Healing: ${isHeal}`);
+    console.log(`[${MODULE}] Is Saving Throw: ${isSavingThrow}`);
+    console.log(`[${MODULE}] Is Taunt: ${isTaunt}`);
     console.log(`[${MODULE}] Targets: ${targets}`);
 
     let threatGlobal = 0;
@@ -410,7 +723,7 @@ Hooks.on('createChatMessage', async(msg) => {
                     !t.actor.hasPlayerOwner)) {
 
                 console.log(`[${MODULE}] Burla a ${enemy.name}: +${threatGlobal}`);
-                await _applyThreat(enemy, responsibleToken.id, responsibleToken.name, threatGlobal);
+                await applyThreatToEnemies(enemy, responsibleToken.id, responsibleToken.name, threatGlobal);
             }
 
             _updateFloatingPanel();
@@ -422,47 +735,70 @@ Hooks.on('createChatMessage', async(msg) => {
 
     // GUARDADO DE PUNTOS DE GOLPE PREVIOS AL CASTEAR UN CONJURO
 
-if (isSpellCast) {
-  for (const token of canvas.tokens.placeables) {
-    if (
-      token.inCombat &&
-      token.document.disposition !== responsibleToken.document.disposition &&
-      !token.actor.hasPlayerOwner
-    ) {
-      const hp = token.actor.system.attributes.hp?.value;
-      if (typeof hp === 'number') {
-        await token.document.setFlag(MODULE, 'preHP', hp);
-        console.log(`[${MODULE}] HP previo guardado para ${token.name}: ${hp}`);
-      }
-    }
-  }
 
-  // APLICAR AMENAZA GLOBAL POR CONJURO LANZADO
-  const spellSlug = context?.options?.find(opt => opt.startsWith("item:slug:"))?.split(":")[2];
-  if (spellSlug && globalThis.ACTION_THREAT?.[spellSlug] !== undefined) {
-    const base = game.settings.get(MODULE, 'baseAttackThreat') || 0;
-    const bonus = globalThis.ACTION_THREAT[spellSlug];
-    const threatGlobal = base + bonus;
-
-    console.log(
-      `[${MODULE}] Conjuro lanzado: slug='${spellSlug}' → base=${base}, bonus=${bonus}, total=${threatGlobal}`
-    );
-
-    for (const enemy of canvas.tokens.placeables.filter(t =>
-      t.inCombat &&
-      t.document.disposition !== responsibleToken.document.disposition &&
-      !t.actor.hasPlayerOwner
-    )) {
-      console.log(`[${MODULE}] Amenaza global aplicada a ${enemy.name}: +${threatGlobal}`);
-      await _applyThreat(enemy, responsibleToken.id, responsibleToken.name, threatGlobal);
+    if (isSavingThrow) {
+        const token = actor.getActiveTokens()[0];
+        if (
+            token.inCombat &&
+            !token.actor.hasPlayerOwner) {
+            const hp = token.actor.system.attributes.hp?.value;
+            if (typeof hp === 'number') {
+                await token.document.setFlag(MODULE, 'preHP', hp);
+                console.log(`[${MODULE}] HP previo guardado para ${token.name}: ${hp}`);
+            }
+        }
     }
 
-    _updateFloatingPanel();
-  } else {
-    console.log(`[${MODULE}] Conjuro lanzado pero slug '${spellSlug}' no tiene amenaza definida`);
-  }
-}
+    if (isSpellCast) {
+        for (const token of canvas.tokens.placeables) {
+            if (
+                token.inCombat &&
+                token.document.disposition !== responsibleToken.document.disposition &&
+                !token.actor.hasPlayerOwner) {
+                const hp = token.actor.system.attributes.hp?.value;
+                if (typeof hp === 'number') {
+                    await token.document.setFlag(MODULE, 'preHP', hp);
+                    console.log(`[${MODULE}] HP previo guardado para ${token.name}: ${hp}`);
+                }
+            }
+        }
 
+        // HACER CUSTOM EN FUTURO
+        const ignoredTraits = ['healing'];
+        const hasIgnoredTrait = context?.options?.some(opt =>
+                ignoredTraits.some(trait => opt === `${trait}`));
+        if (hasIgnoredTrait)
+             {
+                console.log(`[${MODULE}] Conjuro con trait ignorado (${ignoredTraits.join(', ')}): amenaza no aplicada`);
+                return;
+            }
+
+        // APLICAR AMENAZA GLOBAL POR CONJURO LANZADO
+        const spellSlug = context?.options?.find(opt => opt.startsWith("item:slug:"))?.split(":")[2];
+        const spellRankRaw = context?.options?.find(opt => opt.startsWith("item:rank:"))?.split(":")[2];
+        const spellRank = Number(spellRankRaw);
+
+        if (!isNaN(spellRank)) {
+            const base = game.settings.get(MODULE, 'baseSpellThreat') || 0;
+            const threatPerRank = game.settings.get(MODULE, 'threatPerSpellRank') || 3;
+            const bonus = globalThis.ACTION_THREAT[spellSlug];
+            const threatGlobal = (base + bonus) * threatPerRank;
+
+            console.log(`[${MODULE}] Conjuro lanzado (${base} (Base de Conjuro) + ${bonus} (Configurable Slug Bonus)) x ${threatPerRank} (Rank) === ${threatGlobal} Total Threat`);
+
+            for (const enemy of canvas.tokens.placeables.filter(t =>
+                    t.inCombat &&
+                    t.document.disposition !== responsibleToken.document.disposition &&
+                    !t.actor.hasPlayerOwner)) {
+                console.log(`[${MODULE}] Amenaza global aplicada a ${enemy.name}: +${threatGlobal}`);
+                await applyThreatToEnemies(enemy, responsibleToken.id, responsibleToken.name, threatGlobal);
+            }
+
+            _updateFloatingPanel();
+        } else {
+            console.log(`[${MODULE}] Conjuro lanzado pero slug '${spellSlug}' no tiene amenaza definida`);
+        }
+    }
 
     // ATAQUES DE SKILLS
     if (isSkillAttack) {
@@ -491,7 +827,7 @@ if (isSpellCast) {
             threatGlobal = base;
         }
         console.log(`[${MODULE}] Skill-Attack '${actionSlug}' (${outcome}) → threatGlobal = ${threatGlobal}`);
-        await _applyThreat(primaryTarget, responsibleToken.id, responsibleToken.name, threatGlobal);
+        await applyThreatToEnemies(primaryTarget, responsibleToken.id, responsibleToken.name, threatGlobal);
 
         _updateFloatingPanel();
     }
@@ -521,7 +857,7 @@ if (isSpellCast) {
         const primaryTarget = canvas.tokens.get(targets[0]);
         console.log(`[${MODULE}] Primary target: ${primaryTarget?.name}`);
         if (primaryTarget)
-            await storePreHP(primaryTarget, threatGlobal);
+            await storePreHP(primaryTarget, threatGlobal, responsibleToken);
 
         // Secondary enemies
         for (const enemy of canvas.tokens.placeables.filter(t =>
@@ -530,13 +866,13 @@ if (isSpellCast) {
                 !t.actor.hasPlayerOwner &&
                 !targets.includes(t.id))) {
             console.log(`[${MODULE}] Secondary target: ${enemy.name}`);
-            await storePreHP(enemy);
+            await storePreHP(enemy, 0, responsibleToken);
             const distMult = getDistanceThreatMultiplier(enemy, responsibleToken);
-            const vulnMult = getVulnerabilityMultiplier(enemy, traits);
+            const vulnMult = getThreatModifierByTraits(enemy, traits);
             let amount = Math.round(threatGlobal * distMult * vulnMult);
             console.log(`[${MODULE}] Distance mult: ${distMult}, Vulnerability mult: ${vulnMult}, raw threat: ${amount}`);
 
-            if (!isImmuneToThreat(enemy, traits)) {
+            if (vulnMult > 0 && amount > 0) {
                 console.log(`[${MODULE}] Applying ${amount} threat to ${enemy.name}`);
                 await _applyThreat(enemy, responsibleToken.id, responsibleToken.name, amount);
             } else {
@@ -584,14 +920,14 @@ if (isSpellCast) {
                     !t.actor.hasPlayerOwner)) {
                 const primary = targets.includes(enemy.id);
                 let amount = primary ? threatGlobal : Math.floor(threatGlobal / 4);
-                if (isImmuneToThreat(enemy, traits)) {
+                if (getThreatModifierByTraits(enemy, traits)) {
                     console.log(`[${MODULE}] Inmunidad total a amenaza para ${enemy.name} por traits de inmunidad`);
                     amount = 0;
                 }
                 if (amount <= 0)
                     continue;
                 console.log(`[${MODULE}] (Curación) ${primary ? 'Principal' : 'Secundario'} ${enemy.name}: +${amount}`);
-                await _applyThreat(enemy, responsibleToken.id, responsibleToken.name, amount);
+                await applyThreatToEnemies(enemy, responsibleToken.id, responsibleToken.name, amount);
             }
             _updateFloatingPanel();
         }
@@ -622,7 +958,7 @@ if (isSpellCast) {
                 !t.actor.hasPlayerOwner)) {
 
             console.log(`[${MODULE}] Burla aplicada a ${enemy.name}: +${threatGlobal}`);
-            await _applyThreat(enemy, responsibleToken.id, responsibleToken.name, threatGlobal);
+            await applyThreatToEnemies(enemy, responsibleToken.id, responsibleToken.name, threatGlobal);
         }
 
         _updateFloatingPanel();
@@ -634,23 +970,39 @@ if (isSpellCast) {
         console.log(`[${MODULE}] Entering damage block`);
         const candidates = [];
         for (const t of canvas.tokens.placeables) {
-            const preHP = await t.document.getFlag(MODULE, 'preHP');
-            if (typeof preHP === 'number')
+            const preData = await t.document.getFlag(MODULE, 'preHP');
+            if (typeof preData?.hp === 'number')
                 candidates.push(t);
         }
         console.log(`[${MODULE}] Damage candidates: ${candidates.map(t => t.name)}`);
 
         for (const token of candidates) {
-            const preHP = await token.document.getFlag(MODULE, 'preHP');
+			const preData = await token.document.getFlag(MODULE, 'preHP');
+            const preHP = preData?.hp;
+			const attackerId = preData?.attackerId;
+			const attackerName = preData?.attackerName;
+			
+			if (typeof preHP !== 'number' || !attackerId) continue;
+			
+			const responsibleToken = canvas.tokens.get(attackerId);
+			if (!responsibleToken) {
+				console.warn(`[${MODULE}] No se encontró el token atacante con ID: ${attackerId}`);
+				continue;
+			}
+			
             const currHP = token.actor.system.attributes.hp?.value ?? 0;
             const damage = Math.max(0, preHP - currHP);
-            console.log(`[${MODULE}] ${token.name} took damage: ${damage} (preHP: ${preHP}, currHP: ${currHP})`);
+			if (damage === 0) continue;
+            console.log(`[${MODULE}] ${token.name} took damage: ${damage} (Previous HP: ${preHP}, Post HP: ${currHP})`);
 
             let threat = damage;
-            const bonusHalf = Math.floor(damage / 2);
-            threat += bonusHalf;
-            console.log(`[${MODULE}] +${bonusHalf} half-damage bonus`);
-
+			let bonusHalf = 0;
+			let bonusExcess = 0;
+			let ab = 0;
+			let slug = '-';
+			let threatTraits = 0;
+			let threatBaseBonus = typeof threatBase === 'number' ? threatBase : 0;
+			let typeBonus = 0;
             if (damage === 0)
                 continue;
 
@@ -658,27 +1010,22 @@ if (isSpellCast) {
                 const excess = damage - preHP * 0.5;
                 const bonusExcess = Math.floor(excess);
                 threat += bonusExcess;
-                console.log(`[${MODULE}] +${bonusExcess} excess-damage bonus`);
             }
 
             if (isWeaponDamage) {
                 threat += damage;
-                console.log(`[${MODULE}] +${damage} weapon damage bonus`);
             } else if (isSpellDamage) {
                 threat += damage;
-                console.log(`[${MODULE}] +${damage} spell damage bonus`);
             }
 
             if (typeof threatBase === 'number') {
                 threat += threatBase;
-                console.log(`[${MODULE}] +${threatBase} base threat from attack`);
             }
 
             for (const tr of traits) {
                 const tval = globalThis.TRAIT_THREAT[tr] || 0;
                 if (tval) {
                     threat += tval;
-                    console.log(`[${MODULE}] +${tval} trait bonus for '${tr}'`);
                 }
             }
 
@@ -688,275 +1035,53 @@ if (isSpellCast) {
                 const ab = globalThis.ACTION_THREAT?.[slug] || 0;
                 if (ab) {
                     threat += ab;
-                    console.log(`[${MODULE}] +${ab} action bonus for '${slug}'`);
                 }
             }
 
             const distMult = getDistanceThreatMultiplier(token, responsibleToken);
             const vulnMult = getVulnerabilityMultiplier(token, traits);
-            console.log(`[${MODULE}] Multipliers x${vulnMult} vuln, x${distMult} dist`);
+
+			let logBlock = `[${MODULE}] Amenaza para ${token.name}:\n`;
+			logBlock += ` ├─ Daño infligido: ${damage} (de ${preHP} a ${currHP})\n`;
+			logBlock += ` ├─ Bonus por exceso de daño: +${bonusExcess}\n`;
+			logBlock += ` ├─ Bonus por tipo (weapon/spell): +${typeBonus}\n`;
+			logBlock += ` ├─ Bonus base configurado: +${threatBaseBonus}\n`;
+			logBlock += ` ├─ Bonus por traits: +${threatTraits}\n`;
+			logBlock += ` ├─ Bonus por acción (${slug}): +${ab}\n`;
+			logBlock += ` ├─ Total antes de multiplicadores: ${threat}\n`;
+			logBlock += ` └─ Multiplicadores: x${vulnMult.toFixed(2)} (traits) × x${distMult.toFixed(2)} (distancia)\n`;
+			console.log(logBlock);
 
             threat = Math.round(threat * vulnMult * distMult);
+			
             if (!isImmuneToThreat(token, traits)) {
                 console.log(`[${MODULE}] Final threat for ${token.name}: ${threat}`);
                 await _applyThreat(token, responsibleToken.id, responsibleToken.name, threat);
             } else {
                 console.log(`[${MODULE}] ${token.name} is immune to threat`);
             }
-            const leftovers = canvas.tokens.placeables
-                .filter(t => t.document.getFlag(MODULE, 'preHP') !== undefined)
-                .map(t => t.name);
-            console.log(`[${MODULE}] Después del damage block, tokens con preHP aún presentes: ${leftovers.join(', ')}`);
 
             await token.document.unsetFlag(MODULE, 'preHP');
             console.log(`[${MODULE}] → unsetFlag preHP on ${token.name} (${token.id})`);
             await token.document.unsetFlag(MODULE, 'attackThreat');
             console.log(`[${MODULE}] → unsetFlag attackThreat on ${token.name} (${token.id})`);
             console.log(`[${MODULE}] Flags limpiados para ${token.name}`);
+            const leftovers = canvas.tokens.placeables
+                .filter(t => t.document.getFlag(MODULE, 'preHP') !== undefined)
+                .map(t => t.name);
+            if (leftovers.length === 0) {
+                console.log(`[${MODULE}] No hay tokens con preHP`)
+            } else {
+                console.log(`[${MODULE}] Después del damage block, tokens con preHP aún presentes: ${leftovers.join(', ')}`);
+            }
         }
         _updateFloatingPanel();
     }
 });
 
-// OBTENER PUNTOS DE GOLPE
-async function storePreHP(token, threat = null) {
-    const hp = token.actor.system.attributes.hp?.value;
-    if (typeof hp === 'number') {
-        await token.document.setFlag(MODULE, 'preHP', hp);
-        if (threat !== null)
-            await token.document.setFlag(MODULE, 'attackThreat', threat);
-        console.log(`[${MODULE}] HP previo guardado para ${token.name}: ${hp}`);
-    }
-}
-
-// APLICAR AMENAZA EN LA TABLITA
-async function _applyThreat(enemy, srcId, srcName, amount) {
-    const raw = enemy.document.getFlag(MODULE, 'threatTable') ?? {};
-    const current = Object.entries(raw).reduce((acc, [id, v]) => {
-        acc[id] = typeof v === 'object' ? {
-            ...v
-        }
-         : {
-            name: canvas.tokens.get(id)?.name ?? '???',
-            value: v
-        };
-        return acc;
-    }, {});
-    if (!current[srcId])
-        current[srcId] = {
-            name: srcName,
-            value: 0
-        };
-    current[srcId].value += amount;
-    await enemy.document.setFlag(MODULE, 'threatTable', current);
-}
-
-// TOP DE AMENAZA
-function getTopThreatTarget(enemyToken) {
-    const threatTable = enemyToken.document.getFlag(MODULE, 'threatTable') || {};
-    if (!Object.keys(threatTable).length)
-        return null;
-
-    // Obtener el ID con más amenaza solo en ESTE enemigo
-    const sorted = Object.entries(threatTable).sort((a, b) => b[1] - a[1]);
-    const [topTokenId, value] = sorted[0];
-
-    const topToken = canvas.tokens.get(topTokenId);
-    if (!topToken)
-        return null;
-
-    return {
-        token: topToken,
-        amount: value
-    };
-}
-
-// VELOCIDAD MÁXIMA DEL ENEMIGO
-function getHighestSpeed(actor) {
-    const speeds = actor.system.attributes.speed.otherSpeeds || [];
-    const landSpeed = actor.system.attributes.speed.value || 0;
-    const allSpeeds = [landSpeed, ...speeds.map(s => s.value)];
-    return Math.max(...allSpeeds);
-}
-
-function getDistanceThreatMultiplier(tokenTarget, tokenSource) {
-    const maxSpeed = getHighestSpeed(tokenTarget.actor);
-    const adjustedSpeed = Math.max(0, maxSpeed - 5);
-    const distance = canvas.grid.measureDistance(tokenSource, tokenTarget);
-
-    if (distance <= 5)
-        return 1.0;
-    if (distance <= adjustedSpeed)
-        return 0.9;
-    if (distance <= adjustedSpeed * 2)
-        return 0.8;
-    if (distance <= adjustedSpeed * 3)
-        return 0.7;
-    return 0.5;
-}
-
-// UPDATE DE LA TABLITA
-function _updateFloatingPanel() {
-    if (!game.settings.get(MODULE, 'enableThreatPanel'))
-        return;
-    if (!game.user.isGM)
-        return;
-    const combat = game.combats.active;
-    const id = 'threat-tracker-panel';
-    let panel = document.getElementById(id);
-    if (!combat) {
-        panel?.remove();
-        return;
-    }
-
-const savedPos = {
-  left: game.settings.get(MODULE, 'xFactor'),
-  top: game.settings.get(MODULE, 'yFactor')
-};
-
-    if (!panel) {
-        panel = document.createElement('div');
-        panel.id = id;
-        Object.assign(panel.style, {
-            position: 'absolute',
-            top: savedPos.top + 'px',
-            left: savedPos.left + 'px',
-            zIndex: '100',
-            background: 'rgba(0,0,0,0.7)',
-            color: 'white',
-            padding: '8px',
-            borderRadius: '6px',
-            maxHeight: '80vh',
-            overflow: 'auto',
-            cursor: 'move',
-            width: '200px',
-            userSelect: 'none'
-        });
-
-        const header = document.createElement('div');
-        header.style.cssText = 'font-weight: bold; margin-bottom: 8px; cursor: move;';
-        header.textContent = 'Threat Tracker';
-        panel.appendChild(header);
-
-        let isDragging = false;
-        let dragOffsetX = 0;
-        let dragOffsetY = 0;
-
-        header.addEventListener('mousedown', e => {
-            isDragging = true;
-            dragOffsetX = e.clientX - panel.offsetLeft;
-            dragOffsetY = e.clientY - panel.offsetTop;
-            document.body.style.userSelect = 'none';
-        });
-
-        window.addEventListener('mouseup', () => {
-            if (isDragging) {
-        game.settings.set(MODULE, 'xFactor', panel.offsetLeft);
-        game.settings.set(MODULE, 'yFactor', panel.offsetTop);
-    }
-            isDragging = false;
-            document.body.style.userSelect = '';
-        });
-
-        window.addEventListener('mousemove', e => {
-            if (!isDragging)
-                return;
-            let x = e.clientX - dragOffsetX;
-            let y = e.clientY - dragOffsetY;
-            const maxX = window.innerWidth - panel.offsetWidth;
-            const maxY = window.innerHeight - panel.offsetHeight;
-            x = Math.min(Math.max(0, x), maxX);
-            y = Math.min(Math.max(0, y), maxY);
-            panel.style.left = `${x}px`;
-            panel.style.top = `${y}px`;
-        });
-
-        document.body.appendChild(panel);
-    } else if (!panel.querySelector('div')) {
-        const newHeader = document.createElement('div');
-        newHeader.style.cssText = 'font-weight: bold; margin-bottom: 8px; cursor: move;';
-        newHeader.textContent = 'Threat Tracker';
-        panel.prepend(newHeader);
-    }
-
-    while (panel.childNodes.length > 1)
-        panel.removeChild(panel.lastChild);
-
-    for (const tok of canvas.tokens.placeables) {
-        const table = tok.document.getFlag(MODULE, 'threatTable');
-        if (!table || Object.keys(table).length === 0)
-            continue;
-        const sorted = Object.entries(table).sort((a, b) => b[1].value - a[1].value).slice(0, 3);
-        const rows = sorted.map(([_, o]) => `<div>${o.name}: ${o.value}</div>`).join('');
-        const block = document.createElement('div');
-        block.style.marginBottom = '0.5em';
-        block.innerHTML = `<strong>${tok.name}</strong><br>${rows}`;
-        panel.appendChild(block);
-    }
-
-    const configBtn = document.createElement('button');
-    configBtn.textContent = game.i18n.localize('pf2e-threat-tracker.ui.configureTraits');
-    configBtn.addEventListener('click', () => new ThreatTrackerConfig().render(true));
-    panel.appendChild(configBtn);
-}
-
-// HOOK DE LOS EFECTOS
-Hooks.once("ready", () => {
-    Hooks.on("createItem", async(item) => {
-        if (item.type !== "effect")
-            return;
-
-        console.log(`[${MODULE}] Efecto creado:`, item);
-
-        const actor = item.parent;
-        if (!actor)
-            return;
-
-        const level = actor.system.details.level.value;
-
-        let token = actor.token?.object ?? canvas.tokens.placeables.find(t => t.actor?.id === actor.id);
-        if (!token || !token.inCombat) {
-            console.log(`[${MODULE}] No se encontró un token en combate para aplicar amenaza`);
-            return;
-        }
-        if (token.document.disposition !== 1) {
-            console.log(`[${MODULE}] Token no aliado, no genera amenaza: ${token.name}`);
-            return;
-        }
-
-        if (!String.prototype.slugify) {
-            String.prototype.slugify = function () {
-                return this.toLowerCase().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '');
-            };
-        }
-
-        let slug = item.system?.slug || item.slug || item.name?.slugify?.();
-        if (!slug) {
-            console.warn(`[${MODULE}] Efecto sin slug válido:`, item.name);
-            return;
-        }
-
-        console.log(`[${MODULE}] Slug detectado: ${slug}`);
-        console.log(`[${MODULE}] Tabla de efectos:`, globalThis.EFFECTS_THREAT);
-
-        const threatAmount = globalThis.EFFECTS_THREAT?.[slug] * level;
-        if (!threatAmount) {
-            console.log(`[${MODULE}] Efecto '${slug}' no tiene amenaza asociada`);
-            return;
-        }
-        console.log(`[${MODULE}] Efecto detectado: ${slug} -> amenaza ${threatAmount}`);
-
-        for (const enemy of canvas.tokens.placeables.filter(t =>
-                t.inCombat &&
-                t.document.disposition === -1 &&
-                !t.actor.hasPlayerOwner)) {
-            console.log(`[${MODULE}] (Efecto) ${enemy.name}: +${threatAmount}`);
-            await _applyThreat(enemy, token.id, token.name, threatAmount);
-        }
-        _updateFloatingPanel();
-    });
-});
-
+// ===========================
+// 6. HOOKS SECUNDARIOS (createItem, controlToken...)
+// ===========================
 // HOOK PARA SEQUENCER
 Hooks.on('controlToken', async(token, controlled) => {
     console.log(`[${MODULE}] Token ${controlled ? "seleccionado" : "deseleccionado"}: ${token.name} (${token.id})`);
@@ -1091,5 +1216,9 @@ Hooks.on('combatRound', async() => {
 
     _updateFloatingPanel();
 });
+
+// ===========================
+// 7. CIERRE Y LOG FINAL
+// ===========================
 
 console.log(`[${MODULE}] Cargado`);
