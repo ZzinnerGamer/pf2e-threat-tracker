@@ -977,38 +977,51 @@ Hooks.on('createChatMessage', async(msg) => {
         console.log(`[${MODULE}] Damage candidates: ${candidates.map(t => t.name)}`);
 
         for (const token of candidates) {
-			const preData = await token.document.getFlag(MODULE, 'preHP');
+            const preData = await token.document.getFlag(MODULE, 'preHP');
             const preHP = preData?.hp;
-			const attackerId = preData?.attackerId;
-			const attackerName = preData?.attackerName;
-			
-			if (typeof preHP !== 'number' || !attackerId) continue;
-			
-			const responsibleToken = canvas.tokens.get(attackerId);
-			if (!responsibleToken) {
-				console.warn(`[${MODULE}] No se encontró el token atacante con ID: ${attackerId}`);
-				continue;
-			}
-			
+            const attackerId = preData?.attackerId;
+            const attackerName = preData?.attackerName;
+
+            if (typeof preHP !== 'number' || !attackerId) continue;
+
+            const responsibleToken = canvas.tokens.get(attackerId);
+            if (!responsibleToken) {
+                console.warn(`[${MODULE}] No se encontró el token atacante con ID: ${attackerId}`);
+                continue;
+            }
+
             const currHP = token.actor.system.attributes.hp?.value ?? 0;
             const damage = Math.max(0, preHP - currHP);
-			if (damage === 0) continue;
+            if (damage === 0) continue;
             console.log(`[${MODULE}] ${token.name} took damage: ${damage} (Previous HP: ${preHP}, Post HP: ${currHP})`);
 
             let threat = damage;
-			let bonusHalf = 0;
-			let bonusExcess = 0;
-			let ab = 0;
-			let slug = '-';
-			let threatTraits = 0;
-			let threatBaseBonus = typeof threatBase === 'number' ? threatBase : 0;
-			let typeBonus = 0;
+            // Only declare these variables ONCE per iteration, not with let again later!
+            let bonusExcess = 0;
+            let ab = 0;
+            let slug = '-';
+            let threatTraits = 0;
+            let threatBaseBonus = typeof threatBase === 'number' ? threatBase : 0;
+            let typeBonus = 0;
+
             if (damage === 0)
                 continue;
 
+
+            if (context.options?.includes('action:strike' && !context.options.includes('origin:action:slug:cast-a-spell'))) {
+            const baseAttackThreat = game.settings.get(MODULE, 'baseAttackThreat') || 0;
+            threat += baseAttackThreat;
+            console.log(`[${MODULE}] Added baseAttackThreat (${baseAttackThreat}) due to action:strike`);
+            }
+            if (context.options?.includes('origin:action:slug:cast-a-spell')) {
+            const baseSpellThreat = game.settings.get(MODULE, 'baseSpellThreat') || 0;
+            threat += baseSpellThreat;
+            console.log(`[${MODULE}] Added baseSpellThreat (${baseSpellThreat}) due to action:spell`);
+            }
+
             if (damage > preHP * 0.5) {
                 const excess = damage - preHP * 0.5;
-                const bonusExcess = Math.floor(excess);
+                bonusExcess = Math.floor(excess);
                 threat += bonusExcess;
             }
 
