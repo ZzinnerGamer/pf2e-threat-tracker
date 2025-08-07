@@ -6,7 +6,8 @@ const { ApplicationV2 } = foundry.applications.api;
 const HandlebarsApplicationMixin = foundry.applications.api.HandlebarsApplicationMixin;
 
 const TAUNT_TRAITS = new Set(['auditory', 'concentrate', 'emotion', 'linguistic', 'mental']);
-const ATTACK_SKILLS = new Set(["disarm", "escape", "force-open", "grapple", "reposition", "shove", "trip"])
+const ATTACK_SKILLS = new Set(["disarm", "escape", "force-open", "grapple", "reposition", "shove", "trip"]);
+const hasSkillCheck = new Set(["demoralize", "request"])
 
     // ===========================
     // 2. CLASE DE CONFIGURACIÓN
@@ -188,6 +189,16 @@ Hooks.once('init', async() => {
         type: Number
     });
 
+    game.settings.register(MODULE, 'tauntBase', {
+        name: game.i18n.localize("pf2e-threat-tracker.settings.tauntBase.name"),
+        hint: game.i18n.localize("pf2e-threat-tracker.settings.tauntBase.hint"),
+        scope: 'world',
+        config: true,
+    default:
+        40,
+        type: Number
+    });
+
     game.settings.register(MODULE, 'tauntSuccessBonus', {
         name: game.i18n.localize("pf2e-threat-tracker.settings.tauntSuccessBonus.name"),
         hint: game.i18n.localize("pf2e-threat-tracker.settings.tauntSuccessBonus.hint"),
@@ -212,7 +223,7 @@ Hooks.once('init', async() => {
         name: game.i18n.localize("pf2e-threat-tracker.settings.traitThreats.name"),
         hint: game.i18n.localize("pf2e-threat-tracker.settings.traitThreats.hint"),
         scope: 'world',
-        config: false,
+        config: true,
     default:
         JSON.stringify(globalThis.TRAIT_THREAT || {}),
         type: String
@@ -280,6 +291,11 @@ Hooks.once('init', async() => {
         console.log(`→ ${key}: type=${setting.type?.name}, default=${setting.default}, config=${setting.config}`);
     });
 
+    if (globalThis.TRAIT_THREAT && globalThis.TRAIT_THREAT.undefined === null) {
+        globalThis.TRAIT_THREAT = {};
+        await game.settings.set(MODULE, 'traitThreats', JSON.stringify({}));
+    }
+
 });
 
 // ===========================
@@ -309,18 +325,19 @@ async function _applyThreat(enemy, srcId, srcName, amount) {
 }
 
 function getThreatModifierByTraits(enemy, traits = []) {
+    traits = Array.isArray(traits) ? traits : [traits ?? ""];
     const immunities = enemy.actor.system.attributes.immunities ?? [];
     const resistances = enemy.actor.system.attributes.resistances ?? [];
     const vulnerabilities = enemy.actor.system.attributes.vulnerabilities ?? [];
 
-    const thunk = {};
-    for (let k of Object.keys(THREAT_IMMUNITY || {}))
-        thunk[k] = THREAT_IMMUNITY[k];
+    console.log(`[${MODULE}] → Revisando traits para ${enemy.name}:`, traits);
+    console.log(`[${MODULE}] → Inmunidades:`, immunities);
+    console.log(`[${MODULE}] → Resistencias:`, resistances);
+    console.log(`[${MODULE}] → Vulnerabilidades:`, vulnerabilities);
 
     let modifier = 1;
 
     for (const trait of traits.map(t => t.toLowerCase())) {
-        // Inmunidades anulan la amenaza completamente (a menos que haya excepciones)
         for (const immunity of immunities) {
             if (immunity.type === trait) {
                 const excepts = immunity.exceptions?.map(e => e.toLowerCase()) ?? [];
@@ -330,14 +347,12 @@ function getThreatModifierByTraits(enemy, traits = []) {
             }
         }
 
-        // Vulnerabilidades multiplican
         for (const vuln of vulnerabilities) {
             if (vuln.type === trait && typeof vuln.value === "number") {
                 modifier *= vuln.value;
             }
         }
 
-        // Resistencias dividen
         for (const resist of resistances) {
             if (resist.type === trait && typeof resist.value === "number") {
                 modifier *= (1 / resist.value);
@@ -396,6 +411,39 @@ function getVulnerabilityMultiplier(enemy, traits) {
     return multiplier;
 }
 
+function getEnemyTokens(responsibleToken, excludeIds = []) {
+    return canvas.tokens.placeables.filter(t =>
+        t.inCombat &&
+        t.document.disposition !== responsibleToken.document.disposition &&
+        !t.actor.hasPlayerOwner &&
+        !excludeIds.includes(t.id));
+}
+
+function getUserTargets(context, msg, responsibleToken) {
+    if (Array.isArray(context.targets) && context.targets.length > 0) {
+        if (typeof context.targets[0] === "object" && context.targets[0].id) {
+            return context.targets.map(t => t.id);
+        }
+        if (typeof context.targets[0] === "string") {
+            return context.targets;
+        }
+    }
+
+    if (msg?.target?.token) {
+        return [msg.target.token];
+    }
+
+    if (game.user.targets && game.user.targets.size > 0) {
+        return [...game.user.targets].map(t => t.id);
+    }
+
+    if (responsibleToken) {
+        return [responsibleToken.id];
+    }
+
+    return [];
+}
+
 // INMUNIDAD DE TRAITS
 
 function isImmuneToThreat(enemy, actionTraits) {
@@ -415,7 +463,12 @@ function isImmuneToThreat(enemy, actionTraits) {
 
 // OBTENER PUNTOS DE GOLPE Y ATACANTE RESPONSABLE
 
-async function storePreHP(token, threat = null, responsibleToken = null) {
+async function storePreHP(token, threat = null, responsibleToken = null, slug = null) {
+    const alreadyStored = await token.document.getFlag(MODULE, 'preHP');
+    if (alreadyStored) {
+        console.log(`[${MODULE}] ${token.name} ya tenía preHP guardado → no se sobrescribe`);
+        return;
+    }
     const hp = token.actor.system.attributes.hp?.value;
     if (typeof hp === 'number') {
         const data = {
@@ -423,9 +476,12 @@ async function storePreHP(token, threat = null, responsibleToken = null) {
         };
         if (threat !== null)
             data.baseThreat = threat;
-        if (responsibleToken)
-            data.attackerId = responsibleToken.id, data.attackerName = responsibleToken.name;
-
+        if (responsibleToken) {
+            data.attackerId = responsibleToken.id;
+            data.attackerName = responsibleToken.name;
+        }
+        if (slug)
+            data.slug = slug;
         await token.document.setFlag(MODULE, 'preHP', data);
         console.log(`[${MODULE}] HP previo guardado para ${token.name}: ${hp}, threat=${threat}, attacker=${responsibleToken?.name}`);
     }
@@ -438,7 +494,7 @@ function getTopThreatTarget(enemyToken) {
         return null;
 
     // Obtener el ID con más amenaza solo en ESTE enemigo
-    const sorted = Object.entries(threatTable).sort((a, b) => b[1] - a[1]);
+    const sorted = Object.entries(threatTable).sort((a, b) => b[1].value - a[1].value);
     const [topTokenId, value] = sorted[0];
 
     const topToken = canvas.tokens.get(topTokenId);
@@ -608,37 +664,31 @@ Hooks.on('createChatMessage', async(msg) => {
          ? msg.flags.pf2e.traits.map(t => t.toLowerCase())
          : origin?.system?.traits?.value?.map(t => t.toLowerCase()) ?? [];
 
-    const ATTACK_SKILLS = new Set([
-                "disarm", "escape", "force-open", "grapple", "reposition", "shove", "trip"
-            ])
-
-        const actionOpt = context.options?.find(o => typeof o === "string" && o.startsWith("action:"));
-    const actionSlug = actionOpt?.split(":")[1];
+    const actionOpt = context.options?.find(o => typeof o === "string" && o.startsWith("item:slug:"));
+    const actionSlug = actionOpt?.split("item:slug:")[1] || context.options?.find(o => typeof o === hasSkillCheck);
     console.log(`[${MODULE}] Detected actionSlug: ${actionSlug}`);
-
-    const hasAttackFlag = context.options?.includes("attack");
-    console.log(`[${MODULE}] Has generic 'attack' flag in options?`, hasAttackFlag);
 
     const isAttack = context.type === 'attack-roll';
     const isSkillAttack = context.type === 'skill-check' && ATTACK_SKILLS.has(actionSlug) && Array.isArray(context.traits) && context.traits?.includes("attack");
-    const isDamageRoll = context.type === 'damage-roll';
-    const isDamageTaken = context.type === 'damage-taken';
+    const isDamageRoll = context.type === 'damage-roll' && !context.domains.includes("healing-received");
+    const isDamageTaken = context.type === 'damage-taken' && !context.domains.includes("healing-received");
     const isDamage = isDamageRoll || isDamageTaken;
 
-    const isSavingThrow = context.type === 'saving-throw' && !(context.options?.includes('item:type:spell'));
+    const isSavingThrow = context.type === 'saving-throw';
 
     const isWeaponDamage = isDamage && context.sourceType === 'attack';
-    const isSpellDamage = isDamage && context.sourceType === 'spell';
+    const isSpellDamage = context.type === 'damage-taken' && context.domains.includes("action:cast-a-spell") || context.type === 'damage-received' && context.domains.includes("action:cast-a-spell") || (actionSlug && globalThis.ACTION_THREAT?.[actionSlug] !== undefined);
 
     const isSpellCast = context.type === 'spell-cast' || context.type === 'cast-spell';
     const isHeal = Array.isArray(context.domains) && context.domains.includes('healing-received');
 
-    const tauntNoContext = Object.keys(context).length === 0;
-    const tauntActionSlug = msg.flags?.pf2e?.itemSlug ?? msg.flags?.core?.slug;
-
     const isTaunt = context.type === "skill-check" && traits?.some(t => TAUNT_TRAITS.has(t));
 
-    const targets = [...game.user.targets].map(t => t.id);
+    const targets = getUserTargets(context, msg, responsibleToken);
+
+    const knownTypes = [isAttack, isSkillAttack, isDamageRoll, isDamageTaken, isWeaponDamage, isSpellDamage, isSpellCast, isHeal, isSavingThrow, isTaunt];
+
+    const isKnown = knownTypes.some(Boolean);
 
     // Logs
     console.log(`[${MODULE}] sourceType: ${context.sourceType}`, {
@@ -660,9 +710,19 @@ Hooks.on('createChatMessage', async(msg) => {
 
     let threatGlobal = 0;
 
+    if (!isKnown && !hasSkillCheck) {
+        console.log(`[${MODULE}] Tipo de mensaje desconocido. Guardando preHP por precaución.`);
+
+        for (const token of canvas.tokens.placeables) {
+            if (token.inCombat) {
+                await storePreHP(token, null, responsibleToken, actionSlug);
+            }
+        }
+    }
+
     // ACCIONES SIN CONTEXT
 
-    if (Object.keys(context).length === 0) {
+    if (Object.keys(context).length === 0 || !hasSkillCheck) {
         console.log(`[${MODULE}] Contexto vacío, buscando taunt por título`);
 
         const tauntActionSlug =
@@ -710,93 +770,106 @@ Hooks.on('createChatMessage', async(msg) => {
             console.log(`[${MODULE}] No se pudo obtener un slug para este mensaje`);
         }
 
+        for (const enemy of canvas.tokens.placeables.filter(t =>
+                t.inCombat &&
+                t.document.disposition !== responsibleToken.document.disposition &&
+                !t.actor.hasPlayerOwner)) {
+            await storePreHP(enemy, null, responsibleToken, tauntActionSlug);
+        }
+
         if (tauntActionSlug && globalThis.ACTION_THREAT?.[tauntActionSlug] !== undefined) {
-            const base = game.settings.get(MODULE, "baseAttackThreat") || 0;
+            const base = game.settings.get(MODULE, "tauntBase") || 0;
             const bonus = globalThis.ACTION_THREAT[tauntActionSlug];
-            const threatGlobal = base + bonus;
+            const taunterLevel = responsibleToken.actor?.system?.details?.level?.value ?? 1;
+            const levelAdjustment = taunterLevel * 0.1 + 1;
+            const threatGlobal = Math.ceil((base + bonus) * levelAdjustment);
+
+            let logBlock = `[${MODULE}] Amenaza por provocación:\n`;
+            logBlock += ` ├─ Provocación por Taunt ${base}.\n`;
+            logBlock += ` ├─ Bonus por Slug ${bonus}.\n`;
+            logBlock += ` ├─ Cálculo de amenaza: (${base}(Provocación Base) + ${bonus}(Cantidad por Slug)) × ${levelAdjustment}(Ajuste de nivel)\n`;
+            logBlock += ` └─ Amenaza Final: ${threatGlobal}\n`;
+            console.log(logBlock);
 
             console.log(`[${MODULE}] Chat Taunt detectado: slug='${tauntActionSlug}' → base=${base}, bonus=${bonus}, total=${threatGlobal}`);
 
-            for (const enemy of canvas.tokens.placeables.filter(t =>
-                    t.inCombat &&
-                    t.document.disposition !== responsibleToken.document.disposition &&
-                    !t.actor.hasPlayerOwner)) {
+            for (const enemy of getEnemyTokens(responsibleToken)) {
 
                 console.log(`[${MODULE}] Burla a ${enemy.name}: +${threatGlobal}`);
                 await applyThreatToEnemies(enemy, responsibleToken.id, responsibleToken.name, threatGlobal);
             }
-
             _updateFloatingPanel();
             return;
         } else {
-            console.log(`[${MODULE}] Slug '${tauntActionSlug}' no está definido en ACTION_THREAT`);
+            console.log(`[${MODULE}] Slug '${tauntActionSlug}' no está definido en ACTION_THREAT Guardando`);
         }
+
     }
 
     // GUARDADO DE PUNTOS DE GOLPE PREVIOS AL CASTEAR UN CONJURO
 
-
     if (isSavingThrow) {
+        console.log(`[${MODULE}] Procesando Saving Throw`);
         const token = actor.getActiveTokens()[0];
+
         if (
             token.inCombat &&
             !token.actor.hasPlayerOwner) {
+            const alreadyStored = await token.document.getFlag(MODULE, 'preHP');
             const hp = token.actor.system.attributes.hp?.value;
-            if (typeof hp === 'number') {
-                await token.document.setFlag(MODULE, 'preHP', hp);
-                console.log(`[${MODULE}] HP previo guardado para ${token.name}: ${hp}`);
+            if (alreadyStored) {
+                console.log(`[${MODULE}] ${token.name} ya tenía preHP guardado → no se sobrescribe`);
+            } else {
+                if (typeof hp === 'number') {
+                    await storePreHP(token, null, responsibleToken, actionSlug);
+                    console.log(`[${MODULE}] HP previo guardado para ${token.name}: ${hp}`);
+                }
+
+                await storePreHP(token);
             }
         }
     }
 
     if (isSpellCast) {
         for (const token of canvas.tokens.placeables) {
-            if (
-                token.inCombat &&
-                token.document.disposition !== responsibleToken.document.disposition &&
-                !token.actor.hasPlayerOwner) {
+            if (token.inCombat) {
                 const hp = token.actor.system.attributes.hp?.value;
                 if (typeof hp === 'number') {
-                    await token.document.setFlag(MODULE, 'preHP', hp);
+                    await storePreHP(token, null, responsibleToken);
                     console.log(`[${MODULE}] HP previo guardado para ${token.name}: ${hp}`);
                 }
             }
         }
 
-        // HACER CUSTOM EN FUTURO
         const ignoredTraits = ['healing'];
         const hasIgnoredTrait = context?.options?.some(opt =>
                 ignoredTraits.some(trait => opt === `${trait}`));
-        if (hasIgnoredTrait)
-             {
-                console.log(`[${MODULE}] Conjuro con trait ignorado (${ignoredTraits.join(', ')}): amenaza no aplicada`);
-                return;
+
+        if (!hasIgnoredTrait) {
+            const spellSlug = context?.options?.find(opt => opt.startsWith("item:slug:"))?.split(":")[2];
+            const spellRankRaw = context?.options?.find(opt => opt.startsWith("item:rank:"))?.split(":")[2];
+            const spellRank = Number(spellRankRaw);
+
+            if (!isNaN(spellRank)) {
+                const base = game.settings.get(MODULE, 'baseSpellThreat') || 0;
+                const threatPerRank = game.settings.get(MODULE, 'threatPerSpellRank') || 3;
+                const bonus = globalThis.ACTION_THREAT[spellSlug] || 0;
+                const fixedRank = threatPerRank * 0.1
+                    const threatGlobal = (base + bonus) * fixedRank;
+
+                console.log(`[${MODULE}] Conjuro lanzado (${base} + ${bonus}) x ${fixedRank} = ${threatGlobal}`);
+
+                for (const enemy of getEnemyTokens(responsibleToken)) {
+                    console.log(`[${MODULE}] Amenaza global aplicada a ${enemy.name}: +${threatGlobal}`);
+                    await _applyThreat(enemy, responsibleToken.id, responsibleToken.name, threatGlobal);
+                }
+
+                _updateFloatingPanel();
+            } else {
+                console.log(`[${MODULE}] Conjuro lanzado pero no tiene rank numérico válido`);
             }
-
-        // APLICAR AMENAZA GLOBAL POR CONJURO LANZADO
-        const spellSlug = context?.options?.find(opt => opt.startsWith("item:slug:"))?.split(":")[2];
-        const spellRankRaw = context?.options?.find(opt => opt.startsWith("item:rank:"))?.split(":")[2];
-        const spellRank = Number(spellRankRaw);
-
-        if (!isNaN(spellRank)) {
-            const base = game.settings.get(MODULE, 'baseSpellThreat') || 0;
-            const threatPerRank = game.settings.get(MODULE, 'threatPerSpellRank') || 3;
-            const bonus = globalThis.ACTION_THREAT[spellSlug];
-            const threatGlobal = (base + bonus) * threatPerRank;
-
-            console.log(`[${MODULE}] Conjuro lanzado (${base} (Base de Conjuro) + ${bonus} (Configurable Slug Bonus)) x ${threatPerRank} (Rank) === ${threatGlobal} Total Threat`);
-
-            for (const enemy of canvas.tokens.placeables.filter(t =>
-                    t.inCombat &&
-                    t.document.disposition !== responsibleToken.document.disposition &&
-                    !t.actor.hasPlayerOwner)) {
-                console.log(`[${MODULE}] Amenaza global aplicada a ${enemy.name}: +${threatGlobal}`);
-                await applyThreatToEnemies(enemy, responsibleToken.id, responsibleToken.name, threatGlobal);
-            }
-
-            _updateFloatingPanel();
         } else {
-            console.log(`[${MODULE}] Conjuro lanzado pero slug '${spellSlug}' no tiene amenaza definida`);
+            console.log(`[${MODULE}] Conjuro con trait 'healing', amenaza no aplicada (se manejará como curación)`);
         }
     }
 
@@ -815,13 +888,13 @@ Hooks.on('createChatMessage', async(msg) => {
             threatGlobal = 0;
             break;
         case "failure":
-            threatGlobal = base;
+            threatGlobal = Math.ceil(base * (level * 0.1));
             break;
         case "success":
-            threatGlobal = base + 10 * level;
+            threatGlobal = Math.ceil((base + 10) * (level * 0.1));
             break;
         case "criticalSuccess":
-            threatGlobal = base + 20 * level;
+            threatGlobal = Math.ceil((base + 20) * (level * 0.1));
             break;
         default:
             threatGlobal = base;
@@ -842,29 +915,37 @@ Hooks.on('createChatMessage', async(msg) => {
         let threatGlobal = 0;
         switch (outcome) {
         case 'failure':
-            threatGlobal = base;
+            threatGlobal = Math.ceil(base * (level * 0.1));
             break;
         case 'success':
-            threatGlobal = base + 10 * level;
+            threatGlobal = Math.ceil((base + 10) * (level * 0.1));
             break;
         case 'criticalSuccess':
-            threatGlobal = base + 20 * level;
+            threatGlobal = Math.ceil((base + 20) * (level * 0.1));
             break;
         }
         console.log(`[${MODULE}] Calculated global threat: ${threatGlobal}`);
 
         // Primary target
-        const primaryTarget = canvas.tokens.get(targets[0]);
+        const targets = getUserTargets(context, msg, responsibleToken);
+        console.log(`[${MODULE}] Targets array:`, targets);
+        let primaryTarget = undefined;
+        if (targets.length > 0) {
+            if (typeof targets[0] === "string") {
+                primaryTarget = canvas.tokens.get(targets[0]);
+            } else if (typeof targets[0] === "object" && targets[0].id) {
+                primaryTarget = canvas.tokens.placeables.find(t => t.document.id === targets[0].id);
+            }
+        }
         console.log(`[${MODULE}] Primary target: ${primaryTarget?.name}`);
-        if (primaryTarget)
-            await storePreHP(primaryTarget, threatGlobal, responsibleToken);
+        const primaryTargetId = primaryTarget?.id;
+
+        if (primaryTarget) {
+            await storePreHP(primaryTarget, 0, responsibleToken);
+        }
 
         // Secondary enemies
-        for (const enemy of canvas.tokens.placeables.filter(t =>
-                t.inCombat &&
-                t.document.disposition !== responsibleToken.document.disposition &&
-                !t.actor.hasPlayerOwner &&
-                !targets.includes(t.id))) {
+        for (const enemy of getEnemyTokens(responsibleToken, [primaryTargetId])) {
             console.log(`[${MODULE}] Secondary target: ${enemy.name}`);
             await storePreHP(enemy, 0, responsibleToken);
             const distMult = getDistanceThreatMultiplier(enemy, responsibleToken);
@@ -879,12 +960,20 @@ Hooks.on('createChatMessage', async(msg) => {
                 console.log(`[${MODULE}] ${enemy.name} is immune to threat`);
             }
         }
+        if (outcome === 'failure' && primaryTarget) {
+            console.log(`[${MODULE}] Attack failed: applying base threat (${base}) to primary target ${primaryTarget.name}`);
+            await _applyThreat(primaryTarget, responsibleToken.id, responsibleToken.name, base);
+        }
         _updateFloatingPanel();
     }
 
     // CURACIÓN INDEPENDIENTEMENTE DE LA FUENTE ALQUÍMICA, MÁGICA O ACCIÓN
     if (isHeal) {
         const baseHeal = game.settings.get(MODULE, 'baseHealThreat');
+        const targets = getUserTargets(context, msg, responsibleToken);
+        const traits = context.options?.filter(opt => opt.startsWith("item:trait:"))
+            ?.map(opt => opt.split(":")[2]) ?? [];
+
         for (const tgtId of targets) {
             const token = canvas.tokens.get(tgtId);
             if (!token || token.document.disposition !== responsibleToken.document.disposition) {
@@ -893,43 +982,47 @@ Hooks.on('createChatMessage', async(msg) => {
                 continue;
             }
 
+            const preData = await token.document.getFlag(MODULE, 'preHP');
+            const preHP = preData?.hp;
+            if (typeof preHP !== 'number') {
+                console.log(`[${MODULE}] No se pudo obtener preHP para ${token.name}, ignorando`);
+                continue;
+            }
             const { hp } = token.actor.system.attributes;
             const maxHP = hp.max;
-            const preOpt = context.options?.find(o => o.startsWith('hp-percent:'));
-            const preHp = preOpt ? parseFloat(preOpt.split(':')[1]) / 100 : 0;
+            const healedOpt = context.options?.find(o => o.startsWith('hp-remaining:'));
             const healAmt = Math.max(0, hp.value - preHP);
-            const threatLocal = Math.ceil((baseHeal + healAmt));
-
+            const healPossible = Math.max(0, maxHP - preHP);
+            const healerLevel = responsibleToken.actor?.system?.details?.level?.value ?? 1;
+            const levelAdjustment = healerLevel * 0.1 + 1;
+            const threatLocal = Math.ceil((baseHeal + healAmt) * levelAdjustment);
             if (threatLocal > 0) {
-                console.log(`[${MODULE}] Curación válida en ${token.name}: ${healAmt}/${maxHP}, amenaza=${threatLocal}`);
-                threatGlobal += threatLocal;
-            }
-        }
+                for (const enemy of canvas.tokens.placeables.filter(t =>
+                        t.inCombat &&
+                        t.document.disposition !== responsibleToken.document.disposition &&
+                        t.document.disposition !== 0 &&
+                        responsibleToken.document.disposition !== 0 &&
+                        !t.actor.hasPlayerOwner)) {
+                    const primary = targets.includes(enemy.id);
+                    let amount = primary ? threatLocal : threatLocal;
+                    if (amount <= 0)
+                        continue;
 
-        if (threatGlobal === 0) {
-            for (const tr of traits)
-                threatGlobal += (globalThis.TRAIT_THREAT[tr] || 0);
-        }
+                    let logBlock = `[${MODULE}] Amenaza por curación general:\n`;
+                    logBlock += ` ├─ Puntos de golpe previos del objetivo a curar ${healedOpt}.\n`;
+                    logBlock += ` ├─ Puntos de golpe máximos ${maxHP}.\n`;
+                    logBlock += ` ├─ Cantidad de curación posible ${healPossible}.\n`; ;
+                    logBlock += ` ├─ Cálculo de curación: (${baseHeal}(Curación Base) + ${healAmt}(Cantidad Curada)) × ${levelAdjustment}(Ajuste de nivel) .\n`;
+                    logBlock += ` └─ Amenaza de Curación Final: +${amount}\n`;
 
-        if (threatGlobal > 0) {
-            for (const enemy of canvas.tokens.placeables.filter(t =>
-                    t.inCombat &&
-                    t.document.disposition !== responsibleToken.document.disposition &&
-                    t.document.disposition !== 0 &&
-                    responsibleToken.document.disposition !== 0 &&
-                    !t.actor.hasPlayerOwner)) {
-                const primary = targets.includes(enemy.id);
-                let amount = primary ? threatGlobal : Math.floor(threatGlobal / 4);
-                if (getThreatModifierByTraits(enemy, traits)) {
-                    console.log(`[${MODULE}] Inmunidad total a amenaza para ${enemy.name} por traits de inmunidad`);
-                    amount = 0;
+                    console.log(logBlock);
+                    /*
+                    console.log(`[${MODULE}] (Curación) ${primary ? '' : 'Amenaza de Curación'} ${enemy.name}: +${amount}`);*/
+                    await _applyThreat(enemy, responsibleToken.id, responsibleToken.name, amount);
                 }
-                if (amount <= 0)
-                    continue;
-                console.log(`[${MODULE}] (Curación) ${primary ? 'Principal' : 'Secundario'} ${enemy.name}: +${amount}`);
-                await applyThreatToEnemies(enemy, responsibleToken.id, responsibleToken.name, amount);
+                _updateFloatingPanel();
             }
-            _updateFloatingPanel();
+            return;
         }
     }
 
@@ -937,26 +1030,67 @@ Hooks.on('createChatMessage', async(msg) => {
     if (isTaunt) {
         let threatGlobal = 0;
 
-        const domains = context.domains ?? [];
-        const allTraits = [...new Set([...domains, ...options].filter(t => TAUNT_TRAITS.has(t)))];
-        const baseTraitThreat = allTraits.reduce((sum, tr) => sum + (globalThis.TRAIT_THREAT[tr] || 0), 0);
-        console.log(`[${MODULE}] Amenaza por traits: ${baseTraitThreat} (${allTraits.join(', ')})`);
+        let slug =
+            context.options?.find(opt => opt.startsWith("action:"))?.split(":")[1] ??
+            context.options?.find(opt => opt.startsWith("origin:action:"))?.split(":")[2] ??
+            msg.flags?.[MODULE]?.slug ??
+            (await msg.getFlag(MODULE, "slug")) ??
+            undefined;
+
+        if (slug) {
+            console.log(`[${MODULE}] Slug detectado para burla: ${slug}`);
+        } else {
+            console.log(`[${MODULE}] No se pudo detectar un slug para la burla`);
+        }
+
+        const traits = context.traits ?? [];
+        console.log(`[${MODULE}] Traits del contexto:`, traits);
+        console.log(`[${MODULE}] TRAIT_THREAT disponible:`, globalThis.TRAIT_THREAT);
+
+        const matchingTraits = traits.filter(t => t in globalThis.TRAIT_THREAT);
+        console.log(`[${MODULE}] Traits con amenaza detectada:`, matchingTraits);
+        const baseTraitThreat = matchingTraits.reduce((sum, tr) => sum + globalThis.TRAIT_THREAT[tr], 0);
+
+        const taunterLevel = context.options?.find(opt => opt.startsWith("self:level:"))?.split(":")[2] || 1;
+        const levelAdjustment = taunterLevel * 0.1 + 1;
+
+        let logBlock = `[${MODULE}] Amenaza por provocación:\n`;
+        logBlock += ` ├─ Acción: ${slug}\n`;
+        logBlock += ` ├─ Lista de Traits: ${matchingTraits.join(', ')}\n`;
+        logBlock += ` ├─ Bonificador por Traits: ${baseTraitThreat}\n`;
 
         const outcome = context.outcome ?? 'failure';
-        const outcomeBonus = outcome === 'success'
-             ? game.settings.get(MODULE, 'tauntSuccessBonus')
-             : outcome === 'criticalSuccess'
-             ? game.settings.get(MODULE, 'tauntCritBonus')
-             : 0;
 
-        threatGlobal = baseTraitThreat + outcomeBonus;
-        console.log(`[${MODULE}] Taunt (skill-check): traits=${baseTraitThreat} + bonus=${outcomeBonus} => amenaza=${threatGlobal}`);
+        let threat = 0;
 
-        for (const enemy of canvas.tokens.placeables.filter(t =>
-                t.inCombat &&
-                t.document.disposition !== responsibleToken.document.disposition &&
-                !t.actor.hasPlayerOwner)) {
+        if (outcome !== 'failure') {
+            const baseTaunt = game.settings.get(MODULE, 'tauntBase') || 0;
+            const baseTauntSuccess = game.settings.get(MODULE, 'tauntSuccessBonus') || 0;
+            const baseTauntCrit = game.settings.get(MODULE, 'tauntCritBonus') || 0;
+            let outcomeThreat = 0;
+            switch (outcome) {
+            case "success":
+                outcomeThreat = baseTaunt + baseTauntSuccess;
+                break;
+            case "criticalSuccess":
+                outcomeThreat = baseTaunt + baseTauntCrit + baseTauntSuccess;
+                break;
+            default:
+                outcomeThreat = baseTaunt;
+            }
+            threat += outcomeThreat;
+            logBlock += ` ├─ Bonus base por Amenaza: +${outcomeThreat}\n`;
+        } else {
+            return;
+        }
 
+        logBlock += ` ├─ Cálculo de amenaza: (${threat}(Amenaza por Rango de Éxito) + ${baseTraitThreat}(Traits)) × ${levelAdjustment}(Nivel)\n`;
+        threatGlobal = Math.ceil((threat + baseTraitThreat) * levelAdjustment);
+        logBlock += ` └─ Amenaza Final: ${threatGlobal}\n`;
+
+        console.log(logBlock);
+
+        for (const enemy of getEnemyTokens(responsibleToken)) {
             console.log(`[${MODULE}] Burla aplicada a ${enemy.name}: +${threatGlobal}`);
             await applyThreatToEnemies(enemy, responsibleToken.id, responsibleToken.name, threatGlobal);
         }
@@ -969,6 +1103,10 @@ Hooks.on('createChatMessage', async(msg) => {
     if (isDamageTaken) {
         console.log(`[${MODULE}] Entering damage block`);
         const candidates = [];
+
+        // NO ME ESTÁ DETECTANDO LOS CONJUROS DE DAÑO TRAS SALVACIÓN, SOLO LOS ATAQUES
+
+
         for (const t of canvas.tokens.placeables) {
             const preData = await t.document.getFlag(MODULE, 'preHP');
             if (typeof preData?.hp === 'number')
@@ -978,11 +1116,16 @@ Hooks.on('createChatMessage', async(msg) => {
 
         for (const token of candidates) {
             const preData = await token.document.getFlag(MODULE, 'preHP');
-            const preHP = preData?.hp;
             const attackerId = preData?.attackerId;
-            const attackerName = preData?.attackerName;
+            const preHP = preData?.hp;
+            const outcomeOpt = context.options?.find(opt => opt.startsWith("check:outcome:"));
+            const outcomeLevel = context.options?.find(opt => opt.startsWith("origin:level:"));
+            const outcome = outcomeOpt ? outcomeOpt.split(":")[2] : "failure";
+            const level = outcomeLevel ? outcomeLevel.split(":")[2] : 1;
+            // const attackerName = preData?.attackerName;
 
-            if (typeof preHP !== 'number' || !attackerId) continue;
+            if (typeof preHP !== 'number' || !attackerId)
+                continue;
 
             const responsibleToken = canvas.tokens.get(attackerId);
             if (!responsibleToken) {
@@ -992,81 +1135,83 @@ Hooks.on('createChatMessage', async(msg) => {
 
             const currHP = token.actor.system.attributes.hp?.value ?? 0;
             const damage = Math.max(0, preHP - currHP);
-            if (damage === 0) continue;
+            if (damage === 0)
+                continue;
             console.log(`[${MODULE}] ${token.name} took damage: ${damage} (Previous HP: ${preHP}, Post HP: ${currHP})`);
-
-            let threat = damage;
-            // Only declare these variables ONCE per iteration, not with let again later!
-            let bonusExcess = 0;
-            let ab = 0;
-            let slug = '-';
-            let threatTraits = 0;
-            let threatBaseBonus = typeof threatBase === 'number' ? threatBase : 0;
-            let typeBonus = 0;
 
             if (damage === 0)
                 continue;
 
+            let threat = damage;
+            let logBlock = `[${MODULE}] Amenaza para ${token.name}:\n`;
+            let bonusExcess = 0;
 
-            if (context.options?.includes('action:strike' && !context.options.includes('origin:action:slug:cast-a-spell'))) {
-            const baseAttackThreat = game.settings.get(MODULE, 'baseAttackThreat') || 0;
-            threat += baseAttackThreat;
-            console.log(`[${MODULE}] Added baseAttackThreat (${baseAttackThreat}) due to action:strike`);
+            logBlock += ` ├─ Daño infligido: ${damage} (de ${preHP} a ${currHP})\n`;
+
+            if (context.options?.includes('action:strike') && !context.options.includes('origin:action:slug:cast-a-spell')) {
+                const baseAttackThreat = game.settings.get(MODULE, 'baseAttackThreat') || 0;
+                let outcomeThreat = 0;
+                switch (outcome) {
+                case "failure":
+                    outcomeThreat = baseAttackThreat;
+                    break;
+                case "success":
+                    outcomeThreat = baseAttackThreat + 10;
+                    break;
+                case "critical-success":
+                    outcomeThreat = baseAttackThreat + 20;
+                    break;
+                default:
+                    outcomeThreat = baseAttackThreat;
+                }
+                threat += outcomeThreat;
+                logBlock += ` ├─ Bonus base por ataque: +${outcomeThreat}\n`;
             }
             if (context.options?.includes('origin:action:slug:cast-a-spell')) {
-            const baseSpellThreat = game.settings.get(MODULE, 'baseSpellThreat') || 0;
-            threat += baseSpellThreat;
-            console.log(`[${MODULE}] Added baseSpellThreat (${baseSpellThreat}) due to action:spell`);
+                const baseSpellThreat = game.settings.get(MODULE, 'baseSpellThreat') || 0;
+                threat += baseSpellThreat;
+                logBlock += ` ├─ Bonus base por CONJURO: +${baseSpellThreat}\n`;
             }
 
             if (damage > preHP * 0.5) {
                 const excess = damage - preHP * 0.5;
                 bonusExcess = Math.floor(excess);
                 threat += bonusExcess;
+                logBlock += ` ├─ Bonus por exceso de daño: +${bonusExcess}\n`;
+            } else {
+                logBlock += ` ├─ Bonus por exceso de daño: +0\n`;
             }
-
-            if (isWeaponDamage) {
-                threat += damage;
-            } else if (isSpellDamage) {
-                threat += damage;
-            }
-
-            if (typeof threatBase === 'number') {
-                threat += threatBase;
-            }
-
+            let traitBonus = 0;
             for (const tr of traits) {
                 const tval = globalThis.TRAIT_THREAT[tr] || 0;
                 if (tval) {
+                    traitBonus += tval;
                     threat += tval;
                 }
             }
+            logBlock += ` ├─ Bonus por traits: +${traitBonus}\n`;
 
-            const actionOpt = context.options?.find(o => o.startsWith('action:'));
+            const actionSlug = context?.options?.find(opt => opt.startsWith("item:slug:"))?.split(":")[2];
+            let ab = 0;
             if (actionOpt) {
-                const slug = actionOpt.split(':')[1];
-                const ab = globalThis.ACTION_THREAT?.[slug] || 0;
+                ab = globalThis.ACTION_THREAT[actionSlug] || 0;
                 if (ab) {
                     threat += ab;
                 }
             }
+            logBlock += ` ├─ Bonus por acción (${actionSlug}): +${ab}\n`;
 
             const distMult = getDistanceThreatMultiplier(token, responsibleToken);
             const vulnMult = getVulnerabilityMultiplier(token, traits);
+            const levelAdjustment = level * 0.1 + 1
+                logBlock += ` ├─ Multiplicadores: ${threat} × ${vulnMult}(traits) × ${distMult}(distancia) × ${levelAdjustment}(Ajuste de nivel) \n`;
 
-			let logBlock = `[${MODULE}] Amenaza para ${token.name}:\n`;
-			logBlock += ` ├─ Daño infligido: ${damage} (de ${preHP} a ${currHP})\n`;
-			logBlock += ` ├─ Bonus por exceso de daño: +${bonusExcess}\n`;
-			logBlock += ` ├─ Bonus por tipo (weapon/spell): +${typeBonus}\n`;
-			logBlock += ` ├─ Bonus base configurado: +${threatBaseBonus}\n`;
-			logBlock += ` ├─ Bonus por traits: +${threatTraits}\n`;
-			logBlock += ` ├─ Bonus por acción (${slug}): +${ab}\n`;
-			logBlock += ` ├─ Total antes de multiplicadores: ${threat}\n`;
-			logBlock += ` └─ Multiplicadores: x${vulnMult.toFixed(2)} (traits) × x${distMult.toFixed(2)} (distancia)\n`;
-			console.log(logBlock);
+            threat = Math.round(threat * vulnMult * distMult * levelAdjustment);
 
-            threat = Math.round(threat * vulnMult * distMult);
-			
+            logBlock += ` └─ Amenaza Final: +${threat}\n`;
+
+            console.log(logBlock);
+
             if (!isImmuneToThreat(token, traits)) {
                 console.log(`[${MODULE}] Final threat for ${token.name}: ${threat}`);
                 await _applyThreat(token, responsibleToken.id, responsibleToken.name, threat);
