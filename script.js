@@ -7,7 +7,7 @@ const HandlebarsApplicationMixin = foundry.applications.api.HandlebarsApplicatio
 
 const TAUNT_TRAITS = new Set(['auditory', 'concentrate', 'emotion', 'linguistic', 'mental']);
 const ATTACK_SKILLS = new Set(["disarm", "escape", "force-open", "grapple", "reposition", "shove", "trip"]);
-const hasSkillCheck = new Set(["demoralize", "request"])
+const hasSkillCheck = new Set(["seek,", "sense-motive", "balance", "maneuver-in-flight", "squeeze", "tumble-through", "identify-magic", "recall-knowledge", "climb", "disarm", "force-open", "grapple", "high-jump", "long-jump", "reposition", "shove", "swim", "trip", "create-a-diversion", "feint", "request", "demoralize", "administer-first-aid", "treat-poison", "command-an-animal", "perform", "hide", "sneak", "disable-device", "palm-an-object", "pick-a-lock", "steal"]);
 
     // ===========================
     // 2. CLASE DE CONFIGURACIÓN
@@ -1376,3 +1376,4 @@ Hooks.on('combatRound', async() => {
 // ===========================
 
 console.log(`[${MODULE}] Cargado`);
+
