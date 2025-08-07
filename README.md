@@ -116,7 +116,7 @@ Go to **Settings → Module Settings → PF2e Threat Tracker** to adjust:
 
 ### Known Issues
 
-- Healing will generate more threat to targets that has more hit points, ex, Target has 90/100HP if target is healed 1HP will generate +90 Threat, if Target has 1/100 HP and is healed 99HP will generate +1 threat. 
+- Healing will is overtuned, and taunt actions are too lowered, skill actions might be overtuned.
 
 ### Credits
 
