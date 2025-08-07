@@ -722,7 +722,7 @@ Hooks.on('createChatMessage', async(msg) => {
 
     // ACCIONES SIN CONTEXT
 
-    if (Object.keys(context).length === 0 || !hasSkillCheck) {
+    if (Object.keys(context).length === 0 && !hasSkillCheck) {
         console.log(`[${MODULE}] Contexto vacío, buscando taunt por título`);
 
         const tauntActionSlug =
@@ -782,7 +782,7 @@ Hooks.on('createChatMessage', async(msg) => {
             const bonus = globalThis.ACTION_THREAT[tauntActionSlug];
             const taunterLevel = responsibleToken.actor?.system?.details?.level?.value ?? 1;
             const levelAdjustment = taunterLevel * 0.1 + 1;
-            const threatGlobal = Math.ceil((base + bonus) * levelAdjustment);
+            const threatGlobal = (base + bonus) * levelAdjustment;
 
             let logBlock = `[${MODULE}] Amenaza por provocación:\n`;
             logBlock += ` ├─ Provocación por Taunt ${base}.\n`;
@@ -993,9 +993,7 @@ Hooks.on('createChatMessage', async(msg) => {
             const healedOpt = context.options?.find(o => o.startsWith('hp-remaining:'));
             const healAmt = Math.max(0, hp.value - preHP);
             const healPossible = Math.max(0, maxHP - preHP);
-            const healerLevel = responsibleToken.actor?.system?.details?.level?.value ?? 1;
-            const levelAdjustment = healerLevel * 0.1 + 1;
-            const threatLocal = Math.ceil((baseHeal + healAmt) * levelAdjustment);
+            const threatLocal = Math.ceil(baseHeal + healAmt);
             if (threatLocal > 0) {
                 for (const enemy of canvas.tokens.placeables.filter(t =>
                         t.inCombat &&
@@ -1009,10 +1007,10 @@ Hooks.on('createChatMessage', async(msg) => {
                         continue;
 
                     let logBlock = `[${MODULE}] Amenaza por curación general:\n`;
-                    logBlock += ` ├─ Puntos de golpe previos del objetivo a curar ${healedOpt}.\n`;
-                    logBlock += ` ├─ Puntos de golpe máximos ${maxHP}.\n`;
-                    logBlock += ` ├─ Cantidad de curación posible ${healPossible}.\n`; ;
-                    logBlock += ` ├─ Cálculo de curación: (${baseHeal}(Curación Base) + ${healAmt}(Cantidad Curada)) × ${levelAdjustment}(Ajuste de nivel) .\n`;
+                    logBlock += ` ├─ Puntos de golpe previos del objetivo a curar ${healedOpt}\n`;
+                    logBlock += ` ├─ Puntos de golpe máximos ${maxHP}\n`;
+                    logBlock += ` ├─ Cantidad de curación posible ${healPossible}\n`; ;
+                    logBlock += ` ├─ Cálculo de curación: (${baseHeal}(Curación Base) + ${healAmt}(Cantidad Curada))\n`;
                     logBlock += ` └─ Amenaza de Curación Final: +${amount}\n`;
 
                     console.log(logBlock);
@@ -1052,7 +1050,6 @@ Hooks.on('createChatMessage', async(msg) => {
         const baseTraitThreat = matchingTraits.reduce((sum, tr) => sum + globalThis.TRAIT_THREAT[tr], 0);
 
         const taunterLevel = context.options?.find(opt => opt.startsWith("self:level:"))?.split(":")[2] || 1;
-        const levelAdjustment = taunterLevel * 0.1 + 1;
 
         let logBlock = `[${MODULE}] Amenaza por provocación:\n`;
         logBlock += ` ├─ Acción: ${slug}\n`;
@@ -1084,8 +1081,8 @@ Hooks.on('createChatMessage', async(msg) => {
             return;
         }
 
-        logBlock += ` ├─ Cálculo de amenaza: (${threat}(Amenaza por Rango de Éxito) + ${baseTraitThreat}(Traits)) × ${levelAdjustment}(Nivel)\n`;
-        threatGlobal = Math.ceil((threat + baseTraitThreat) * levelAdjustment);
+        logBlock += ` ├─ Cálculo de amenaza: (${threat}(Amenaza por Rango de Éxito) + ${baseTraitThreat}(Traits))\n`;
+        threatGlobal = Math.ceil(threat + baseTraitThreat);
         logBlock += ` └─ Amenaza Final: ${threatGlobal}\n`;
 
         console.log(logBlock);
@@ -1203,10 +1200,9 @@ Hooks.on('createChatMessage', async(msg) => {
 
             const distMult = getDistanceThreatMultiplier(token, responsibleToken);
             const vulnMult = getVulnerabilityMultiplier(token, traits);
-            const levelAdjustment = level * 0.1 + 1
-                logBlock += ` ├─ Multiplicadores: ${threat} × ${vulnMult}(traits) × ${distMult}(distancia) × ${levelAdjustment}(Ajuste de nivel) \n`;
+                logBlock += ` ├─ Multiplicadores: ${threat} × ${vulnMult}(traits) × ${distMult}(distancia)\n`;
 
-            threat = Math.round(threat * vulnMult * distMult * levelAdjustment);
+            threat = Math.round(threat * vulnMult * distMult);
 
             logBlock += ` └─ Amenaza Final: +${threat}\n`;
 
