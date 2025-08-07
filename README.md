@@ -116,7 +116,7 @@ Go to **Settings → Module Settings → PF2e Threat Tracker** to adjust:
 
 ### Known Issues
 
-- For now none, make a issue if you find some!
+- I need to delete weapon traits from the documents, now weapons are overtuned due to this XD
 
 ### Credits
 
