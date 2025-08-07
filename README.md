@@ -116,7 +116,7 @@ Go to **Settings → Module Settings → PF2e Threat Tracker** to adjust:
 
 ### Known Issues
 
-- Healing will is overtuned, and taunt actions are too lowered, skill actions might be overtuned.
+- For now none, make a issue if you find some!
 
 ### Credits
 
