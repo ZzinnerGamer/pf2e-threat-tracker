@@ -304,6 +304,7 @@ Hooks.once('init', async() => {
 
 // APLICAR AMENAZA EN LA TABLITA
 async function _applyThreat(enemy, srcId, srcName, amount) {
+    if (!game.user.isGM) return;
     const raw = enemy.document.getFlag(MODULE, 'threatTable') ?? {};
     const current = Object.entries(raw).reduce((acc, [id, v]) => {
         acc[id] = typeof v === 'object' ? {
@@ -364,6 +365,7 @@ function getThreatModifierByTraits(enemy, traits = []) {
 }
 
 async function applyThreatToEnemies(responsibleToken, baseThreat, traits = []) {
+    if (!game.user.isGM) return;
     for (const enemy of canvas.tokens.placeables) {
         if (!enemy.inCombat)
             continue;
@@ -464,6 +466,7 @@ function isImmuneToThreat(enemy, actionTraits) {
 // OBTENER PUNTOS DE GOLPE Y ATACANTE RESPONSABLE
 
 async function storePreHP(token, threat = null, responsibleToken = null, slug = null) {
+    if (!game.user.isGM) return;
     const alreadyStored = await token.document.getFlag(MODULE, 'preHP');
     if (alreadyStored) {
         console.log(`[${MODULE}] ${token.name} ya tenía preHP guardado → no se sobrescribe`);
@@ -640,6 +643,7 @@ function _updateFloatingPanel() {
 // 5. HOOK createChatMessage (FLUJO PRINCIPAL)
 // ===========================
 Hooks.on('createChatMessage', async(msg) => {
+    if (!game.user.isGM) return;
     console.log(`[${MODULE}] createChatMessage hook ejecutado`);
     const context = msg.flags.pf2e?.context ?? {};
     const actor = msg.actor;
@@ -1238,6 +1242,7 @@ Hooks.on('createChatMessage', async(msg) => {
 // ===========================
 // HOOK PARA SEQUENCER
 Hooks.on('controlToken', async(token, controlled) => {
+    if (!game.user.isGM) return;
     console.log(`[${MODULE}] Token ${controlled ? "seleccionado" : "deseleccionado"}: ${token.name} (${token.id})`);
     if (!game.settings.get(MODULE, 'enableTopThreatEffect'))
         return;
@@ -1307,6 +1312,7 @@ Hooks.on('canvasReady', _updateFloatingPanel);
 Hooks.on('canvasPan', _updateFloatingPanel);
 Hooks.on('updateToken', _updateFloatingPanel);
 Hooks.on('deleteCombat', async() => {
+    if (!game.user.isGM) return;
     for (const tok of canvas.tokens.placeables)
         await tok.document.unsetFlag(MODULE, 'threatTable');
     _updateFloatingPanel();
@@ -1331,6 +1337,7 @@ Hooks.on('getTokenHUDButtons', (hud, buttons) => {
 
 // LIMPIAR FLAGS POR TURNO
 Hooks.on('combatTurn', async() => {
+    if (!game.user.isGM) return;
     for (const token of canvas.tokens.placeables.filter(t => t.inCombat)) {
         await token.document.unsetFlag(MODULE, 'preHP');
         console.log(`[${MODULE}] → unsetFlag preHP on ${token.name} (${token.id})`);
@@ -1343,6 +1350,7 @@ Hooks.on('combatTurn', async() => {
 
 // REDUCIR AMENAZA POR TURNO
 Hooks.on('combatRound', async() => {
+    if (!game.user.isGM) return;
     if (!game.settings.get(MODULE, 'decayEnabled'))
         return;
 
@@ -1376,4 +1384,3 @@ Hooks.on('combatRound', async() => {
 // ===========================
 
 console.log(`[${MODULE}] Cargado`);
-
