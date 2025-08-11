@@ -5,7 +5,6 @@ const MODULE = 'pf2e-threat-tracker';
 const { ApplicationV2 } = foundry.applications.api;
 const HandlebarsApplicationMixin = foundry.applications.api.HandlebarsApplicationMixin;
 
-const TAUNT_TRAITS = new Set(['auditory', 'concentrate', 'emotion', 'linguistic', 'mental']);
 const ATTACK_SKILLS = new Set(["disarm", "escape", "force-open", "grapple", "reposition", "shove", "trip"]);
 const hasSkillCheck = new Set(["seek,", "sense-motive", "balance", "maneuver-in-flight", "squeeze", "tumble-through", "identify-magic", "recall-knowledge", "climb", "disarm", "force-open", "grapple", "high-jump", "long-jump", "reposition", "shove", "swim", "trip", "create-a-diversion", "feint", "request", "demoralize", "administer-first-aid", "treat-poison", "command-an-animal", "perform", "hide", "sneak", "disable-device", "palm-an-object", "pick-a-lock", "steal"]);
 
@@ -22,50 +21,7 @@ const hasSkillCheck = new Set(["seek,", "sense-motive", "balance", "maneuver-in-
             height: "auto",
             closeOnSubmit: true,
         });
-    }
-
-    getData() {
-        return {
-            traits: globalThis.TRAIT_THREAT || {},
-        };
-    }
-
-    async _updateObject(event, formData) {
-        const traits = {};
-        const traitNames = formData.trait;
-        const traitValues = formData.value;
-
-        if (Array.isArray(traitNames)) {
-            for (let i = 0; i < traitNames.length; i++) {
-                const name = traitNames[i];
-                const value = Number(traitValues[i]);
-                if (name)
-                    traits[name] = value;
-            }
-        } else {
-            traits[traitNames] = Number(traitValues);
-        }
-
-        const json = JSON.stringify(traits, null, 2);
-        await game.settings.set(MODULE, "traitThreats", json);
-        globalThis.TRAIT_THREAT = traits;
-        ui.notifications.info(game.i18n.localize("pf2e-threat-tracker.notifications.traitThreats.updated"));
-    }
-    activateListeners(html) {
-        super.activateListeners(html);
-
-        const traitList = html.find(".trait-entry");
-
-        html.find("#trait-search").on("input", (event) => {
-            const query = event.target.value.toLowerCase();
-            traitList.each(function () {
-                const trait = $(this).data("trait")?.toLowerCase();
-                $(this).toggle(trait.includes(query));
-            });
-        });
-    }
-
-}
+    }}
 
 // ===========================
 // 3. HOOK INIT: CARGA JSON + REGISTRO DE SETTINGS
@@ -77,12 +33,6 @@ Hooks.once('init', async() => {
         let data = {};
         try {
             const response = await fetch(`modules/${MODULE}/config/${path}`);
-            if (response.ok) {
-                data = await response.json();
-                console.log(`[${MODULE}] Configuración de ${path} cargada:`, data);
-            } else {
-                console.warn(`[${MODULE}] No se pudo cargar ${path}: HTTP ${response.status}`);
-            }
         } catch (err) {
             console.warn(`[${MODULE}] No se pudo cargar ${path}`, err);
         }
@@ -95,7 +45,6 @@ Hooks.once('init', async() => {
     };
 
     await Promise.all([
-            loadJSONSetting('trait-threat.json', 'traitThreats', 'TRAIT_THREAT'),
             loadJSONSetting('trait-vulnerability.json', 'traitVulnerabilities', 'TRAIT_VULNERABILITY'),
             loadJSONSetting('action-threats.json', null, 'ACTION_THREAT'),
             loadJSONSetting('effects-threats.json', null, 'EFFECTS_THREAT'),
@@ -146,7 +95,8 @@ Hooks.once('init', async() => {
     default:
         0.5,
         onChange: value => {
-            ui.notifications.error(game.i18n.localize("pf2e-threat-tracker.notifications.decayFactor"));
+            ui.notifications.info(game.i18n.localize("pf2e-threat-tracker.notifications.decayFactor"));            
+            location.reload();
         }
     })
     game.settings.register(MODULE, 'baseAttackThreat', {
@@ -157,6 +107,17 @@ Hooks.once('init', async() => {
         type: Number,
     default:
         10
+    });
+
+    
+    game.settings.register(MODULE, 'attackThreatMode', {
+        name: game.i18n.localize("pf2e-threat-tracker.settings.attackThreatMode.name"),
+        hint: game.i18n.localize("pf2e-threat-tracker.settings.attackThreatMode.hint"),
+        scope: 'world',
+        config: true,
+        type: Boolean,
+    default:
+        false
     });
 
     game.settings.register(MODULE, 'baseSpellThreat', {
@@ -189,44 +150,24 @@ Hooks.once('init', async() => {
         type: Number
     });
 
-    game.settings.register(MODULE, 'tauntBase', {
-        name: game.i18n.localize("pf2e-threat-tracker.settings.tauntBase.name"),
-        hint: game.i18n.localize("pf2e-threat-tracker.settings.tauntBase.hint"),
+    game.settings.register(MODULE, 'skillBase', {
+        name: game.i18n.localize("pf2e-threat-tracker.settings.skillBase.name"),
+        hint: game.i18n.localize("pf2e-threat-tracker.settings.skillBase.hint"),
         scope: 'world',
         config: true,
     default:
-        40,
+        20,
         type: Number
     });
 
-    game.settings.register(MODULE, 'tauntSuccessBonus', {
-        name: game.i18n.localize("pf2e-threat-tracker.settings.tauntSuccessBonus.name"),
-        hint: game.i18n.localize("pf2e-threat-tracker.settings.tauntSuccessBonus.hint"),
+    game.settings.register(MODULE, 'skillCritBonus', {
+        name: game.i18n.localize("pf2e-threat-tracker.settings.skillCritBonus.name"),
+        hint: game.i18n.localize("pf2e-threat-tracker.settings.skillCritBonus.hint"),
         scope: 'world',
         config: true,
     default:
-        40,
+        20,
         type: Number
-    });
-
-    game.settings.register(MODULE, 'tauntCritBonus', {
-        name: game.i18n.localize("pf2e-threat-tracker.settings.tauntCritBonus.name"),
-        hint: game.i18n.localize("pf2e-threat-tracker.settings.tauntCritBonus.hint"),
-        scope: 'world',
-        config: true,
-    default:
-        40,
-        type: Number
-    });
-
-    game.settings.register(MODULE, 'traitThreats', {
-        name: game.i18n.localize("pf2e-threat-tracker.settings.traitThreats.name"),
-        hint: game.i18n.localize("pf2e-threat-tracker.settings.traitThreats.hint"),
-        scope: 'world',
-        config: true,
-    default:
-        JSON.stringify(globalThis.TRAIT_THREAT || {}),
-        type: String
     });
 
     game.settings.register(MODULE, 'traitVulnerabilities', {
@@ -281,7 +222,6 @@ Hooks.once('init', async() => {
         type: String
     });
 
-    globalThis.TRAIT_THREAT = JSON.parse(game.settings.get(MODULE, 'traitThreats') || '{}');
     globalThis.TRAIT_VULNERABILITY = JSON.parse(game.settings.get(MODULE, 'traitVulnerabilities') || '{}');
 
     console.log(`[${MODULE}] Settings registrados:`);
@@ -291,10 +231,6 @@ Hooks.once('init', async() => {
         console.log(`→ ${key}: type=${setting.type?.name}, default=${setting.default}, config=${setting.config}`);
     });
 
-    if (globalThis.TRAIT_THREAT && globalThis.TRAIT_THREAT.undefined === null) {
-        globalThis.TRAIT_THREAT = {};
-        await game.settings.set(MODULE, 'traitThreats', JSON.stringify({}));
-    }
 
 });
 
@@ -325,44 +261,54 @@ async function _applyThreat(enemy, srcId, srcName, amount) {
     await enemy.document.setFlag(MODULE, 'threatTable', current);
 }
 
-function getThreatModifierByTraits(enemy, traits = []) {
-    traits = Array.isArray(traits) ? traits : [traits ?? ""];
-    const immunities = enemy.actor.system.attributes.immunities ?? [];
-    const resistances = enemy.actor.system.attributes.resistances ?? [];
-    const vulnerabilities = enemy.actor.system.attributes.vulnerabilities ?? [];
+function getThreatModifierIDR(enemy, { traits = [], slug = "", damageType = "" } = {}) {
+    if (!enemy?.actor) return 1;
 
-    console.log(`[${MODULE}] → Revisando traits para ${enemy.name}:`, traits);
-    console.log(`[${MODULE}] → Inmunidades:`, immunities);
-    console.log(`[${MODULE}] → Resistencias:`, resistances);
-    console.log(`[${MODULE}] → Vulnerabilidades:`, vulnerabilities);
+    traits = traits.map(t => t.toLowerCase());
+    damageType = damageType?.toLowerCase() || "";
 
-    let modifier = 1;
+    const immunities = enemy.actor.system.traits?.immunities?.map(i => i.type || i.label?.toLowerCase()) || [];
+    const weaknesses = enemy.actor.system.traits?.weaknesses || [];
+    const resistances = enemy.actor.system.traits?.resistances || [];
 
-    for (const trait of traits.map(t => t.toLowerCase())) {
-        for (const immunity of immunities) {
-            if (immunity.type === trait) {
-                const excepts = immunity.exceptions?.map(e => e.toLowerCase()) ?? [];
-                if (!excepts.includes(trait)) {
-                    return 0;
-                }
-            }
+    // --- 1. Inmunidades absolutas ---
+    // Si es inmune a una condición, trait o tipo de daño, amenaza = 0
+    for (const trait of traits) {
+        if (immunities.includes(trait)) {
+            console.log(`[${MODULE}] ${enemy.name} es inmune a '${trait}', amenaza anulada`);
+            return 0;
         }
+    }
+    if (damageType && immunities.includes(damageType)) {
+        console.log(`[${MODULE}] ${enemy.name} es inmune a daño de tipo '${damageType}', amenaza anulada`);
+        return 0;
+    }
+    if (slug && immunities.includes(slug)) {
+        console.log(`[${MODULE}] ${enemy.name} es inmune a acción '${slug}', amenaza anulada`);
+        return 0;
+    }
 
-        for (const vuln of vulnerabilities) {
-            if (vuln.type === trait && typeof vuln.value === "number") {
-                modifier *= vuln.value;
-            }
-        }
+    let multiplier = 1;
 
-        for (const resist of resistances) {
-            if (resist.type === trait && typeof resist.value === "number") {
-                modifier *= (1 / resist.value);
-            }
+    // --- 2. Debilidades ---
+    for (const w of weaknesses) {
+        if (w.type && (traits.includes(w.type) || w.type === damageType || w.type === slug)) {
+            console.log(`[${MODULE}] ${enemy.name} tiene debilidad contra '${w.type}' (+${w.value} amenaza)`);
+            multiplier += (w.value / 2); // Ajusta el divisor para la escala de amenaza
         }
     }
 
-    return modifier;
+    // --- 3. Resistencias ---
+    for (const r of resistances) {
+        if (r.type && (traits.includes(r.type) || r.type === damageType || r.type === slug)) {
+            console.log(`[${MODULE}] ${enemy.name} tiene resistencia contra '${r.type}' (-${r.value} amenaza)`);
+            multiplier -= (r.value * 2);
+        }
+    }
+
+    return Math.max(multiplier, 0); // Nunca negativo
 }
+
 
 async function applyThreatToEnemies(responsibleToken, baseThreat, traits = []) {
     if (!game.user.isGM) return;
@@ -379,8 +325,13 @@ async function applyThreatToEnemies(responsibleToken, baseThreat, traits = []) {
 
         traits = traits.map(t => t.toLowerCase());
 
-        const modifier = getThreatModifierByTraits(enemy, traits);
-        const finalThreat = Math.floor(baseThreat * modifier);
+        const idrMult = getThreatModifierIDR(enemy, {
+            traits: context.traits || [],
+            slug: actionSlug,
+            damageType: context.damageType || ""
+        });
+        const finalThreat = Math.round(threatGlobal * idrMult);
+
 
         if (finalThreat > 0) {
             console.log(`[${MODULE}] Aplicando ${finalThreat} amenaza a ${enemy.name} (mod=${modifier})`);
@@ -467,28 +418,31 @@ function isImmuneToThreat(enemy, actionTraits) {
 
 async function storePreHP(token, threat = null, responsibleToken = null, slug = null) {
     if (!game.user.isGM) return;
+
     const alreadyStored = await token.document.getFlag(MODULE, 'preHP');
-    if (alreadyStored) {
-        console.log(`[${MODULE}] ${token.name} ya tenía preHP guardado → no se sobrescribe`);
-        return;
-    }
     const hp = token.actor.system.attributes.hp?.value;
+
+    console.log(`[${MODULE}] storePreHP called for ${token.name} | alreadyStored=${!!alreadyStored} | HP=${hp} | threat=${threat} | attacker=${responsibleToken?.name ?? "N/A"} | slug=${slug ?? "N/A"}`);
+
+    if (alreadyStored) {
+        await token.document.unsetFlag(MODULE, 'preHP');
+        console.log(`[${MODULE}] preHP flag removed for ${token.name}`);
+    }
+
     if (typeof hp === 'number') {
-        const data = {
-            hp
-        };
-        if (threat !== null)
-            data.baseThreat = threat;
+        const data = { hp };
+        if (threat !== null) data.baseThreat = threat;
         if (responsibleToken) {
             data.attackerId = responsibleToken.id;
             data.attackerName = responsibleToken.name;
         }
-        if (slug)
-            data.slug = slug;
+        if (slug) data.slug = slug;
+
         await token.document.setFlag(MODULE, 'preHP', data);
-        console.log(`[${MODULE}] HP previo guardado para ${token.name}: ${hp}, threat=${threat}, attacker=${responsibleToken?.name}`);
+        console.log(`[${MODULE}] preHP flag set for ${token.name}:`, data);
     }
 }
+
 
 // TOP DE AMENAZA
 function getTopThreatTarget(enemyToken) {
@@ -644,7 +598,6 @@ function _updateFloatingPanel() {
 // ===========================
 Hooks.on('createChatMessage', async(msg) => {
     if (!game.user.isGM) return;
-    console.log(`[${MODULE}] createChatMessage hook ejecutado`);
     const context = msg.flags.pf2e?.context ?? {};
     const actor = msg.actor;
     if (!actor || !msg.author || !msg.flags?.pf2e)
@@ -659,9 +612,6 @@ Hooks.on('createChatMessage', async(msg) => {
     if (!responsibleToken)
         return;
 
-    console.log(`[${MODULE}] Token responsable: ${responsibleToken.name}`);
-    console.log(`[${MODULE}] Contexto:`, context);
-
     const traits = Array.isArray(context.traits)
          ? context.traits.map(t => t.toLowerCase())
          : Array.isArray(msg.flags.pf2e?.traits)
@@ -669,8 +619,23 @@ Hooks.on('createChatMessage', async(msg) => {
          : origin?.system?.traits?.value?.map(t => t.toLowerCase()) ?? [];
 
     const actionOpt = context.options?.find(o => typeof o === "string" && o.startsWith("item:slug:"));
-    const actionSlug = actionOpt?.split("item:slug:")[1] || context.options?.find(o => typeof o === hasSkillCheck);
-    console.log(`[${MODULE}] Detected actionSlug: ${actionSlug}`);
+    let actionSlug = actionOpt?.split("item:slug:")[1] || context.options?.find(o => typeof o === hasSkillCheck);
+
+    let item = null;
+    if (msg.item) {
+        item = msg.item;
+    } else if (origin && origin.type && ["weapon", "action", "spell", "shield", "feat", "consumable"].includes(origin.type)) {
+        item = origin;
+    }
+
+    let customThreatSlug;
+    if (item) {
+        customThreatSlug = await item.getFlag(MODULE, "threatItemSlug");
+        if (customThreatSlug !== undefined && customThreatSlug !== null) {
+            actionSlug = customThreatSlug;
+        }
+    }
+
 
     const isAttack = context.type === 'attack-roll';
     const isSkillAttack = context.type === 'skill-check' && ATTACK_SKILLS.has(actionSlug) && Array.isArray(context.traits) && context.traits?.includes("attack");
@@ -681,16 +646,16 @@ Hooks.on('createChatMessage', async(msg) => {
     const isSavingThrow = context.type === 'saving-throw';
 
     const isWeaponDamage = isDamage && context.sourceType === 'attack';
-    const isSpellDamage = context.type === 'damage-taken' && context.domains.includes("action:cast-a-spell") || context.type === 'damage-received' && context.domains.includes("action:cast-a-spell") || (actionSlug && globalThis.ACTION_THREAT?.[actionSlug] !== undefined);
+    const isSpellDamage = context.type === 'damage-taken' && context.domains.includes("action:cast-a-spell") || context.type === 'damage-received' && context.domains.includes("action:cast-a-spell");
 
     const isSpellCast = context.type === 'spell-cast' || context.type === 'cast-spell';
     const isHeal = Array.isArray(context.domains) && context.domains.includes('healing-received');
 
-    const isTaunt = context.type === "skill-check" && traits?.some(t => TAUNT_TRAITS.has(t));
+    const isSkillAction = context.type === "skill-check";
 
     const targets = getUserTargets(context, msg, responsibleToken);
 
-    const knownTypes = [isAttack, isSkillAttack, isDamageRoll, isDamageTaken, isWeaponDamage, isSpellDamage, isSpellCast, isHeal, isSavingThrow, isTaunt];
+    const knownTypes = [isAttack, isSkillAttack, isDamageRoll, isDamageTaken, isWeaponDamage, isSpellDamage, isSpellCast, isHeal, isSavingThrow, isSkillAction];
 
     const isKnown = knownTypes.some(Boolean);
 
@@ -698,21 +663,6 @@ Hooks.on('createChatMessage', async(msg) => {
     console.log(`[${MODULE}] sourceType: ${context.sourceType}`, {
         domains: context.domains
     });
-    console.log(`[${MODULE}] Has Slug: ${actionSlug}`);
-    console.log(`[${MODULE}] Is Skill Attack: ${isSkillAttack}`);
-    console.log(`[${MODULE}] Is Attack: ${isAttack}`);
-    console.log(`[${MODULE}] Is Damage Roll: ${isDamageRoll}`);
-    console.log(`[${MODULE}] Is Damage Taken: ${isDamageTaken}`);
-    console.log(`[${MODULE}] Is Damage: ${isDamage}`);
-    console.log(`[${MODULE}] Is Weapon Damage: ${isWeaponDamage}`);
-    console.log(`[${MODULE}] Is Spell Damage: ${isSpellDamage}`);
-    console.log(`[${MODULE}] Is Spell Cast: ${isSpellCast}`);
-    console.log(`[${MODULE}] Is Healing: ${isHeal}`);
-    console.log(`[${MODULE}] Is Saving Throw: ${isSavingThrow}`);
-    console.log(`[${MODULE}] Is Taunt: ${isTaunt}`);
-    console.log(`[${MODULE}] Targets: ${targets}`);
-
-    let threatGlobal = 0;
 
     if (!isKnown && !hasSkillCheck) {
         console.log(`[${MODULE}] Tipo de mensaje desconocido. Guardando preHP por precaución.`);
@@ -724,91 +674,73 @@ Hooks.on('createChatMessage', async(msg) => {
         }
     }
 
-    // ACCIONES SIN CONTEXT
+    //  ACCIONES SIN CONTEXT MODO DE DETECCIÓN DE OBJETO APLICADO!! AHORA AL MODO DE DAÑO -------------------------------------------------------------------------------------------------------------------------------
 
-    if (Object.keys(context).length === 0 && !hasSkillCheck) {
-        console.log(`[${MODULE}] Contexto vacío, buscando taunt por título`);
+if (Object.keys(context).length === 0) {
+    console.log(`[${MODULE}] Contexto vacío, buscando por slug previamente definido`);
 
-        const tauntActionSlug =
-            msg.flags?.pf2e?.itemSlug ??
-            msg.flags?.core?.slug ??
-            (() => {
-                const rawContent = msg.content ?? "";
-                console.log(`[${MODULE}] msg.content:`, rawContent);
-
-                let title;
-                const h3Match = rawContent.match(/<h3>(.*?)<\/h3>/i);
-                if (h3Match) {
-                    const rawTitle = h3Match[1].replace(/<.*?>/g, "").trim();
-                    title = rawTitle;
-                    console.log(`[${MODULE}] Título extraído de <h3>: "${title}"`);
-                } else {
-                    const strongMatch = rawContent.match(/<strong>(.*?)<\/strong>/i);
-                    if (strongMatch) {
-                        title = strongMatch[1].trim();
-                        console.log(`[${MODULE}] Título extraído de <strong>: "${title}"`);
-                    } else {
-                        console.log(`[${MODULE}] No se encontró <strong>...</strong> ni <h3>...</h3>`);
-                        return undefined;
-                    }
-                }
-
-                console.log(`[${MODULE}] Título extraído: "${title}"`);
-
-                const slugified = title
-                    .toLowerCase()
-                    .normalize("NFD")
-                    .replace(/[\u0300-\u036f]/g, "")
-                    .replace(/[^\w\s]/g, "")
-                    .replace(/\s+/g, "-");
-
-                const cleanedSlug = slugified.replace(/-\w+$/, "");
-
-                console.log(`[${MODULE}] Slug generado: "${cleanedSlug}"`);
-                return cleanedSlug;
-            })();
-
-        if (tauntActionSlug) {
-            console.log(`[${MODULE}] Slug final obtenido: ${tauntActionSlug}`);
-        } else {
-            console.log(`[${MODULE}] No se pudo obtener un slug para este mensaje`);
-        }
-
-        for (const enemy of canvas.tokens.placeables.filter(t =>
-                t.inCombat &&
-                t.document.disposition !== responsibleToken.document.disposition &&
-                !t.actor.hasPlayerOwner)) {
-            await storePreHP(enemy, null, responsibleToken, tauntActionSlug);
-        }
-
-        if (tauntActionSlug && globalThis.ACTION_THREAT?.[tauntActionSlug] !== undefined) {
-            const base = game.settings.get(MODULE, "tauntBase") || 0;
-            const bonus = globalThis.ACTION_THREAT[tauntActionSlug];
-            const taunterLevel = responsibleToken.actor?.system?.details?.level?.value ?? 1;
-            const levelAdjustment = taunterLevel * 0.1 + 1;
-            const threatGlobal = (base + bonus) * levelAdjustment;
-
-            let logBlock = `[${MODULE}] Amenaza por provocación:\n`;
-            logBlock += ` ├─ Provocación por Taunt ${base}.\n`;
-            logBlock += ` ├─ Bonus por Slug ${bonus}.\n`;
-            logBlock += ` ├─ Cálculo de amenaza: (${base}(Provocación Base) + ${bonus}(Cantidad por Slug)) × ${levelAdjustment}(Ajuste de nivel)\n`;
-            logBlock += ` └─ Amenaza Final: ${threatGlobal}\n`;
-            console.log(logBlock);
-
-            console.log(`[${MODULE}] Chat Taunt detectado: slug='${tauntActionSlug}' → base=${base}, bonus=${bonus}, total=${threatGlobal}`);
-
-            for (const enemy of getEnemyTokens(responsibleToken)) {
-
-                console.log(`[${MODULE}] Burla a ${enemy.name}: +${threatGlobal}`);
-                await applyThreatToEnemies(enemy, responsibleToken.id, responsibleToken.name, threatGlobal);
-            }
-            _updateFloatingPanel();
-            return;
-        } else {
-            console.log(`[${MODULE}] Slug '${tauntActionSlug}' no está definido en ACTION_THREAT Guardando`);
-        }
-
+    if (!actionSlug) {
+        console.log(`[${MODULE}] No se pudo obtener un slug para este mensaje`);
+        return;
     }
+
+    for (const enemy of canvas.tokens.placeables.filter(t =>
+        t.inCombat &&
+        t.document.disposition !== responsibleToken.document.disposition &&
+        !t.actor.hasPlayerOwner
+    )) {
+        await storePreHP(enemy, null, responsibleToken, actionSlug);
+    }
+
+    if (globalThis.ACTION_THREAT?.[actionSlug] !== undefined) {
+        const itemBase = Number(await item.getFlag(MODULE, "threatItemValue")) || 0;
+        const itemMode = await item.getFlag(MODULE, "threatItemMode") || "apply"; // ← nuevo
+        const settingsBase = Number(game.settings.get(MODULE, "skillBase")) || 0;
+
+        const base = itemBase > 0 ? itemBase : settingsBase;
+        const bonus = globalThis.ACTION_THREAT[actionSlug];
+        const taunterLevel = responsibleToken.actor?.system?.details?.level?.value ?? 1;
+        const levelAdjustment = taunterLevel * 0.1 + 1;
+        let threatGlobal = (base + bonus) * levelAdjustment;
+
+        if (itemMode === "reduce") {
+            threatGlobal = -threatGlobal;
+            console.log(`[${MODULE}] Modo 'reduce' detectado, invirtiendo amenaza`);
+        }
+
+    for (const enemy of getEnemyTokens(responsibleToken)) {
+    const traits = context.traits ?? item?.system?.traits?.value ?? [];
+    const idrMult = getThreatModifierIDR(enemy, traits);
+    if (idrMult <= 0) {
+        console.log(`[${MODULE}] ${enemy.name} es inmune a ${traits.join(", ")}`);
+        continue;
+    }
+
+    const finalThreat = Math.round(threatGlobal * idrMult);
+
+    let logBlock = `[${MODULE}] Amenaza por provocación:\n`;
+    logBlock += ` ├─ Provocación por Habilidad ${base}.\n`;
+    logBlock += ` ├─ Bonus por Slug ${bonus}.\n`;
+    logBlock += ` ├─ Cálculo de amenaza: (${base}(Provocación Base) + ${bonus}(Cantidad por Slug)) × ${levelAdjustment}(Ajuste de nivel)\n`;
+    logBlock += ` └─ Amenaza Final: ${finalThreat}\n`;
+    console.log(logBlock);
+
+    console.log(`[${MODULE}] Chat habilidad/dote detectado: slug='${actionSlug}' → base=${base}, bonus=${bonus}, total=${finalThreat}`);
+
+    if (finalThreat >= 0) {
+        console.log(`[${MODULE}] Burla a ${enemy.name}: +${finalThreat}`);
+    } else {
+        console.log(`[${MODULE}] Reducción de amenaza a ${enemy.name}: ${finalThreat}`);
+    }
+    await _applyThreat(enemy, responsibleToken.id, responsibleToken.name, finalThreat);
+}
+_updateFloatingPanel();
+
+}
+}
+
+
+
 
     // GUARDADO DE PUNTOS DE GOLPE PREVIOS AL CASTEAR UN CONJURO
 
@@ -822,7 +754,9 @@ Hooks.on('createChatMessage', async(msg) => {
             const alreadyStored = await token.document.getFlag(MODULE, 'preHP');
             const hp = token.actor.system.attributes.hp?.value;
             if (alreadyStored) {
-                console.log(`[${MODULE}] ${token.name} ya tenía preHP guardado → no se sobrescribe`);
+                await token.document.unsetFlag(MODULE, 'preHP');
+                await storePreHP(token, null, responsibleToken, actionSlug);
+                console.log(`[${MODULE}] ${token.name} preHP sobreescrito: ${hp}`);
             } else {
                 if (typeof hp === 'number') {
                     await storePreHP(token, null, responsibleToken, actionSlug);
@@ -834,60 +768,83 @@ Hooks.on('createChatMessage', async(msg) => {
         }
     }
 
-    if (isSpellCast) {
-        for (const token of canvas.tokens.placeables) {
-            if (token.inCombat) {
-                const hp = token.actor.system.attributes.hp?.value;
-                if (typeof hp === 'number') {
-                    await storePreHP(token, null, responsibleToken);
-                    console.log(`[${MODULE}] HP previo guardado para ${token.name}: ${hp}`);
-                }
+if (isSpellCast) {
+    for (const token of canvas.tokens.placeables) {
+        if (token.inCombat) {
+            const hp = token.actor.system.attributes.hp?.value;
+            if (typeof hp === 'number') {
+                await storePreHP(token, null, responsibleToken);
+                console.log(`[${MODULE}] HP previo guardado para ${token.name}: ${hp}`);
             }
-        }
-
-        const ignoredTraits = ['healing'];
-        const hasIgnoredTrait = context?.options?.some(opt =>
-                ignoredTraits.some(trait => opt === `${trait}`));
-
-        if (!hasIgnoredTrait) {
-            const spellSlug = context?.options?.find(opt => opt.startsWith("item:slug:"))?.split(":")[2];
-            const spellRankRaw = context?.options?.find(opt => opt.startsWith("item:rank:"))?.split(":")[2];
-            const spellRank = Number(spellRankRaw);
-
-            if (!isNaN(spellRank)) {
-                const base = game.settings.get(MODULE, 'baseSpellThreat') || 0;
-                const threatPerRank = game.settings.get(MODULE, 'threatPerSpellRank') || 3;
-                const bonus = globalThis.ACTION_THREAT[spellSlug] || 0;
-                const fixedRank = threatPerRank * 0.1
-                    const threatGlobal = (base + bonus) * fixedRank;
-
-                console.log(`[${MODULE}] Conjuro lanzado (${base} + ${bonus}) x ${fixedRank} = ${threatGlobal}`);
-
-                for (const enemy of getEnemyTokens(responsibleToken)) {
-                    console.log(`[${MODULE}] Amenaza global aplicada a ${enemy.name}: +${threatGlobal}`);
-                    await _applyThreat(enemy, responsibleToken.id, responsibleToken.name, threatGlobal);
-                }
-
-                _updateFloatingPanel();
-            } else {
-                console.log(`[${MODULE}] Conjuro lanzado pero no tiene rank numérico válido`);
-            }
-        } else {
-            console.log(`[${MODULE}] Conjuro con trait 'healing', amenaza no aplicada (se manejará como curación)`);
         }
     }
 
+    const ignoredTraits = ['healing'];
+    const hasIgnoredTrait = context?.options?.some(opt =>
+        ignoredTraits.some(trait => opt === `${trait}`)
+    );
+
+    if (!hasIgnoredTrait) {
+        const spellSlug = context?.options?.find(opt => opt.startsWith("item:slug:"))?.split(":")[2];
+        const spellRankRaw = context?.options?.find(opt => opt.startsWith("item:rank:"))?.split(":")[2];
+        const spellRank = Number(spellRankRaw);
+
+        if (!isNaN(spellRank)) {
+            const base          = game.settings.get(MODULE, 'baseSpellThreat') || 0;
+            const threatPerRank = game.settings.get(MODULE, 'threatPerSpellRank') || 3;
+            const bonus         = globalThis.ACTION_THREAT[spellSlug] || 0;
+            const fixedRank     = threatPerRank * 0.1; // ✅ ahora bien cerrado
+            const threatGlobal  = (base + bonus) * fixedRank;
+
+            // 🔹 Un solo bucle para aplicar modificador IDR y amenaza
+            for (const enemy of getEnemyTokens(responsibleToken)) {
+                const traits = context.traits ?? item?.system?.traits?.value ?? [];
+                const idrMult = getThreatModifierIDR(enemy, traits);
+                if (idrMult <= 0) {
+                    console.log(`[${MODULE}] ${enemy.name} es inmune a ${traits.join(", ")}`);
+                    continue;
+                }
+
+                const finalThreat = Math.round(threatGlobal * idrMult);
+                console.log(`[${MODULE}] Conjuro lanzado (${base} + ${bonus}) x ${fixedRank} = ${finalThreat}`);
+                console.log(`[${MODULE}] Amenaza global aplicada a ${enemy.name}: +${finalThreat}`);
+
+                await _applyThreat(enemy, responsibleToken.id, responsibleToken.name, finalThreat);
+            }
+
+            _updateFloatingPanel();
+        } else {
+            console.log(`[${MODULE}] Conjuro lanzado pero no tiene rank numérico válido`);
+        }
+    } else {
+        console.log(`[${MODULE}] Conjuro con trait 'healing', amenaza no aplicada (se manejará como curación)`);
+    }
+}
+
+
     // ATAQUES DE SKILLS
-    if (isSkillAttack) {
-        const outcome = context.outcome ?? "failure";
-        const level = actor.system.details.level.value;
-        const base = game.settings.get(MODULE, "baseAttackThreat");
-        let threatGlobal;
+if (isSkillAttack) {
+    const actionSlug =
+        context.options?.find(opt => opt.startsWith("action:"))?.split(":")[1] ??
+        context.options?.find(opt => opt.startsWith("origin:action:"))?.split(":")[2] ??
+        msg.flags?.[MODULE]?.slug ??
+        (await msg.getFlag(MODULE, "slug")) ??
+        undefined;
 
-        const primaryTarget = canvas.tokens.get(targets[0]);
-        console.log(`[${MODULE}] Primary target: ${primaryTarget?.name}`);
+    if (!actionSlug || !ATTACK_SKILLS.has(actionSlug)) {
+        console.log(`[${MODULE}] Acción de skill-attack no reconocida o no en ATTACK_SKILLS: ${actionSlug}`);
+        return;
+    }
 
-        switch (outcome) {
+    const outcome = context.outcome ?? "failure";
+    const level = actor.system.details.level.value;
+    const base = game.settings.get(MODULE, "baseAttackThreat") || 0;
+    let threatGlobal;
+
+    const primaryTarget = canvas.tokens.get(targets[0]);
+    console.log(`[${MODULE}] Primary target: ${primaryTarget?.name}`);
+
+    switch (outcome) {
         case "criticalFailure":
             threatGlobal = 0;
             break;
@@ -902,344 +859,420 @@ Hooks.on('createChatMessage', async(msg) => {
             break;
         default:
             threatGlobal = base;
-        }
-        console.log(`[${MODULE}] Skill-Attack '${actionSlug}' (${outcome}) → threatGlobal = ${threatGlobal}`);
-        await applyThreatToEnemies(primaryTarget, responsibleToken.id, responsibleToken.name, threatGlobal);
-
-        _updateFloatingPanel();
     }
+
+    const customSkillAttackValue = Number(await responsibleToken.actor.getFlag(MODULE, `skillActionValue.${actionSlug}`)) || 0;
+const customSkillAttackMode  = await responsibleToken.actor.getFlag(MODULE, `skillActionMode.${actionSlug}`) ?? "apply";
+
+if (customSkillAttackValue > 0) {
+    threatGlobal = customSkillAttackValue;
+    if (customSkillAttackMode === "reduce") threatGlobal *= -1;
+    console.log(`[${MODULE}] Usando amenaza personalizada del actor para skill-attack ${actionSlug}: ${customSkillAttackValue} (${customSkillAttackMode})`);
+}
+
+         for (const enemy of getEnemyTokens(responsibleToken)) {
+            const damageType = item?.system?.damage?.damageType ?? null;
+            const traits = context.traits ?? item?.system?.traits?.value ?? [];
+        const idrMult = getThreatModifierIDR(enemy, traits, damageType);
+        if (idrMult <= 0) {
+            console.log(`[${MODULE}] ${enemy.name} es inmune a ${traits.join(", ")}`);
+            continue; // ✅ Ahora sí está dentro del for
+        }
+        const finalThreat = Math.round(threatGlobal * idrMult);
+
+    console.log(`[${MODULE}] Skill-Attack '${actionSlug}' (${outcome}) → threatGlobal = ${finalThreat}`);
+    await applyThreatToEnemies(primaryTarget, responsibleToken.id, responsibleToken.name, finalThreat);
+
+    _updateFloatingPanel();
+}
+}
 
     // ATAQUES SIRVEN LOS CONJUROS TAMBIÉN
-    if (isAttack) {
-        const outcome = context.outcome ?? 'failure';
-        const level = actor.system.details.level.value;
-        const base = game.settings.get(MODULE, 'baseAttackThreat');
-        console.log(`[${MODULE}] Attack outcome: ${outcome}, actor level: ${level}, base threat: ${base}`);
+if (isAttack) {
+    const outcome = context.outcome ?? 'failure';
 
-        let threatGlobal = 0;
-        switch (outcome) {
-        case 'failure':
-            threatGlobal = Math.ceil(base * (level * 0.1));
-            break;
-        case 'success':
-            threatGlobal = Math.ceil((base + 10) * (level * 0.1));
-            break;
-        case 'criticalSuccess':
-            threatGlobal = Math.ceil((base + 20) * (level * 0.1));
-            break;
+    // Determinar amenaza base
+    let base = game.settings.get(MODULE, 'baseAttackThreat') || 0;
+    if (origin instanceof Item && ['weapon', 'shield', 'spell'].includes(origin.type)) {
+        const customValue = Number(await origin.getFlag(MODULE, "threatAttackValue")) || 0;
+        if (customValue > 0) {
+            base = customValue;
+            console.log(`[${MODULE}] Usando amenaza de ataque personalizada del ítem: ${base}`);
+        } else {
+            console.log(`[${MODULE}] Amenaza de ataque del ítem no configurada, usando valor global: ${base}`);
         }
-        console.log(`[${MODULE}] Calculated global threat: ${threatGlobal}`);
-
-        // Primary target
-        const targets = getUserTargets(context, msg, responsibleToken);
-        console.log(`[${MODULE}] Targets array:`, targets);
-        let primaryTarget = undefined;
-        if (targets.length > 0) {
-            if (typeof targets[0] === "string") {
-                primaryTarget = canvas.tokens.get(targets[0]);
-            } else if (typeof targets[0] === "object" && targets[0].id) {
-                primaryTarget = canvas.tokens.placeables.find(t => t.document.id === targets[0].id);
-            }
-        }
-        console.log(`[${MODULE}] Primary target: ${primaryTarget?.name}`);
-        const primaryTargetId = primaryTarget?.id;
-
-        if (primaryTarget) {
-            await storePreHP(primaryTarget, 0, responsibleToken);
-        }
-
-        // Secondary enemies
-        for (const enemy of getEnemyTokens(responsibleToken, [primaryTargetId])) {
-            console.log(`[${MODULE}] Secondary target: ${enemy.name}`);
-            await storePreHP(enemy, 0, responsibleToken);
-            const distMult = getDistanceThreatMultiplier(enemy, responsibleToken);
-            const vulnMult = getThreatModifierByTraits(enemy, traits);
-            let amount = Math.round(threatGlobal * distMult * vulnMult);
-            console.log(`[${MODULE}] Distance mult: ${distMult}, Vulnerability mult: ${vulnMult}, raw threat: ${amount}`);
-
-            if (vulnMult > 0 && amount > 0) {
-                console.log(`[${MODULE}] Applying ${amount} threat to ${enemy.name}`);
-                await _applyThreat(enemy, responsibleToken.id, responsibleToken.name, amount);
-            } else {
-                console.log(`[${MODULE}] ${enemy.name} is immune to threat`);
-            }
-        }
-        if (outcome === 'failure' && primaryTarget) {
-            console.log(`[${MODULE}] Attack failed: applying base threat (${base}) to primary target ${primaryTarget.name}`);
-            await _applyThreat(primaryTarget, responsibleToken.id, responsibleToken.name, base);
-        }
-        _updateFloatingPanel();
+    } else {
+        console.log(`[${MODULE}] No es ítem con ataque configurado, usando valor global: ${base}`);
     }
+
+    // Bonus por resultado
+    let threatGlobal = base;
+    switch (outcome) {
+        case 'success': threatGlobal += 10; break;
+        case 'criticalSuccess': threatGlobal += 20; break;
+        case 'failure': default: break;
+    }
+
+    console.log(`[${MODULE}] Attack outcome: ${outcome}, base threat: ${base}, total base threat: ${threatGlobal}`);
+
+    // Detectar targets
+    const targets = getUserTargets(context, msg, responsibleToken);
+    console.log(`[${MODULE}] Targets array:`, targets);
+
+    
+    for (const target of targets) {
+    const targetToken = canvas.tokens.get(target.id);
+    if (targetToken) {
+        await storePreHP(targetToken, null, responsibleToken, actionSlug);
+        console.log(`[${MODULE}] preHP registrado para ${targetToken.name} antes del daño.`);
+    }
+}
+
+    // Aplicar amenaza a cada enemigo en combate
+    for (const enemy of getEnemyTokens(responsibleToken, targets)) {
+        const damageType = item?.system?.damage?.damageType ?? null;
+        const distMult = getDistanceThreatMultiplier(enemy, responsibleToken);
+        const vulnMult = getThreatModifierIDR(enemy, damageType);
+        const itemMode = await origin?.getFlag(MODULE, "threatItemMode") || "apply";
+
+        let amount = Math.round(threatGlobal * distMult * vulnMult);
+        if (itemMode === "reduce" || game.settings.get(MODULE, 'attackThreatMode') === true) {
+            amount = -amount;
+            console.log(`[${MODULE}] Modo 'reduce' detectado, invirtiendo amenaza`);
+        }
+        const traits = context.traits ?? item?.system?.traits?.value ?? [];
+        const idrMult = getThreatModifierIDR(enemy, traits);        
+        if (idrMult <= 0) {
+            console.log(`[${MODULE}] ${enemy.name} es inmune a ${traits.join(", ")}`);
+            continue; // No aplicar amenaza
+        }
+        const finalThreat = Math.round(amount * idrMult);
+
+        console.log(`[${MODULE}] ${enemy.name}: Distance mult ${distMult}, Vulnerability mult ${vulnMult}, final threat ${finalThreat}`);
+        await applyThreatToEnemies(enemy, responsibleToken.id, responsibleToken.name, finalThreat);
+    }
+
+    _updateFloatingPanel();
+}
+
 
     // CURACIÓN INDEPENDIENTEMENTE DE LA FUENTE ALQUÍMICA, MÁGICA O ACCIÓN
-    if (isHeal) {
-        const baseHeal = game.settings.get(MODULE, 'baseHealThreat');
-        const targets = getUserTargets(context, msg, responsibleToken);
-        const traits = context.options?.filter(opt => opt.startsWith("item:trait:"))
-            ?.map(opt => opt.split(":")[2]) ?? [];
+if (isHeal) {
+    const originItem = origin instanceof Item ? origin : responsibleToken?.actor?.items?.get(origin?.id);
 
-        for (const tgtId of targets) {
-            const token = canvas.tokens.get(tgtId);
-            if (!token || token.document.disposition !== responsibleToken.document.disposition) {
-                if (token)
-                    console.log(`[${MODULE}] Curación a enemigo ignorada: ${token.name}`);
-                continue;
-            }
 
-            const preData = await token.document.getFlag(MODULE, 'preHP');
-            const preHP = preData?.hp;
-            if (typeof preHP !== 'number') {
-                console.log(`[${MODULE}] No se pudo obtener preHP para ${token.name}, ignorando`);
-                continue;
-            }
-            const { hp } = token.actor.system.attributes;
-            const maxHP = hp.max;
-            const healedOpt = context.options?.find(o => o.startsWith('hp-remaining:'));
-            const healAmt = Math.max(0, hp.value - preHP);
-            const healPossible = Math.max(0, maxHP - preHP);
-            const threatLocal = Math.ceil(baseHeal + healAmt);
-            if (threatLocal > 0) {
-                for (const enemy of canvas.tokens.placeables.filter(t =>
-                        t.inCombat &&
-                        t.document.disposition !== responsibleToken.document.disposition &&
-                        t.document.disposition !== 0 &&
-                        responsibleToken.document.disposition !== 0 &&
-                        !t.actor.hasPlayerOwner)) {
-                    const primary = targets.includes(enemy.id);
-                    let amount = primary ? threatLocal : threatLocal;
-                    if (amount <= 0)
-                        continue;
+    let baseHealThreat = 0;
+    let baseHeal = 0;
 
-                    let logBlock = `[${MODULE}] Amenaza por curación general:\n`;
-                    logBlock += ` ├─ Puntos de golpe previos del objetivo a curar ${healedOpt}\n`;
-                    logBlock += ` ├─ Puntos de golpe máximos ${maxHP}\n`;
-                    logBlock += ` ├─ Cantidad de curación posible ${healPossible}\n`; ;
-                    logBlock += ` ├─ Cálculo de curación: (${baseHeal}(Curación Base) + ${healAmt}(Cantidad Curada))\n`;
-                    logBlock += ` └─ Amenaza de Curación Final: +${amount}\n`;
+    // Recuperar flag temporal si venimos de Treat Wounds
+    const lastHealAction = await responsibleToken?.document?.getFlag(MODULE, "lastHealAction");
 
-                    console.log(logBlock);
-                    /*
-                    console.log(`[${MODULE}] (Curación) ${primary ? '' : 'Amenaza de Curación'} ${enemy.name}: +${amount}`);*/
-                    await _applyThreat(enemy, responsibleToken.id, responsibleToken.name, amount);
-                }
-                _updateFloatingPanel();
-            }
-            return;
+    const isTreatWounds =
+        (context.type?.toLowerCase() === "skill-check" &&
+         context.options?.some(opt => opt.toLowerCase().includes("action:treat-wounds"))) ||
+        lastHealAction === "treat-wounds";
+
+    if (isTreatWounds) {
+    baseHealThreat = Number(await responsibleToken.actor?.getFlag(MODULE, "skillActionValue.treat-wounds"));
+    if (!baseHealThreat || baseHealThreat <= 0) {
+        baseHealThreat = game.settings.get(MODULE, 'baseHealThreat') || 0;
+        console.log(`[${MODULE}] Amenaza Treat Wounds no configurada en el actor, usando valor global: ${baseHealThreat}`);
+    }
+    baseHeal = baseHealThreat; // aquí aseguramos que se use en el cálculo
+    console.log(`[${MODULE}] Detectado Treat Wounds → Amenaza del actor: ${baseHeal}`);
+    await responsibleToken?.document?.unsetFlag(MODULE, "lastHealAction");
+} else {
+    let foundItem = originItem;
+    if (!foundItem || !(foundItem instanceof Item)) {
+        const actor = origin?.actor ?? responsibleToken?.actor;
+        if (actor && origin?.id) {
+            const found = actor.items.get(origin.id);
+            if (found) foundItem = found;
         }
     }
 
-    // ACCIONES ACTION-THREATS.JSON
-    if (isTaunt) {
-        let threatGlobal = 0;
-
-        let slug =
-            context.options?.find(opt => opt.startsWith("action:"))?.split(":")[1] ??
-            context.options?.find(opt => opt.startsWith("origin:action:"))?.split(":")[2] ??
-            msg.flags?.[MODULE]?.slug ??
-            (await msg.getFlag(MODULE, "slug")) ??
-            undefined;
-
-        if (slug) {
-            console.log(`[${MODULE}] Slug detectado para burla: ${slug}`);
+    if (foundItem?.getFlag) {
+        baseHealThreat = Number(await foundItem.getFlag(MODULE, "threatHealValue"));
+        if (!baseHealThreat || baseHealThreat <= 0) {
+            baseHealThreat = game.settings.get(MODULE, 'baseHealThreat') || 0;
+            console.log(`[${MODULE}] Amenaza de curación del ítem no configurada, usando valor global: ${baseHealThreat}`);
         } else {
-            console.log(`[${MODULE}] No se pudo detectar un slug para la burla`);
+            console.log(`[${MODULE}] Amenaza de curación personalizada del ítem: ${baseHealThreat}`);
         }
+    } else {
+        baseHealThreat = game.settings.get(MODULE, 'baseHealThreat') || 0;
+        console.log(`[${MODULE}] Amenaza de curación del ítem no configurada, usando valor global: ${baseHealThreat}`);
+    }
+    baseHeal = baseHealThreat; // también aquí para que siempre se use
+}
 
-        const traits = context.traits ?? [];
-        console.log(`[${MODULE}] Traits del contexto:`, traits);
-        console.log(`[${MODULE}] TRAIT_THREAT disponible:`, globalThis.TRAIT_THREAT);
+    baseHeal = baseHealThreat > 0
+        ? baseHealThreat
+        : game.settings.get(MODULE, 'baseHealThreat') || 0;
 
-        const matchingTraits = traits.filter(t => t in globalThis.TRAIT_THREAT);
-        console.log(`[${MODULE}] Traits con amenaza detectada:`, matchingTraits);
-        const baseTraitThreat = matchingTraits.reduce((sum, tr) => sum + globalThis.TRAIT_THREAT[tr], 0);
+    const targets = getUserTargets(context, msg, responsibleToken);
 
-        const taunterLevel = context.options?.find(opt => opt.startsWith("self:level:"))?.split(":")[2] || 1;
-
-        let logBlock = `[${MODULE}] Amenaza por provocación:\n`;
-        logBlock += ` ├─ Acción: ${slug}\n`;
-        logBlock += ` ├─ Lista de Traits: ${matchingTraits.join(', ')}\n`;
-        logBlock += ` ├─ Bonificador por Traits: ${baseTraitThreat}\n`;
-
-        const outcome = context.outcome ?? 'failure';
-
-        let threat = 0;
-
-        if (outcome !== 'failure') {
-            const baseTaunt = game.settings.get(MODULE, 'tauntBase') || 0;
-            const baseTauntSuccess = game.settings.get(MODULE, 'tauntSuccessBonus') || 0;
-            const baseTauntCrit = game.settings.get(MODULE, 'tauntCritBonus') || 0;
-            let outcomeThreat = 0;
-            switch (outcome) {
-            case "success":
-                outcomeThreat = baseTaunt + baseTauntSuccess;
-                break;
-            case "criticalSuccess":
-                outcomeThreat = baseTaunt + baseTauntCrit + baseTauntSuccess;
-                break;
-            default:
-                outcomeThreat = baseTaunt;
-            }
-            threat += outcomeThreat;
-            logBlock += ` ├─ Bonus base por Amenaza: +${outcomeThreat}\n`;
-        } else {
-            return;
+    let token = null;
+    for (const tgtId of targets) {
+        const tempToken = canvas.tokens.get(tgtId);
+        if (!tempToken || tempToken.document.disposition !== responsibleToken.document.disposition) {
+            if (tempToken) console.log(`[${MODULE}] Curación a enemigo ignorada: ${tempToken.name}`);
+            continue;
         }
+        token = tempToken;
+        break;
+    }
 
-        logBlock += ` ├─ Cálculo de amenaza: (${threat}(Amenaza por Rango de Éxito) + ${baseTraitThreat}(Traits))\n`;
-        threatGlobal = Math.ceil(threat + baseTraitThreat);
-        logBlock += ` └─ Amenaza Final: ${threatGlobal}\n`;
+    if (!token) {
+        console.log(`[${MODULE}] No hay token válido para curar`);
+        return;
+    }
 
-        console.log(logBlock);
+    
+    // Calcular amenaza
+    const preData = await token.document.getFlag(MODULE, 'preHP');
+    let preHP = preData?.hp;
+    const { hp } = token.actor.system.attributes;
+    const maxHP = hp.max;
+    const healedOpt = context.options?.find(o => o.startsWith('hp-remaining:'));
+    const healAmt = Math.max(0, hp.value - preHP);
+    const healPossible = Math.max(0, maxHP - preHP);
+    const threatLocal = Math.ceil(baseHeal + healAmt);
 
-        for (const enemy of getEnemyTokens(responsibleToken)) {
-            console.log(`[${MODULE}] Burla aplicada a ${enemy.name}: +${threatGlobal}`);
-            await applyThreatToEnemies(enemy, responsibleToken.id, responsibleToken.name, threatGlobal);
+    if (threatLocal > 0) {
+        for (const enemy of canvas.tokens.placeables.filter(t =>
+            t.inCombat &&
+            t.document.disposition !== responsibleToken.document.disposition &&
+            t.document.disposition !== 0 &&
+            responsibleToken.document.disposition !== 0 &&
+            !t.actor.hasPlayerOwner)) {
+            const primary = targets.includes(enemy.id);
+            let amount = primary ? threatLocal : threatLocal;
+            if (amount <= 0) continue;
+
+            let logBlock = `[${MODULE}] Amenaza por curación general:\n`;
+            logBlock += ` ├─ Puntos de golpe previos del objetivo a curar ${healedOpt}\n`;
+            logBlock += ` ├─ Puntos de golpe máximos ${maxHP}\n`;
+            logBlock += ` ├─ Cantidad de curación posible ${healPossible}\n`;
+            logBlock += ` ├─ Cálculo de curación: (${baseHeal}(Curación Base) + ${healAmt}(Cantidad Curada))\n`;
+            logBlock += ` └─ Amenaza de Curación Final: +${amount}\n`;
+
+            console.log(logBlock);
+            await applyThreatToEnemies(enemy, responsibleToken.id, responsibleToken.name, amount);
         }
-
         _updateFloatingPanel();
     }
+    return;
+}
+
+    // ACCIONES ACTION-THREATS.JSON
+if (isSkillAction) {
+    let slug =
+        context.options?.find(opt => opt.startsWith("action:"))?.split(":")[1] ??
+        context.options?.find(opt => opt.startsWith("origin:action:"))?.split(":")[2] ??
+        msg.flags?.[MODULE]?.slug ??
+        (await msg.getFlag(MODULE, "slug")) ??
+        undefined;
+
+    if (!slug) {
+        console.log(`[${MODULE}] No se pudo detectar un slug para acción de habilidad`);
+        return;
+    }
+
+    if (ATTACK_SKILLS.has(slug)) {
+    console.log(`[${MODULE}] Acción ${slug} es una habilidad de ataque, manejada como ataque`);
+    return;
+}
+    console.log(`[${MODULE}] Slug detectado para acción de habilidad: ${slug}`);
+
+    const actorLevel = Number(
+        context.options?.find(opt => opt.startsWith("self:level:"))?.split(":")[2]
+    ) || 1;
+
+    const outcome = context.outcome ?? 'failure';
+    let threatGlobal = 0;
+
+    // --- Buscar configuración personalizada del actor ---
+    const customSkillValue = Number(await responsibleToken.actor.getFlag(MODULE, `skillActionValue.${slug}`)) || 0;
+    const customSkillMode  = await responsibleToken.actor.getFlag(MODULE, `skillActionMode.${slug}`) ?? "apply";
+
+    if (customSkillValue > 0) {
+        // Usar configuración personalizada
+        threatGlobal = customSkillValue
+        if (customSkillMode === "reduce") threatGlobal *= -1;
+        console.log(`[${MODULE}] Usando amenaza personalizada del actor para ${slug}: ${customSkillValue} (${customSkillMode})`);
+    } else {
+        // Usar configuración global
+        if (outcome === 'failure') return;
+
+        const baseSkillThreat      = game.settings.get(MODULE, 'skillBase') || 0;
+        const baseSkillCrit        = game.settings.get(MODULE, 'skillCritBonus') || 0;
+
+        let outcomeThreat = baseSkillThreat;
+        if (outcome === "failure") outcomeThreat === baseSkillThreat;
+        if (outcome === "success") outcomeThreat += Math.ceil(baseSkillThreat * (1 + actorLevel * 0.1));
+        if (outcome === "criticalSuccess") outcomeThreat += Math.ceil(baseSkillThreat + baseSkillCrit * (1 + actorLevel * 0.1));
+
+        threatGlobal = outcomeThreat;
+        console.log(`[${MODULE}] Usando configuración global para skillAction: ${threatGlobal}`);
+    }
+
+    for (const enemy of getEnemyTokens(responsibleToken)) {
+    const idrMult = getThreatModifierIDR(enemy, traits);
+    if (idrMult <= 0) {
+        console.log(`[${MODULE}] ${enemy.name} es inmune a ${traits.join(", ")}`);
+        continue;
+    }
+
+    const finalThreat = Math.round(threatGlobal * idrMult);
+
+    // Log
+    let logBlock = `[${MODULE}] Amenaza por acción de habilidad:\n`;
+    logBlock += ` ├─ Acción: ${slug}\n`;
+    logBlock += ` └─ Amenaza Final: ${finalThreat}\n`;
+    console.log(logBlock);
+
+    console.log(`[${MODULE}] Amenaza aplicada a ${enemy.name}: ${finalThreat >= 0 ? "+" : ""}${finalThreat}`);
+    await _applyThreat(enemy, responsibleToken.id, responsibleToken.name, finalThreat);
+}
+
+    _updateFloatingPanel();
+}
+
+
+
 
     // GENERACIÓN DE AMENAZA POR DAÑO
 
-    if (isDamageTaken) {
-        console.log(`[${MODULE}] Entering damage block`);
-        const candidates = [];
+if (isDamageTaken) {
+    console.log(`[${MODULE}] Entering damage block`);
 
-        // NO ME ESTÁ DETECTANDO LOS CONJUROS DE DAÑO TRAS SALVACIÓN, SOLO LOS ATAQUES
+    const damagedTokens = canvas.tokens.placeables.filter(t => {
+        const preHP = t.document.getFlag(MODULE, 'preHP')?.hp;
+        return typeof preHP === 'number';
+    });
+    console.log(`[${MODULE}] Tokens con preHP registrado: ${damagedTokens.map(t => t.name).join(", ")}`);
 
+    for (const token of damagedTokens) {
+        console.log(`[${MODULE}] Procesando token: ${token.name}`);
+        const preData = await token.document.getFlag(MODULE, 'preHP');
+        console.log(`[${MODULE}] preData:`, preData);
+        const { hp: preHP, attackerId } = preData || {};
 
-        for (const t of canvas.tokens.placeables) {
-            const preData = await t.document.getFlag(MODULE, 'preHP');
-            if (typeof preData?.hp === 'number')
-                candidates.push(t);
+        if (!attackerId) {
+            console.warn(`[${MODULE}] ${token.name} no tiene attackerId, se omite`);
+            continue;
         }
-        console.log(`[${MODULE}] Damage candidates: ${candidates.map(t => t.name)}`);
 
-        for (const token of candidates) {
-            const preData = await token.document.getFlag(MODULE, 'preHP');
-            const attackerId = preData?.attackerId;
-            const preHP = preData?.hp;
-            const outcomeOpt = context.options?.find(opt => opt.startsWith("check:outcome:"));
-            const outcomeLevel = context.options?.find(opt => opt.startsWith("origin:level:"));
-            const outcome = outcomeOpt ? outcomeOpt.split(":")[2] : "failure";
-            const level = outcomeLevel ? outcomeLevel.split(":")[2] : 1;
-            // const attackerName = preData?.attackerName;
+        const responsibleToken = canvas.tokens.get(attackerId);
+        console.log(`[${MODULE}] Attacker encontrado: ${responsibleToken?.name ?? "NINGUNO"}`);
+        if (!responsibleToken) continue;
 
-            if (typeof preHP !== 'number' || !attackerId)
-                continue;
+        const currHP = token.actor.system.attributes.hp?.value ?? 0;
+        const damage = Math.max(0, preHP - currHP);
+        console.log(`[${MODULE}] HP actual: ${currHP}, Daño calculado: ${damage}`);
+        if (damage === 0) continue;
 
-            const responsibleToken = canvas.tokens.get(attackerId);
-            if (!responsibleToken) {
-                console.warn(`[${MODULE}] No se encontró el token atacante con ID: ${attackerId}`);
-                continue;
-            }
+        let threat = damage;
+        let logBlock = `[${MODULE}] Amenaza para ${token.name}:\n`;
+        logBlock += ` ├─ Daño infligido: ${damage} (de ${preHP} a ${currHP})\n`;
 
-            const currHP = token.actor.system.attributes.hp?.value ?? 0;
-            const damage = Math.max(0, preHP - currHP);
-            if (damage === 0)
-                continue;
-            console.log(`[${MODULE}] ${token.name} took damage: ${damage} (Previous HP: ${preHP}, Post HP: ${currHP})`);
+        // Ataque físico
+        if (context.options?.includes('action:strike') && !context.options.includes('origin:action:slug:cast-a-spell')) {
+            const baseAttackThreat = game.settings.get(MODULE, 'baseAttackThreat') || 0;
+            const outcome = context.options?.find(opt => opt.startsWith("check:outcome:"))?.split(":")[2] ?? "failure";
+            const outcomeBonus = { failure: 0, success: 10, "critical-success": 20 }[outcome] ?? 0;
+            threat += baseAttackThreat + outcomeBonus;
+            logBlock += ` ├─ Bonus base por ataque: +${baseAttackThreat + outcomeBonus}\n`;
+        }
 
-            if (damage === 0)
-                continue;
+        // Conjuro ofensivo
+        if (context.options?.includes('origin:action:slug:cast-a-spell')) {
+            const baseSpellThreat = game.settings.get(MODULE, 'baseSpellThreat') || 0;
+            threat += baseSpellThreat;
+            logBlock += ` ├─ Bonus base por CONJURO: +${baseSpellThreat}\n`;
+        }
 
-            let threat = damage;
-            let logBlock = `[${MODULE}] Amenaza para ${token.name}:\n`;
-            let bonusExcess = 0;
+        // Bonus por exceso de daño
+        if (damage > preHP * 0.5) {
+            const bonusExcess = Math.floor(damage - preHP * 0.5);
+            threat += bonusExcess;
+            logBlock += ` ├─ Bonus por exceso de daño: +${bonusExcess}\n`;
+        } else {
+            logBlock += ` ├─ Bonus por exceso de daño: +0\n`;
+        }
 
-            logBlock += ` ├─ Daño infligido: ${damage} (de ${preHP} a ${currHP})\n`;
-
-            if (context.options?.includes('action:strike') && !context.options.includes('origin:action:slug:cast-a-spell')) {
-                const baseAttackThreat = game.settings.get(MODULE, 'baseAttackThreat') || 0;
-                let outcomeThreat = 0;
-                switch (outcome) {
-                case "failure":
-                    outcomeThreat = baseAttackThreat;
-                    break;
-                case "success":
-                    outcomeThreat = baseAttackThreat + 10;
-                    break;
-                case "critical-success":
-                    outcomeThreat = baseAttackThreat + 20;
-                    break;
-                default:
-                    outcomeThreat = baseAttackThreat;
-                }
-                threat += outcomeThreat;
-                logBlock += ` ├─ Bonus base por ataque: +${outcomeThreat}\n`;
-            }
-            if (context.options?.includes('origin:action:slug:cast-a-spell')) {
-                const baseSpellThreat = game.settings.get(MODULE, 'baseSpellThreat') || 0;
-                threat += baseSpellThreat;
-                logBlock += ` ├─ Bonus base por CONJURO: +${baseSpellThreat}\n`;
-            }
-
-            if (damage > preHP * 0.5) {
-                const excess = damage - preHP * 0.5;
-                bonusExcess = Math.floor(excess);
-                threat += bonusExcess;
-                logBlock += ` ├─ Bonus por exceso de daño: +${bonusExcess}\n`;
-            } else {
-                logBlock += ` ├─ Bonus por exceso de daño: +0\n`;
-            }
-            let traitBonus = 0;
-            for (const tr of traits) {
-                const tval = globalThis.TRAIT_THREAT[tr] || 0;
-                if (tval) {
-                    traitBonus += tval;
-                    threat += tval;
-                }
-            }
-            logBlock += ` ├─ Bonus por traits: +${traitBonus}\n`;
-
-            const actionSlug = context?.options?.find(opt => opt.startsWith("item:slug:"))?.split(":")[2];
-            let ab = 0;
-            if (actionOpt) {
-                ab = globalThis.ACTION_THREAT[actionSlug] || 0;
-                if (ab) {
-                    threat += ab;
-                }
-            }
+        // Bonus por acción específica
+        const actionSlug = context?.options?.find(opt => opt.startsWith("item:slug:"))?.split(":")[2];
+        if (actionSlug) {
+            const ab = globalThis.ACTION_THREAT[actionSlug] || 0;
+            if (ab) threat += ab;
             logBlock += ` ├─ Bonus por acción (${actionSlug}): +${ab}\n`;
-
-            const distMult = getDistanceThreatMultiplier(token, responsibleToken);
-            const vulnMult = getVulnerabilityMultiplier(token, traits);
-                logBlock += ` ├─ Multiplicadores: ${threat} × ${vulnMult}(traits) × ${distMult}(distancia)\n`;
-
-            threat = Math.round(threat * vulnMult * distMult);
-
-            logBlock += ` └─ Amenaza Final: +${threat}\n`;
-
-            console.log(logBlock);
-
-            if (!isImmuneToThreat(token, traits)) {
-                console.log(`[${MODULE}] Final threat for ${token.name}: ${threat}`);
-                await _applyThreat(token, responsibleToken.id, responsibleToken.name, threat);
-            } else {
-                console.log(`[${MODULE}] ${token.name} is immune to threat`);
-            }
-
-            await token.document.unsetFlag(MODULE, 'preHP');
-            console.log(`[${MODULE}] → unsetFlag preHP on ${token.name} (${token.id})`);
-            await token.document.unsetFlag(MODULE, 'attackThreat');
-            console.log(`[${MODULE}] → unsetFlag attackThreat on ${token.name} (${token.id})`);
-            console.log(`[${MODULE}] Flags limpiados para ${token.name}`);
-            const leftovers = canvas.tokens.placeables
-                .filter(t => t.document.getFlag(MODULE, 'preHP') !== undefined)
-                .map(t => t.name);
-            if (leftovers.length === 0) {
-                console.log(`[${MODULE}] No hay tokens con preHP`)
-            } else {
-                console.log(`[${MODULE}] Después del damage block, tokens con preHP aún presentes: ${leftovers.join(', ')}`);
-            }
         }
-        _updateFloatingPanel();
+
+        // Multiplicadores
+        const distMult = getDistanceThreatMultiplier(token, responsibleToken);
+        console.log(`[${MODULE}] distMult = ${distMult}`);
+
+        const traits = context.traits ?? item?.system?.traits?.value ?? [];
+        console.log(`[${MODULE}] Traits detectados: ${JSON.stringify(traits)}`);
+
+        const damageType = item?.system?.damage?.damageType ?? null;
+        console.log(`[${MODULE}] Damage type detectado: ${damageType}`);
+
+        const traitMult = getThreatModifierIDR(token, traits);
+        console.log(`[${MODULE}] traitMult = ${traitMult}`);
+
+        const dmgTypeMult = damageType ? getThreatModifierIDR(token, [damageType]) : 1;
+        console.log(`[${MODULE}] dmgTypeMult = ${dmgTypeMult}`);
+
+        if (traitMult <= 0 || dmgTypeMult <= 0) {
+            console.log(`[${MODULE}] ${token.name} es inmune a ${[...traits, damageType].filter(Boolean).join(", ")}`);
+            continue; // No aplicar amenaza
+        }
+
+        logBlock += ` ├─ Multiplicadores: ${threat} × ${distMult}(distancia) × ${traitMult}(traits)\n`;
+
+        threat = Math.round(threat * distMult * traitMult * dmgTypeMult);
+        logBlock += ` └─ Amenaza Final: +${threat}\n`;
+
+        console.log(logBlock);
+
+        // Aplicar amenaza
+        await _applyThreat(token, responsibleToken.id, responsibleToken.name, threat);
+        console.log(`[${MODULE}] Amenaza aplicada a ${token.name}`);
+
+        // Limpiar flags
+        await token.document.unsetFlag(MODULE, 'preHP');
+        await token.document.unsetFlag(MODULE, 'attackThreat');
     }
+    console.log(`[${MODULE}] Finalizando damage block, actualizando panel`);
+    _updateFloatingPanel();
+}
+
+
 });
 
 // ===========================
 // 6. HOOKS SECUNDARIOS (createItem, controlToken...)
 // ===========================
+
+Hooks.on("preUpdateActor", async (actor, update, options, userId) => {
+    // Comprobar si hay cambios en HP
+    const newHP = update?.system?.attributes?.hp?.value;
+    if (typeof newHP !== "number") return;
+
+    const currentHP = actor.system.attributes.hp.value;
+
+    // Guardar preHP solo si va a aumentar (curación)
+    if (newHP > currentHP) {
+        for (const token of actor.getActiveTokens()) {
+            await token.document.setFlag(MODULE, "preHP", { hp: currentHP });
+            console.log(`[${MODULE}] preHP guardado para ${token.name}: ${currentHP}`);
+        }
+    }
+});
+
 // HOOK PARA SEQUENCER
 Hooks.on('controlToken', async(token, controlled) => {
     if (!game.user.isGM) return;
@@ -1350,7 +1383,6 @@ Hooks.on('combatTurn', async() => {
 
 // REDUCIR AMENAZA POR TURNO
 Hooks.on('combatRound', async() => {
-    if (!game.user.isGM) return;
     if (!game.settings.get(MODULE, 'decayEnabled'))
         return;
 
@@ -1378,6 +1410,405 @@ Hooks.on('combatRound', async() => {
 
     _updateFloatingPanel();
 });
+
+Hooks.on("renderItemSheet", (app, html, data) => {// Solo GM
+if (!game.user.isGM) return;
+
+const allowedTypes = ["weapon", "spell", "shield", "feat", "consumable", "action"];
+if (!allowedTypes.includes(app.item.type)) return;
+if (
+    app.item.type === "feat" &&
+    app.item.system.actions?.value === null &&
+    !["reaction", "free"].includes(app.item.system.actionType?.value)
+) return;
+if (app.item.type === "consumable" && app.item.system.category === "ammo") return;
+if (!app.item.system.slug) return;
+
+if (html.closest(".app").find(".window-header .threat-adjust").length) return;
+
+
+    const threatBtn = $(
+        `<a class="threat-adjust" title="${game.i18n.localize("pf2e-threat-tracker.itemThreatConfig.tooltip")}">
+        <span style= "color: Tomato;">
+            <i class="fa-sharp fa-solid fa-seal-exclamation"></i>
+        </span>
+            <span>${game.i18n.localize("pf2e-threat-tracker.itemThreatConfig.buttonText")}</span>
+        </a>`
+    );
+
+    threatBtn.on("click", () => openThreatDialog(app.item));
+
+    html.closest(".app").find(".window-header .window-title").after(threatBtn);
+});
+
+async function openThreatDialog(item) {
+    console.log(`[${MODULE}] === openThreatDialog iniciado ===`);
+    console.log(`[${MODULE}] Item:`, item);
+
+    const currentValue  = await item.getFlag(MODULE, "threatItemValue") ?? 0;
+    const currentMode   = await item.getFlag(MODULE, "threatItemMode") ?? "apply";
+    const currentSlug   = await item.getFlag(MODULE, "threatItemSlug");
+    const currentType   = await item.getFlag(MODULE, "threatItemType");
+    const currentAttack = await item.getFlag(MODULE, "threatAttackValue") ?? 0;
+    const currentDamage = await item.getFlag(MODULE, "threatDamageValue") ?? 0;
+    const currentRaise  = await item.getFlag(MODULE, "threatRaiseValue") ?? 0;
+    const currentHeal   = await item.getFlag(MODULE, "threatHealValue") ?? 0;
+
+    console.log(`[${MODULE}] Flags actuales:`, {
+        currentValue, currentMode, currentSlug, currentType,
+        currentAttack, currentDamage, currentRaise
+    });
+
+    const slug = item.slug ?? item.name.toLowerCase().replace(/\s+/g, "-");
+    const type = item.type;
+    const healingItem = item.system.traits.value.includes("healing");
+
+    let extraFields = "";
+    let showBaseValue = true;
+
+    if (type === "weapon" || type === "shield") {
+        showBaseValue = false;
+        extraFields += `
+            <label>${game.i18n.localize("pf2e-threat-tracker.itemThreatConfig.attackValue")}:</label>
+            <input type="number" name="threatAttackValue" value="${currentAttack}" style="width:100%;">
+
+            <label>${game.i18n.localize("pf2e-threat-tracker.itemThreatConfig.damageValue")}:</label>
+            <input type="number" name="threatDamageValue" value="${currentDamage}" style="width:100%;">`;
+    }
+    if (type === "shield") {
+        extraFields += `
+            <label>${game.i18n.localize("pf2e-threat-tracker.itemThreatConfig.raiseValue")}:</label>
+            <input type="number" name="threatRaiseValue" value="${currentRaise}" style="width:100%;">`;
+    }
+    
+    if (type === "spell") {
+        const hasDamage = !!item.system.damage && Object.keys(item.system.damage).length > 0;
+        const isAttack  = item.system.defense?.passive?.statistic === "ac";
+
+        if (isAttack) {
+            showBaseValue = false;
+            extraFields += `
+                <label>${game.i18n.localize("pf2e-threat-tracker.itemThreatConfig.attackValue")}:</label>
+                <input type="number" name="threatAttackValue" value="${currentAttack}" style="width:100%;">`;
+        }
+        if (hasDamage && !healingItem) {
+            extraFields += `
+                <label>${game.i18n.localize("pf2e-threat-tracker.itemThreatConfig.damageValue")}:</label>
+                <input type="number" name="threatDamageValue" value="${currentDamage}" style="width:100%;">`;
+        }
+    }
+
+    if (healingItem) {
+        showBaseValue = false;
+        extraFields += `
+            <label>${game.i18n.localize("pf2e-threat-tracker.itemThreatConfig.healValue")}:</label>
+            <input type="number" name="threatHealValue" value="${currentHeal}" style="width:100%;">`;
+    }
+
+    new foundry.applications.api.DialogV2({
+        window: { title: game.i18n.localize("pf2e-threat-tracker.itemThreatConfig.title") },
+        form: true,
+        content: `
+                <form>
+                    <div style="display:flex; flex-direction:column; gap:6px;">
+                        <label>${game.i18n.localize("pf2e-threat-tracker.itemThreatConfig.slug")}:</label>
+                        <input type="text" name="slug" value="${slug}" style="width:100%;" readonly>
+                        <label>${game.i18n.localize("pf2e-threat-tracker.itemThreatConfig.type")}:</label>
+                        <input type="text" name="type" value="${type}" style="width:100%;" readonly>
+
+                        ${showBaseValue ? `
+                        <label>${game.i18n.localize("pf2e-threat-tracker.itemThreatConfig.value")}:</label>
+                        <input type="number" name="threatValue" value="${currentValue}" style="width:100%;">` : ""}
+
+                        ${extraFields}
+
+                        <label>${game.i18n.localize("pf2e-threat-tracker.itemThreatConfig.mode")}:</label>
+                        <select name="mode">
+                            <option value="apply" ${currentMode === "apply" ? "selected" : ""}>
+                                ${game.i18n.localize("pf2e-threat-tracker.itemThreatConfig.modeApply")}
+                                </option>
+                            <option value="reduce" ${currentMode === "reduce" ? "selected" : ""}>
+                                ${game.i18n.localize("pf2e-threat-tracker.itemThreatConfig.modeReduce")}
+                            </option>
+                        </select>
+
+                    </div>
+                </form>
+                `,
+        buttons: [
+            { action: "save", label: game.i18n.localize("pf2e-threat-tracker.itemThreatConfig.save"), default: true },
+            { action: "cancel", label: game.i18n.localize("pf2e-threat-tracker.itemThreatConfig.cancel") }
+        ],
+        submit: async function (result, dialog) {
+            if (result !== "save") return;
+
+            const formEl = dialog.element.querySelector("form");
+            if (!formEl) {
+                console.warn(`[${MODULE}] No se encontró el <form> en el diálogo`);
+                return;
+            }
+
+            const fd = new foundry.applications.ux.FormDataExtended(formEl);
+            const data = fd.object ?? {};
+
+            console.log(`[${MODULE}] Datos procesados:`, data);
+
+            const saveOrUnset = async (key, value) => {
+            if (value && value !== 0) {
+                await item.setFlag(MODULE, key, value);
+            } else {
+                await item.unsetFlag(MODULE, key);
+            }
+        };
+
+            await saveOrUnset("threatItemValue",  parseInt(data.threatValue) || 0);
+            await item.setFlag(MODULE, "threatItemMode",   data.mode);
+            await item.setFlag(MODULE, "threatItemSlug",   data.slug);
+            await item.setFlag(MODULE, "threatItemType",   data.type);
+
+            if (data.threatAttackValue !== undefined) {
+                await saveOrUnset("threatAttackValue", parseInt(data.threatAttackValue) || 0);
+            }
+            if (data.threatDamageValue !== undefined) {
+                await saveOrUnset("threatDamageValue", parseInt(data.threatDamageValue) || 0);
+            }
+            if (data.threatRaiseValue !== undefined) {
+                await saveOrUnset("threatRaiseValue", parseInt(data.threatRaiseValue) || 0);
+            }
+            if (data.threatHealValue !== undefined) {
+                await saveOrUnset("threatHealValue", parseInt(data.threatHealValue) || 0);
+            }
+
+            console.log(`[${MODULE}] Flags después de guardar:`, {
+                threatItemValue:  await item.getFlag(MODULE, "threatItemValue"),
+                threatItemMode:   await item.getFlag(MODULE, "threatItemMode"),
+                threatItemSlug:   await item.getFlag(MODULE, "threatItemSlug"),
+                threatItemType:   await item.getFlag(MODULE, "threatItemType"),
+                threatAttackValue: await item.getFlag(MODULE, "threatAttackValue"),
+                threatDamageValue: await item.getFlag(MODULE, "threatDamageValue"),
+                threatRaiseValue:  await item.getFlag(MODULE, "threatRaiseValue"),
+                threatHealValue:   await item.getFlag(MODULE, "threatHealValue")
+            });
+
+            ui.notifications.info(game.i18n.localize("pf2e-threat-tracker.itemThreatConfig.saved"));
+        }
+    }).render({ force: true });
+}
+
+Hooks.on("renderActorSheet", (app, html, data) => {
+    if (!game.user.isGM) return;
+    const actor = app.actor;
+    if (actor.system.details.alliance !== "party") return;
+
+    // Evitar duplicados
+    if (html.closest(".app").find(".party-threat-config").length) return;
+
+    const threatBtn = $(`
+        <a class="party-threat-config" title="Configurar Amenaza de Global">
+            <i class="fa-solid fa-users"></i>
+            <span>Config Amenaza</span>
+        </a>
+    `);
+
+    threatBtn.on("click", () => openActorThreatDialog(actor));
+
+    html.closest(".app").find(".window-header .window-title").after(threatBtn);
+});
+
+async function openActorThreatDialog(actor) {
+    const feats = actor.items.filter(i =>
+        i.type === "feat" &&
+        (
+            i.system.actions?.value !== null ||
+            ["reaction", "free"].includes(i.system.actionType?.value)
+        )
+    );
+
+    const skillActionsData = {
+        acrobatics: [
+            { name: game.i18n.localize("PF2E.Actions.Balance.Title"), slug: "balance", minRank: 0 },
+            { name: game.i18n.localize("PF2E.Actions.TumbleThrough.Title"), slug: "tumble-through", minRank: 0 },
+            { name: game.i18n.localize("PF2E.Actions.ManeuverInFlight.Title"), slug: "maneuver-in-flight", minRank: 1 }
+        ],
+        athletics: [
+            { name: game.i18n.localize("PF2E.Actions.Climb.Title"), slug: "climb", minRank: 0 },
+            { name: game.i18n.localize("PF2E.Actions.ForceOpen.Title"), slug: "force-open", minRank: 0 },
+            { name: game.i18n.localize("PF2E.Actions.Grapple.Title"), slug: "grapple", minRank: 0 },
+            { name: game.i18n.localize("PF2E.Actions.HighJump.Title"), slug: "high-jump", minRank: 0 },
+            { name: game.i18n.localize("PF2E.Actions.LongJump.Title"), slug: "long-jump", minRank: 0 },
+            { name: game.i18n.localize("PF2E.Actions.Reposition.Title"), slug: "reposition", minRank: 0 },
+            { name: game.i18n.localize("PF2E.Actions.Shove.Title"), slug: "shove", minRank: 0 },
+            { name: game.i18n.localize("PF2E.Actions.Swim.Title"), slug: "swim", minRank: 0 },
+            { name: game.i18n.localize("PF2E.Actions.Trip.Title"), slug: "trip", minRank: 0 },
+            { name: game.i18n.localize("PF2E.Actions.Disarm.Title"), slug: "disarm", minRank: 1 }
+        ],
+        crafting: [
+            { name: game.i18n.localize("PF2E.Actions.Repair.Title"), slug: "repair", minRank: 0 }
+        ],
+        deception: [
+            { name: game.i18n.localize("PF2E.Actions.CreateADiversion.Title"), slug: "create-a-diversion", minRank: 0 },
+            { name: game.i18n.localize("PF2E.Actions.Feint.Title"), slug: "feint", minRank: 1 }
+        ],
+        diplomacy: [
+            { name: game.i18n.localize("PF2E.Actions.Request.Title"), slug: "request", minRank: 0 }
+        ],
+        intimidation: [
+            { name: game.i18n.localize("PF2E.Actions.Demoralize.Title"), slug: "demoralize", minRank: 0 }
+        ],
+        medicine: [
+            { name: game.i18n.localize("PF2E.Actions.AdministerFirstAid.Title"), slug: "administer-first-aid", minRank: 0 },
+            { name: game.i18n.localize("PF2E.Actions.TreatDisease.Title"), slug: "treat-disease", minRank: 1 },
+            { name: game.i18n.localize("PF2E.Actions.TreatWounds.Label"), slug: "treat-wounds", minRank: 1 }
+        ],
+        nature: [
+            { name: game.i18n.localize("PF2E.Actions.CommandAnAnimal.Title"), slug: "command-an-animal", minRank: 0 }
+        ],
+        performance: [
+            { name: game.i18n.localize("PF2E.Actions.Perform.Title"), slug: "perform", minRank: 0 }
+        ],
+        stealth: [
+            { name: game.i18n.localize("PF2E.Actions.ConcealAnObject.Title"), slug: "conceal-an-object", minRank: 0 },
+            { name: game.i18n.localize("PF2E.Actions.Hide.Title"), slug: "hide", minRank: 0 },
+            { name: game.i18n.localize("PF2E.Actions.Sneak.Title"), slug: "sneak", minRank: 0 }
+        ],
+        thievery: [
+            { name: game.i18n.localize("PF2E.Actions.PalmAnObject.Title"), slug: "disable-device", minRank: 0 },
+            { name: game.i18n.localize("PF2E.Actions.Steal.Title"), slug: "steal", minRank: 0 },
+            { name: game.i18n.localize("PF2E.Actions.DisableDevice.Title"), slug: "disable-device", minRank: 1 },
+            { name: game.i18n.localize("PF2E.Actions.PickALock.Title"), slug: "pick-a-lock", minRank: 1 }
+        ]
+    };
+
+    const skillIcons = {
+        acrobatics: "icons/skills/movement/feet-winged-boots-blue.webp",
+        athletics: "icons/skills/melee/unarmed-punch-fist.webp",
+        crafting: "icons/tools/smithing/hammer-sledge-steel-grey.webp",
+        deception: "icons/skills/social/diplomacy-handshake-gray.webp",
+        diplomacy: "icons/skills/social/diplomacy-handshake.webp",
+        intimidation: "icons/skills/social/intimidation-impressing.webp",
+        medicine: "icons/tools/hand/needle-grey.webp",
+        nature: "icons/creatures/mammals/deer-movement-leap-green.webp",
+        performance: "icons/tools/instruments/flute-simple-wood.webp",
+        stealth: "icons/creatures/mammals/humanoid-cat-skulking-teal.webp",
+        thievery: "icons/tools/hand/lockpicks-steel-grey.webp"
+    };
+
+    let content = `<form><div class="scrolltable" style="max-height:600px; min-width:500px; overflow-y:auto; display:flex; flex-direction:column; gap:8px; padding-right:8px;">`;
+
+    const skillActions = [];
+
+    // --- Skill Actions ---
+    content += `<h2 style="text-align:center;">${game.i18n.localize("pf2e-threat-tracker.SkillActions")}</h2>`;
+    for (const [skill, actions] of Object.entries(skillActionsData)) {
+        const skillRank = actor.system.skills[skill]?.rank ?? 0;
+        const filtered = actions.filter(a => skillRank >= a.minRank);
+        if (!filtered.length) continue;
+
+        content += `<h3 style="margin-top:8px; border-bottom:1px solid #888;">
+            ${game.i18n.localize("PF2E.Skill." + skill.charAt(0).toUpperCase() + skill.slice(1))}
+        </h3>`;
+
+        for (const act of filtered) {
+            skillActions.push(act);
+            const val = await actor.getFlag(MODULE, `skillActionValue.${act.slug}`) ?? 0;
+            const mode = await actor.getFlag(MODULE, `skillActionMode.${act.slug}`) ?? "apply";
+
+            content += `
+                <div style="display:grid; grid-template-columns: 24px 1fr 60px 150px; align-items:center; gap:8px;">
+                    <img src="${skillIcons[skill]}" style="width:24px; height:24px; border:0;" />
+                    <span style="overflow:hidden; text-overflow:ellipsis;">${act.name}</span>
+                    <input type="number" name="${act.slug}-value" value="${val}" style="width:60px;" />
+                    <select name="${act.slug}-mode">
+                        <option value="apply" ${mode === "apply" ? "selected" : ""}>${game.i18n.localize("pf2e-threat-tracker.itemThreatConfig.modeApply")}</option>
+                        <option value="reduce" ${mode === "reduce" ? "selected" : ""}>${game.i18n.localize("pf2e-threat-tracker.itemThreatConfig.modeReduce")}</option>
+                    </select>
+                </div>
+            `;
+        }
+    }
+
+    // --- Feats ---
+    if (feats.length) {
+    const featCategories = ["ancestry", "general", "class", "bonus", "skill", "calling", "classfeature", "curse", "deityboon", "pfsboon", "ancestryfeature"];
+
+    content += `<h2 style="margin-top:12px; text-align:center;">${game.i18n.localize("pf2e-threat-tracker.Feats")}</h2>`;
+
+    for (const category of featCategories) {
+        const featsInCategory = feats.filter(f => f.system.category === category);
+        if (!featsInCategory.length) continue;
+
+        content += `<h3 style="margin-top:8px; border-bottom:1px solid #888;">
+            ${game.i18n.localize(`PF2E.Item.Feat.Category.${category.charAt(0).toUpperCase() + category.slice(1)}`) || category}
+        </h3>`;
+
+        for (const feat of featsInCategory) {
+            const slug = feat.system.slug || feat.id;
+            const val = await actor.getFlag(MODULE, `featValue.${slug}`) ?? 0;
+            const mode = await actor.getFlag(MODULE, `featMode.${slug}`) ?? "apply";
+
+            content += `
+                <div style="display:grid; grid-template-columns: 1fr 60px 150px; align-items:center; gap:8px;">
+                    <span style="overflow:hidden; text-overflow:ellipsis;">${feat.name}</span>
+                    <input type="number" name="${slug}-value" value="${val}" style="width:60px;" />
+                    <select name="${slug}-mode">
+                        <option value="apply" ${mode === "apply" ? "selected" : ""}>
+                            ${game.i18n.localize("pf2e-threat-tracker.itemThreatConfig.modeApply")}
+                        </option>
+                        <option value="reduce" ${mode === "reduce" ? "selected" : ""}>
+                            ${game.i18n.localize("pf2e-threat-tracker.itemThreatConfig.modeReduce")}
+                        </option>
+                    </select>
+                </div>
+            `;
+        }
+    }
+}
+
+
+    content += `</div></form>`;
+
+    new foundry.applications.api.DialogV2({
+        window: { title: game.i18n.localize("pf2e-threat-tracker.actorThreatConfig.title") },
+        content,
+        buttons: [
+            { action: "save", label: game.i18n.localize("pf2e-threat-tracker.itemThreatConfig.save"), default: true },
+            { action: "cancel", label: game.i18n.localize("pf2e-threat-tracker.itemThreatConfig.cancel") }
+        ],
+        submit: async function (result, dialog) {
+            if (result !== "save") return;
+            const formEl = dialog.element.querySelector("form");
+            const fd = new foundry.applications.ux.FormDataExtended(formEl);
+
+            for (const act of skillActions) {
+                const val = parseInt(fd.get(`${act.slug}-value`)) || 0;
+                const mode = fd.get(`${act.slug}-mode`);
+                if (val !== 0) {
+                    await actor.setFlag(MODULE, `skillActionValue.${act.slug}`, val);
+                    await actor.setFlag(MODULE, `skillActionMode.${act.slug}`, mode);
+                } else {
+                    await actor.unsetFlag(MODULE, `skillActionValue.${act.slug}`);
+                    await actor.unsetFlag(MODULE, `skillActionMode.${act.slug}`);
+                }
+            }
+
+            for (const feat of feats) {
+                const slug = feat.system.slug || feat.id;
+                const val = parseInt(fd.get(`${slug}-value`)) || 0;
+                const mode = fd.get(`${slug}-mode`);
+                if (val !== 0) {
+                    await actor.setFlag(MODULE, `featValue.${slug}`, val);
+                    await actor.setFlag(MODULE, `featMode.${slug}`, mode);
+                } else {
+                    await actor.unsetFlag(MODULE, `featValue.${slug}`);
+                    await actor.unsetFlag(MODULE, `featMode.${slug}`);
+                }
+            }
+
+            ui.notifications.info(game.i18n.localize("pf2e-threat-tracker.actorThreatConfig.saved"));
+        }
+    }).render({ force: true });
+}
+
 
 // ===========================
 // 7. CIERRE Y LOG FINAL
