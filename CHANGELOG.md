@@ -2,6 +2,11 @@
 
 ## [Beta5] - 2025-8-11
 
+### Fixed
+* Attacks were not applying threat correctly
+
+## [Beta5] - 2025-8-11
+
 ### ✨ Gameplay Improvements
 
 * **Smarter detection of actions and spells:** The system now better identifies when an action comes from an item, skill, spell, weapon, or feat.
