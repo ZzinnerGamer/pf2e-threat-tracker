@@ -949,7 +949,7 @@ if (isAttack) {
         const finalThreat = Math.round(amount * idrMult);
 
         console.log(`[${MODULE}] ${enemy.name}: Distance mult ${distMult}, Vulnerability mult ${vulnMult}, final threat ${finalThreat}`);
-        await applyThreatToEnemies(enemy, responsibleToken.id, responsibleToken.name, finalThreat);
+        await _applyThreat(enemy, responsibleToken.id, responsibleToken.name, finalThreat);
     }
 
     _updateFloatingPanel();
@@ -1815,3 +1815,4 @@ async function openActorThreatDialog(actor) {
 // ===========================
 
 console.log(`[${MODULE}] Cargado`);
+
