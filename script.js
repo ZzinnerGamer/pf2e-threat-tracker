@@ -272,7 +272,6 @@ function getThreatModifierIDR(enemy, { traits = [], slug = "", damageType = "" }
     const resistances = enemy.actor.system.traits?.resistances || [];
 
     // --- 1. Inmunidades absolutas ---
-    // Si es inmune a una condición, trait o tipo de daño, amenaza = 0
     for (const trait of traits) {
         if (immunities.includes(trait)) {
             console.log(`[${MODULE}] ${enemy.name} es inmune a '${trait}', amenaza anulada`);
@@ -294,7 +293,7 @@ function getThreatModifierIDR(enemy, { traits = [], slug = "", damageType = "" }
     for (const w of weaknesses) {
         if (w.type && (traits.includes(w.type) || w.type === damageType || w.type === slug)) {
             console.log(`[${MODULE}] ${enemy.name} tiene debilidad contra '${w.type}' (+${w.value} amenaza)`);
-            multiplier += (w.value / 2); // Ajusta el divisor para la escala de amenaza
+            multiplier += (w.value / 2);
         }
     }
 
@@ -306,7 +305,7 @@ function getThreatModifierIDR(enemy, { traits = [], slug = "", damageType = "" }
         }
     }
 
-    return Math.max(multiplier, 0); // Nunca negativo
+    return Math.max(multiplier, 0);
 }
 
 
@@ -356,7 +355,7 @@ function getVulnerabilityMultiplier(enemy, traits) {
         for (const trait of traits) {
             const traitMult = vulnData.weakness[trait.toLowerCase()];
             if (traitMult && traitMult !== 1) {
-                multiplier *= traitMult; // acumulativo si hay varios
+                multiplier *= traitMult;
             }
         }
     }
@@ -450,7 +449,6 @@ function getTopThreatTarget(enemyToken) {
     if (!Object.keys(threatTable).length)
         return null;
 
-    // Obtener el ID con más amenaza solo en ESTE enemigo
     const sorted = Object.entries(threatTable).sort((a, b) => b[1].value - a[1].value);
     const [topTokenId, value] = sorted[0];
 
@@ -659,7 +657,6 @@ Hooks.on('createChatMessage', async(msg) => {
 
     const isKnown = knownTypes.some(Boolean);
 
-    // Logs
     console.log(`[${MODULE}] sourceType: ${context.sourceType}`, {
         domains: context.domains
     });
@@ -694,7 +691,7 @@ if (Object.keys(context).length === 0) {
 
     if (globalThis.ACTION_THREAT?.[actionSlug] !== undefined) {
         const itemBase = Number(await item.getFlag(MODULE, "threatItemValue")) || 0;
-        const itemMode = await item.getFlag(MODULE, "threatItemMode") || "apply"; // ← nuevo
+        const itemMode = await item.getFlag(MODULE, "threatItemMode") || "apply";
         const settingsBase = Number(game.settings.get(MODULE, "skillBase")) || 0;
 
         const base = itemBase > 0 ? itemBase : settingsBase;
@@ -793,10 +790,9 @@ if (isSpellCast) {
             const base          = game.settings.get(MODULE, 'baseSpellThreat') || 0;
             const threatPerRank = game.settings.get(MODULE, 'threatPerSpellRank') || 3;
             const bonus         = globalThis.ACTION_THREAT[spellSlug] || 0;
-            const fixedRank     = threatPerRank * 0.1; // ✅ ahora bien cerrado
+            const fixedRank     = threatPerRank * 0.1;
             const threatGlobal  = (base + bonus) * fixedRank;
 
-            // 🔹 Un solo bucle para aplicar modificador IDR y amenaza
             for (const enemy of getEnemyTokens(responsibleToken)) {
                 const traits = context.traits ?? item?.system?.traits?.value ?? [];
                 const idrMult = getThreatModifierIDR(enemy, traits);
@@ -876,7 +872,7 @@ if (customSkillAttackValue > 0) {
         const idrMult = getThreatModifierIDR(enemy, traits, damageType);
         if (idrMult <= 0) {
             console.log(`[${MODULE}] ${enemy.name} es inmune a ${traits.join(", ")}`);
-            continue; // ✅ Ahora sí está dentro del for
+            continue;
         }
         const finalThreat = Math.round(threatGlobal * idrMult);
 
@@ -891,7 +887,6 @@ if (customSkillAttackValue > 0) {
 if (isAttack) {
     const outcome = context.outcome ?? 'failure';
 
-    // Determinar amenaza base
     let base = game.settings.get(MODULE, 'baseAttackThreat') || 0;
     if (origin instanceof Item && ['weapon', 'shield', 'spell'].includes(origin.type)) {
         const customValue = Number(await origin.getFlag(MODULE, "threatAttackValue")) || 0;
@@ -905,7 +900,6 @@ if (isAttack) {
         console.log(`[${MODULE}] No es ítem con ataque configurado, usando valor global: ${base}`);
     }
 
-    // Bonus por resultado
     let threatGlobal = base;
     switch (outcome) {
         case 'success': threatGlobal += 10; break;
@@ -915,7 +909,6 @@ if (isAttack) {
 
     console.log(`[${MODULE}] Attack outcome: ${outcome}, base threat: ${base}, total base threat: ${threatGlobal}`);
 
-    // Detectar targets
     const targets = getUserTargets(context, msg, responsibleToken);
     console.log(`[${MODULE}] Targets array:`, targets);
 
@@ -928,7 +921,6 @@ if (isAttack) {
     }
 }
 
-    // Aplicar amenaza a cada enemigo en combate
     for (const enemy of getEnemyTokens(responsibleToken, targets)) {
         const damageType = item?.system?.damage?.damageType ?? null;
         const distMult = getDistanceThreatMultiplier(enemy, responsibleToken);
@@ -944,7 +936,7 @@ if (isAttack) {
         const idrMult = getThreatModifierIDR(enemy, traits);        
         if (idrMult <= 0) {
             console.log(`[${MODULE}] ${enemy.name} es inmune a ${traits.join(", ")}`);
-            continue; // No aplicar amenaza
+            continue;
         }
         const finalThreat = Math.round(amount * idrMult);
 
@@ -964,7 +956,6 @@ if (isHeal) {
     let baseHealThreat = 0;
     let baseHeal = 0;
 
-    // Recuperar flag temporal si venimos de Treat Wounds
     const lastHealAction = await responsibleToken?.document?.getFlag(MODULE, "lastHealAction");
 
     const isTreatWounds =
@@ -978,7 +969,7 @@ if (isHeal) {
         baseHealThreat = game.settings.get(MODULE, 'baseHealThreat') || 0;
         console.log(`[${MODULE}] Amenaza Treat Wounds no configurada en el actor, usando valor global: ${baseHealThreat}`);
     }
-    baseHeal = baseHealThreat; // aquí aseguramos que se use en el cálculo
+    baseHeal = baseHealThreat;
     console.log(`[${MODULE}] Detectado Treat Wounds → Amenaza del actor: ${baseHeal}`);
     await responsibleToken?.document?.unsetFlag(MODULE, "lastHealAction");
 } else {
@@ -1003,7 +994,7 @@ if (isHeal) {
         baseHealThreat = game.settings.get(MODULE, 'baseHealThreat') || 0;
         console.log(`[${MODULE}] Amenaza de curación del ítem no configurada, usando valor global: ${baseHealThreat}`);
     }
-    baseHeal = baseHealThreat; // también aquí para que siempre se use
+    baseHeal = baseHealThreat;
 }
 
     baseHeal = baseHealThreat > 0
@@ -1028,8 +1019,6 @@ if (isHeal) {
         return;
     }
 
-    
-    // Calcular amenaza
     const preData = await token.document.getFlag(MODULE, 'preHP');
     let preHP = preData?.hp;
     const { hp } = token.actor.system.attributes;
@@ -1065,7 +1054,6 @@ if (isHeal) {
     return;
 }
 
-    // ACCIONES ACTION-THREATS.JSON
 if (isSkillAction) {
     let slug =
         context.options?.find(opt => opt.startsWith("action:"))?.split(":")[1] ??
@@ -1092,17 +1080,14 @@ if (isSkillAction) {
     const outcome = context.outcome ?? 'failure';
     let threatGlobal = 0;
 
-    // --- Buscar configuración personalizada del actor ---
     const customSkillValue = Number(await responsibleToken.actor.getFlag(MODULE, `skillActionValue.${slug}`)) || 0;
     const customSkillMode  = await responsibleToken.actor.getFlag(MODULE, `skillActionMode.${slug}`) ?? "apply";
 
     if (customSkillValue > 0) {
-        // Usar configuración personalizada
         threatGlobal = customSkillValue
         if (customSkillMode === "reduce") threatGlobal *= -1;
         console.log(`[${MODULE}] Usando amenaza personalizada del actor para ${slug}: ${customSkillValue} (${customSkillMode})`);
     } else {
-        // Usar configuración global
         if (outcome === 'failure') return;
 
         const baseSkillThreat      = game.settings.get(MODULE, 'skillBase') || 0;
@@ -1126,7 +1111,6 @@ if (isSkillAction) {
 
     const finalThreat = Math.round(threatGlobal * idrMult);
 
-    // Log
     let logBlock = `[${MODULE}] Amenaza por acción de habilidad:\n`;
     logBlock += ` ├─ Acción: ${slug}\n`;
     logBlock += ` └─ Amenaza Final: ${finalThreat}\n`;
@@ -1177,7 +1161,6 @@ if (isDamageTaken) {
         let logBlock = `[${MODULE}] Amenaza para ${token.name}:\n`;
         logBlock += ` ├─ Daño infligido: ${damage} (de ${preHP} a ${currHP})\n`;
 
-        // Ataque físico
         if (context.options?.includes('action:strike') && !context.options.includes('origin:action:slug:cast-a-spell')) {
             const baseAttackThreat = game.settings.get(MODULE, 'baseAttackThreat') || 0;
             const outcome = context.options?.find(opt => opt.startsWith("check:outcome:"))?.split(":")[2] ?? "failure";
@@ -1186,14 +1169,12 @@ if (isDamageTaken) {
             logBlock += ` ├─ Bonus base por ataque: +${baseAttackThreat + outcomeBonus}\n`;
         }
 
-        // Conjuro ofensivo
         if (context.options?.includes('origin:action:slug:cast-a-spell')) {
             const baseSpellThreat = game.settings.get(MODULE, 'baseSpellThreat') || 0;
             threat += baseSpellThreat;
             logBlock += ` ├─ Bonus base por CONJURO: +${baseSpellThreat}\n`;
         }
 
-        // Bonus por exceso de daño
         if (damage > preHP * 0.5) {
             const bonusExcess = Math.floor(damage - preHP * 0.5);
             threat += bonusExcess;
@@ -1202,7 +1183,6 @@ if (isDamageTaken) {
             logBlock += ` ├─ Bonus por exceso de daño: +0\n`;
         }
 
-        // Bonus por acción específica
         const actionSlug = context?.options?.find(opt => opt.startsWith("item:slug:"))?.split(":")[2];
         if (actionSlug) {
             const ab = globalThis.ACTION_THREAT[actionSlug] || 0;
@@ -1210,7 +1190,6 @@ if (isDamageTaken) {
             logBlock += ` ├─ Bonus por acción (${actionSlug}): +${ab}\n`;
         }
 
-        // Multiplicadores
         const distMult = getDistanceThreatMultiplier(token, responsibleToken);
         console.log(`[${MODULE}] distMult = ${distMult}`);
 
@@ -1228,7 +1207,7 @@ if (isDamageTaken) {
 
         if (traitMult <= 0 || dmgTypeMult <= 0) {
             console.log(`[${MODULE}] ${token.name} es inmune a ${[...traits, damageType].filter(Boolean).join(", ")}`);
-            continue; // No aplicar amenaza
+            continue;
         }
 
         logBlock += ` ├─ Multiplicadores: ${threat} × ${distMult}(distancia) × ${traitMult}(traits)\n`;
@@ -1238,11 +1217,9 @@ if (isDamageTaken) {
 
         console.log(logBlock);
 
-        // Aplicar amenaza
         await _applyThreat(token, responsibleToken.id, responsibleToken.name, threat);
         console.log(`[${MODULE}] Amenaza aplicada a ${token.name}`);
 
-        // Limpiar flags
         await token.document.unsetFlag(MODULE, 'preHP');
         await token.document.unsetFlag(MODULE, 'attackThreat');
     }
@@ -1258,13 +1235,11 @@ if (isDamageTaken) {
 // ===========================
 
 Hooks.on("preUpdateActor", async (actor, update, options, userId) => {
-    // Comprobar si hay cambios en HP
     const newHP = update?.system?.attributes?.hp?.value;
     if (typeof newHP !== "number") return;
 
     const currentHP = actor.system.attributes.hp.value;
 
-    // Guardar preHP solo si va a aumentar (curación)
     if (newHP > currentHP) {
         for (const token of actor.getActiveTokens()) {
             await token.document.setFlag(MODULE, "preHP", { hp: currentHP });
@@ -1411,7 +1386,7 @@ Hooks.on('combatRound', async() => {
     _updateFloatingPanel();
 });
 
-Hooks.on("renderItemSheet", (app, html, data) => {// Solo GM
+Hooks.on("renderItemSheet", (app, html, data) => {
 if (!game.user.isGM) return;
 
 const allowedTypes = ["weapon", "spell", "shield", "feat", "consumable", "action"];
@@ -1598,7 +1573,6 @@ Hooks.on("renderActorSheet", (app, html, data) => {
     const actor = app.actor;
     if (actor.system.details.alliance !== "party") return;
 
-    // Evitar duplicados
     if (html.closest(".app").find(".party-threat-config").length) return;
 
     const threatBtn = $(`
