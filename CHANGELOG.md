@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## [Beta5.1.1] - 2025-8-15
+
+* Update compatibility with [Cleaner Sheet Title Bar](https://github.com/MiahNelah/cleaner-sheet-title-bar) module
+
+## [Beta5.1] - 2025-8-11
+
+### Fixed
+* Attacks were not applying threat correctly
+
 ## [Beta5] - 2025-8-11
 
 ### Fixed
