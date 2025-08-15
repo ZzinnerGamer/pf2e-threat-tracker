@@ -1429,10 +1429,8 @@ if (html.closest(".app").find(".window-header .threat-adjust").length) return;
 
     const threatBtn = $(
         `<a class="threat-adjust" title="${game.i18n.localize("pf2e-threat-tracker.itemThreatConfig.tooltip")}">
-        <span style= "color: Tomato;">
-            <i class="fa-sharp fa-solid fa-seal-exclamation"></i>
-        </span>
-            <span>${game.i18n.localize("pf2e-threat-tracker.itemThreatConfig.buttonText")}</span>
+            <i style= "color: Tomato;" class="fa-sharp fa-solid fa-seal-exclamation"></i>
+            ${game.i18n.localize("pf2e-threat-tracker.itemThreatConfig.buttonText")}
         </a>`
     );
 
@@ -1605,8 +1603,8 @@ Hooks.on("renderActorSheet", (app, html, data) => {
 
     const threatBtn = $(`
         <a class="party-threat-config" title="Configurar Amenaza de Global">
-            <i class="fa-solid fa-users"></i>
-            <span>Config Amenaza</span>
+            <i style= "color: Tomato;" class="fa-sharp fa-solid fa-seal-exclamation"></i>
+            ${game.i18n.localize("pf2e-threat-tracker.itemThreatConfig.buttonText")}
         </a>
     `);
 
@@ -1815,4 +1813,3 @@ async function openActorThreatDialog(actor) {
 // ===========================
 
 console.log(`[${MODULE}] Cargado`);
-
