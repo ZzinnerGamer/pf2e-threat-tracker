@@ -39,6 +39,9 @@
       "flags": {}
     }
   ],
+  "styles": [
+  "styles/threat-panel.css"
+],
   "relationships": {
     "recommends": [
       {
