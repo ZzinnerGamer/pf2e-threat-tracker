@@ -31,7 +31,6 @@
 
 * `logic/` → threat calculations and utilities.
   * `ui/` → menus and graphical interfaces.
-  * `settings.js` → defines all customizable options.
   * `addons/` → optional compatibility (e.g., integration with *Sequencer*).
 
 This makes bugs easier to locate and future development faster.
