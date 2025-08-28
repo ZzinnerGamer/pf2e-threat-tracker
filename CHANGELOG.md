@@ -11,7 +11,7 @@
 * It can now be moved freely around the screen.
   * Includes visual themes (dark, light, etc.) and opacity adjustment.
   * Better aesthetic integration thanks to the new `threat-panel.css` file.
-* **New preset system**: added a sample file (`MMO-preset.json`) to load predefined threat configurations (WIP).
+* **New preset system**: added a sample file (`MMO-preset.json` (WIP)) to load predefined threat configurations.
 
 ## 🎮 User experience
 
@@ -23,7 +23,6 @@
     * **Custom threat menu** with quick options.
   * Revised and expanded English and Spanish localization.
 * **Improved visual feedback**: the panel displays threat values more clearly, with icons and visual indicators.
-* **Expanded translations**: Spanish and English text strings were reorganized and dozens of new entries were added.
 
 ## ⚙️ Internal changes (explained simply)
 
