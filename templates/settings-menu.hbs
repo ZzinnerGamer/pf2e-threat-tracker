@@ -1,0 +1,153 @@
+<form class="pf2e-threat-tracker-settings"
+      style="display:flex; flex-direction:column; height:100%;">
+
+  {{!-- HEADER: tabs fijas --}}
+  <nav class="pf2e-threat-tabs"
+       style="flex:0 0 auto; display:flex; gap:8px; padding:8px 10px; z-index:2;">
+    {{#each categories as |cat|}}
+      <button type="button"
+              class="tab {{#if cat.active}}active{{/if}}"
+              data-action="switchGroup"
+              data-key="{{cat.key}}"
+              style="padding:6px 10px; border-radius:6px; border:1px solid var(--color-border-light-primary);
+                     {{#if cat.active}}background: rgba(100,150,255,0.15); font-weight:700;{{/if}}">
+        {{cat.title}}
+      </button>
+    {{/each}}
+  </nav>
+
+  {{!-- BODY: solo aquí hay scroll --}}
+  <div class="pf2e-threat-body"
+       style="flex:1 1 auto; overflow:auto; padding:10px 6px 12px 10px; position:relative;">
+
+    {{!-- Sección dinámica para las 3 primeras pestañas --}}
+    {{#if (or (eq activeGroupKey "General") (eq activeGroupKey "Threat") (eq activeGroupKey "Other"))}}
+      {{#each groups as |group|}}
+        <fieldset style="margin-top:10px; border-radius:8px; padding:8px;">
+          <legend style="font-weight:700; letter-spacing:.2px; padding:0 4px;">{{group.title}}</legend>
+          {{#each group.items as |item|}}
+            {{#if (eq item.inputType "checkbox")}}
+              <div class="pv-form-row"
+                   style="margin-bottom: 10px; display:flex; align-items:center; justify-content:space-between; gap:12px;
+                          border-bottom:1px solid #6868684d; padding:6px 0;">
+                <div style="flex:1 1 auto;">
+                  <label>{{item.name}}</label>
+                  {{#if item.hint}}<div class="notes" style="opacity:.8;">{{item.hint}}</div>{{/if}}
+                </div>
+                <div style="flex:0 0 auto; display:flex; align-items:center;">
+                  <input type="checkbox" name="settings.{{item.key}}" {{#if item.value}}checked{{/if}}>
+                </div>
+              </div>
+            {{else}}
+              <div class="pv-form-row"
+                   style="margin-bottom: 10px; border-bottom:1px solid #6868684d; padding:6px 0;">
+                <label>{{item.name}}</label>
+                {{#if item.hint}}<div class="notes" style="opacity:.8;">{{item.hint}}</div>{{/if}}
+                {{#if (eq item.inputType "number")}}
+                  <input type="number" name="settings.{{item.key}}" value="{{item.value}}" min="{{item.min}}" max="{{item.max}}" step="{{item.step}}">
+                {{else}}
+                  <input type="text" name="settings.{{item.key}}" value="{{item.value}}">
+                {{/if}}
+              </div>
+            {{/if}}
+          {{/each}}
+        </fieldset>
+      {{/each}}
+    {{/if}}
+
+{{!-- Pestañas Personalizadas --}}
+{{#if (eq activeGroupKey "Custom")}}
+  <fieldset style="margin-top:10px; border-radius:8px; padding:8px;">
+    <legend style="font-weight:700; letter-spacing:.2px; padding:0 4px;">
+      {{localize "pf2e-threat-tracker.threatConfig.customThreat"}}
+    </legend>
+    <div style="display:flex; flex-direction:column; gap:10px; margin-top:8px;">
+      <button type="button" data-action="skill-actions" 
+              style="padding:6px 10px; border-radius:6px; border:1px solid var(--color-border-light-primary); text-align:left;">
+        <i class="fas fa-running" style="margin-right:6px;"></i>
+        {{localize "pf2e-threat-tracker.threatConfig.globalThreatPerSkillAction"}}
+      </button>
+      <button type="button" data-action="actor-actions" 
+              style="padding:6px 10px; border-radius:6px; border:1px solid var(--color-border-light-primary); text-align:left;">
+        <i class="fas fa-user" style="margin-right:6px;"></i>
+        {{localize "pf2e-threat-tracker.threatConfig.threatPerActorActions"}}
+      </button>
+      <button type="button" data-action="effects" 
+              style="padding:6px 10px; border-radius:6px; border:1px solid var(--color-border-light-primary); text-align:left;">
+        <i class="fas fa-magic" style="margin-right:6px;"></i>
+        {{localize "pf2e-threat-tracker.threatConfig.threatPerEffects"}}
+      </button>
+      <div class="pv-form-row" style="margin-bottom:10px;">
+        <label>{{localize "pf2e-threat-tracker.settings.effectExcludedPacks.name"}}</label>
+        <br>
+      <label class="notes" style="opacity:.75;">
+        {{localize "pf2e-threat-tracker.settings.effectExcludedPacks.hint"}}
+      </label>
+        <input type="text"
+               name="settings.effectExcludedPacks"
+               value="{{effectExcludedPacks}}"
+               placeholder="Divine Intercessions, Pathfinder Society Boons, Bestiary Effects, Campaign Effects, Kingmaker Features, otherModule">
+    </div>
+  </fieldset>
+{{/if}}
+
+{{!-- Pestaña Templates / Presets --}}
+{{#if (eq activeGroupKey "Templates")}}
+  <fieldset style="margin-top:10px; border-radius:8px; padding:8px;">
+    <legend style="font-weight:700; letter-spacing:.2px; padding:0 4px;">
+      {{localize "pf2e-threat-tracker.threatConfig.threatPresets"}}
+    </legend>
+    <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:8px;">
+      <button type="button" data-action="preset-MMO" 
+              style="flex:1 1 auto; padding:6px 10px; border-radius:6px; border:1px solid var(--color-border-light-primary);">
+        <i class="fas fa-dragon" style="margin-right:6px;"></i>
+        {{localize "pf2e-threat-tracker.threatConfig.presetMMO"}}
+      </button>
+      <button type="button" data-action="preset-template1" 
+              style="flex:1 1 auto; padding:6px 10px; border-radius:6px; border:1px solid var(--color-border-light-primary);">
+        <i class="fas fa-scroll" style="margin-right:6px;"></i>
+        {{localize "pf2e-threat-tracker.threatConfig.presetTemplate"}}
+      </button>
+      <button type="button" data-action="preset-template2" 
+              style="flex:1 1 auto; padding:6px 10px; border-radius:6px; border:1px solid var(--color-border-light-primary);">
+        <i class="fas fa-scroll" style="margin-right:6px;"></i>
+        {{localize "pf2e-threat-tracker.threatConfig.presetTemplate"}}
+      </button>
+    </div>
+  </fieldset>
+{{/if}}
+
+{{!-- Pestaña Apariencia --}}
+{{#if (eq activeGroupKey "Appearance")}}
+  <fieldset style="margin-top:10px; border-radius:8px; padding:8px;">
+    <legend style="font-weight:700; letter-spacing:.2px; padding:0 4px;">
+      {{localize "pf2e-threat-tracker.threatConfig.appearance"}}
+    </legend>
+
+    <div class="pv-form-row" style="margin-bottom:10px; padding:6px 0; border-bottom:1px solid #6868684d;">
+      <label>{{localize "pf2e-threat-tracker.Settings.panelTheme.name"}}</label>
+      <div class="notes" style="opacity:.8;">{{localize "pf2e-threat-tracker.Settings.panelTheme.hint"}}</div>
+      <select name="settings.panelTheme">
+        <option value="dark"  {{#if (eq panelTheme "dark")}}selected{{/if}}>{{localize "pf2e-threat-tracker.Settings.panelTheme.dark"}}</option>
+        <option value="glass"  {{#if (eq panelTheme "glass")}}selected{{/if}}>{{localize "pf2e-threat-tracker.Settings.panelTheme.glass"}}</option>
+        <option value="parchment" {{#if (eq panelTheme "parchment")}}selected{{/if}}>{{localize "pf2e-threat-tracker.Settings.panelTheme.parchment"}}</option>
+        <option value="blueNeon" {{#if (eq panelTheme "blueNeon")}}selected{{/if}}>{{localize "pf2e-threat-tracker.Settings.panelTheme.blueNeon"}}</option>
+      </select>
+    </div>
+
+    <div class="pv-form-row" style="margin-bottom:10px; padding:6px 0; border-bottom:1px solid #6868684d;">
+      <label>{{localize "pf2e-threat-tracker.Settings.panelOpacity.name"}}</label>
+      <div class="notes" style="opacity:.8;">{{localize "pf2e-threat-tracker.Settings.panelOpacity.hint"}}</div>
+      <input type="range" name="settings.panelOpacity" min="0.3" max="1" step="0.1" value="{{panelOpacity}}" style="width:100%;">
+    </div>
+  </fieldset>
+{{/if}}
+
+  {{!-- Footer normal: Guardar / Cerrar --}}
+  <footer style="flex:0 0 auto; display:flex; gap:8px; justify-content:center;
+                 border-top:1px solid var(--color-border-light-primary);
+                 padding:10px; background:var(--color-bg-primary); z-index:2;">
+    <button type="button" data-action="submit" class="pf2e-threat-save">{{localize "Save"}}</button>
+    <button type="button" data-action="closeApp">{{localize "Close"}}</button>
+  </footer>
+</form>
