@@ -2,7 +2,7 @@
 
 # [1.0.0] - 2025-8-XX
 
-# 🚀 Main changes
+## 🚀 Main changes
 
 * **Complete module restructuring**: the code has been reorganized into folders (`scripts/`, `logic/`, `ui/`, `data/`), improving maintainability and facilitating future expansions.
 * **New configuration system**: there is now a dedicated options menu within Foundry to enable, disable, and customize the threat tracker's behavior.
@@ -13,7 +13,7 @@
   * Better aesthetic integration thanks to the new `threat-panel.css` file.
 * **New preset system**: added a sample file (`MMO-preset.json`) to load predefined threat configurations (WIP).
 
-# 🎮 User experience
+## 🎮 User experience
 
 * **More intuitive interface**:
 
@@ -25,7 +25,7 @@
 * **Improved visual feedback**: the panel displays threat values more clearly, with icons and visual indicators.
 * **Expanded translations**: Spanish and English text strings were reorganized and dozens of new entries were added.
 
-# ⚙️ Internal changes (explained simply)
+## ⚙️ Internal changes (explained simply)
 
 * **Before**: a single large file (`script.js`) contained all the logic.
 * **Now**:
@@ -37,7 +37,7 @@
 
 This makes bugs easier to locate and future development faster.
 
-# 🛠️ Fixes and improvements
+## 🛠️ Fixes and improvements
 
 * Fixed localization issues that prevented the use of `game.i18n.localize` when exporting data.
 * Removed old configuration files (`action-threats.json`, `effects-threats.json`, `trait-threat.json`, `trait-vulnerability.json`) that were rigidly defined: now everything is managed from interactive menus.
