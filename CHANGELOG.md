@@ -24,7 +24,7 @@
   * Revised and expanded English and Spanish localization.
 * **Improved visual feedback**: the panel displays threat values more clearly, with icons and visual indicators.
 
-## ⚙️ Internal changes (explained simply)
+## ⚙️ Internal changes
 
 * **Before**: a single large file (`script.js`) contained all the logic.
 * **Now**:
@@ -38,7 +38,7 @@ This makes bugs easier to locate and future development faster.
 
 ## 🛠️ Fixes and improvements
 
-* Fixed localization issues that prevented the use of `game.i18n.localize` when exporting data.
+* Fixed localization issues.
 * Removed old configuration files (`action-threats.json`, `effects-threats.json`, `trait-threat.json`, `trait-vulnerability.json`) that were rigidly defined: now everything is managed from interactive menus.
 * Optimized threat loading to make the system faster and more stable.
 
