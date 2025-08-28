@@ -1,5 +1,57 @@
 # CHANGELOG
 
+# [1.0.0] - 2025-8-XX
+
+# 🚀 Main changes
+
+* **Complete module restructuring**: the code has been reorganized into folders (`scripts/`, `logic/`, `ui/`, `data/`), improving maintainability and facilitating future expansions.
+* **New configuration system**: there is now a dedicated options menu within Foundry to enable, disable, and customize the threat tracker's behavior.
+* **Improved floating panel**:
+
+* It can now be moved freely around the screen.
+  * Includes visual themes (dark, light, etc.) and opacity adjustment.
+  * Better aesthetic integration thanks to the new `threat-panel.css` file.
+* **New preset system**: added a sample file (`MMO-preset.json`) to load predefined threat configurations (WIP).
+
+# 🎮 User experience
+
+* **More intuitive interface**:
+
+  * New menus:
+
+    * **Advanced settings menu** (settings-menu.hbs).
+    * **Custom threat menu** with quick options.
+  * Revised and expanded English and Spanish texts.
+* **Improved visual feedback**: the panel displays threat values more clearly, with icons and visual indicators.
+* **Expanded translations**: Spanish and English text strings were reorganized and dozens of new entries were added.
+
+# ⚙️ Internal changes (explained simply)
+
+* **Before**: a single large file (`script.js`) contained all the logic.
+* **Now**:
+
+* `logic/` → threat calculations and utilities.
+  * `ui/` → menus and graphical interfaces.
+  * `settings.js` → defines all customizable options.
+  * `addons/` → optional compatibility (e.g., integration with *Sequencer*).
+
+This makes bugs easier to locate and future development faster.
+
+# 🛠️ Fixes and improvements
+
+* Fixed localization issues that prevented the use of `game.i18n.localize` when exporting data.
+* Removed old configuration files (`action-threats.json`, `effects-threats.json`, `trait-threat.json`, `trait-vulnerability.json`) that were rigidly defined: now everything is managed from interactive menus.
+* Optimized threat loading to make the system faster and more stable.
+
+---
+
+# ✅ TL;DR
+
+* The module is now easier to use: movable, configurable floating panel with improved design.
+* New menus to change threat rules without manually editing files.
+* Major code refactoring.
+* Old JSON files removed and replaced with presets and dynamic menus.
+ 
 ## [Beta5.1.1] - 2025-8-15
 
 * Update compatibility with [Cleaner Sheet Title Bar](https://github.com/MiahNelah/cleaner-sheet-title-bar) module
