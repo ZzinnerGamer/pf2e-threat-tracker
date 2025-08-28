@@ -21,7 +21,7 @@
 
     * **Advanced settings menu** (settings-menu.hbs).
     * **Custom threat menu** with quick options.
-  * Revised and expanded English and Spanish texts.
+  * Revised and expanded English and Spanish localization.
 * **Improved visual feedback**: the panel displays threat values more clearly, with icons and visual indicators.
 * **Expanded translations**: Spanish and English text strings were reorganized and dozens of new entries were added.
 
