@@ -98,7 +98,7 @@ Hooks.on("preCreateItem", (itemData, options, userId) => {
 
 
 Hooks.on("createItem", (item, options, userId) => {
-  if (!game.settings.get(MODULE, 'enableThreatFromEffectsConditions')) return;
+  if (!game.settings.get(MODULE, 'enableThreatFromEffects')) return;
 
   const chatMessage = options?.chatMessage ?? null; // captura si viene
   console.log("Hook createItem:", { item: item.name, userId, chatMessage });
