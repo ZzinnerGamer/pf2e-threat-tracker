@@ -220,9 +220,15 @@ game.settings.register(MODULE, 'panelTheme', {
   config: false,
   type: String,
   choices: {
+    blueNeon: "pf2e-threat-tracker.Settings.panelTheme.blueNeon",
+    redNeon: "pf2e-threat-tracker.Settings.panelTheme.redNeon",
     dark: "pf2e-threat-tracker.Settings.panelTheme.dark",
-    parchment: "pf2e-threat-tracker.Settings.panelTheme.parchment",
-    blueNeon: "pf2e-threat-tracker.Settings.panelTheme.blueNeon"
+    darkGeoBlack: "pf2e-threat-tracker.Settings.panelTheme.darkGeoBlack",
+    darkGeoWhite: "pf2e-threat-tracker.Settings.panelTheme.darkGeoWhite",
+    fargo: "pf2e-threat-tracker.Settings.panelTheme.fargo",
+    sciFiBlue: "pf2e-threat-tracker.Settings.panelTheme.sciFiBlue",
+    sciFiRed: "pf2e-threat-tracker.Settings.panelTheme.sciFiRed",
+    white: "pf2e-threat-tracker.Settings.panelTheme.white"
   },
   default: 'dark',
         onChange: () => {
