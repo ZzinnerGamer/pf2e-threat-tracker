@@ -102,3 +102,6 @@ Go to **Settings → Module Settings → PF2e Threat Tracker** to adjust:
 
 Contributions and feedback are welcome!  
 Feel free to open issues or pull requests via GitHub.
+
+## Disclaimer
+I am not a JS developer, neither an knowledged person about it, AI was used in the creation of this module just because I lack of the knowledge of how coding works and I learned a lot with the creation of this module. I hope you understand and appreciate every module developer for their ability to do such incredible things day after day.
