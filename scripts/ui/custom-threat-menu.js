@@ -354,7 +354,7 @@ async function openActorThreatDialog(actor) {
     content += `</div></form>`;
 
     new foundry.applications.api.DialogV2({
-        window: { title: game.i18n.localize("pf2e-threat-tracker.actorThreatConfig.title") },
+        window: { title: game.i18n.localize("pf2e-threat-tracker.threatConfig.title") },
         content,
         buttons: [
             { action: "save", label: game.i18n.localize("pf2e-threat-tracker.threatConfig.save"), default: true },
@@ -390,7 +390,7 @@ async function openActorThreatDialog(actor) {
                 }
             }
 
-            ui.notifications.info(game.i18n.localize("pf2e-threat-tracker.actorThreatConfig.saved"));
+            ui.notifications.info(game.i18n.localize("pf2e-threat-tracker.threatConfig.saved"));
         }
     }).render({ force: true });
 }
