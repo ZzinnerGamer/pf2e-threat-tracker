@@ -111,17 +111,50 @@
     color: #fff;
     background: rgba(20,22,30,.88);
   }
-  #threat-tracker-panel.parchment {
-    color: #2a1e14;
-    background: #f0e6d6 url('../assets/panel/parchment.jpg') center/cover no-repeat;
-    border-color: rgba(42,30,20,0.25);
+
+    #threat-tracker-panel.white {
+    color: #000000;
+    background: rgba(182, 182, 182, 0.88);
+  }    
+  #threat-tracker-panel.white .tt-bar {
+    background: linear-gradient(90deg, rgba(107, 0, 0, 0.9), rgba(255, 0, 0, 0.9));
   }
-    
-  #threat-tracker-panel.darkGeo {
-    color: #4b2c14ff;
-    background: #524228ff url('../assets/panel/noir.jpg') center/cover no-repeat;
-    border-color: rgba(82, 40, 6, 0.25);
-  }
+
+  #threat-tracker-panel.fargo {
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+    color: rgb(255, 255, 255);
+    background: url('../assets/panel/fargo.png') center/100% 100% no-repeat;
+    background-color: rgba(0, 0, 0, 0);
+    border-color: rgb(186, 138, 104);
+  }    
+#threat-tracker-panel.fargo .tt-bar-wrap {
+  background: url('../assets/bars/fargoBG.png') center/cover no-repeat;
+}
+#threat-tracker-panel.fargo .tt-bar {
+  background: url('../assets/bars/fargoFG.png') left center no-repeat;
+  background-size: auto 51%;
+}
+
+  #threat-tracker-panel.darkGeoBlack {
+    color: rgb(255, 255, 255);
+    background:  #161312 url('../assets/panel/darkGeoBlack.png') center/cover no-repeat;
+    border-color: #1a1614;
+  }        
+  #threat-tracker-panel.darkGeoBlack .tt-bar {
+    background: linear-gradient(90deg, #614c1e, #b16a00);
+  } 
+
+  #threat-tracker-panel.darkGeoWhite {
+    color: rgb(255, 255, 255);
+    background:  url('../assets/panel/darkGeoWhite.png') center/cover no-repeat;
+    border-color: #64605e;
+  }        
+  #threat-tracker-panel.darkGeoWhite .tt-bar {
+    background: linear-gradient(90deg, #222222, #b6b6b6);
+  } 
+
   #threat-tracker-panel.blueNeon {
     color: #e8f7ff;
     background: rgba(10,12,26,.9);
@@ -131,3 +164,43 @@
   #threat-tracker-panel.blueNeon .tt-bar {
     background: linear-gradient(90deg, rgba(0,255,200,.9), rgba(0,120,255,.9));
   }
+
+  #threat-tracker-panel.redNeon {
+    color: #e8f7ff;
+    background: rgba(26, 10, 10, 0.9);
+    border-color: rgba(255, 0, 0, 0.25);
+    box-shadow: 0 0 18px rgba(255, 0, 0, 0.25);
+  }
+  #threat-tracker-panel.redNeon .tt-bar {
+    background: linear-gradient(90deg, rgba(255, 0, 106, 0.9), rgba(255, 0, 0, 0.9));
+  }
+
+#threat-tracker-panel.sciFiBlue {
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+  background: url('../assets/panel/sciFiBlue.png') center/100% 100% no-repeat;
+  background-color: rgba(0, 0, 0, 0);
+}
+
+#threat-tracker-panel.sciFiBlue .tt-bar-wrap {
+  background: url('../assets/bars/sciFiblueBG.png') center/cover no-repeat;
+}
+#threat-tracker-panel.sciFiBlue .tt-bar {
+  background: url('../assets/bars/sciFiblueFG.png') center/cover no-repeat;
+}
+
+#threat-tracker-panel.sciFiRed {
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+  background: url('../assets/panel/sciFiRed.png') center/100% 100% no-repeat;
+  background-color: rgba(0, 0, 0, 0);
+}
+
+#threat-tracker-panel.sciFiRed .tt-bar-wrap {
+  background: url('../assets/bars/sciFiRedBG.png') center/cover no-repeat;
+}
+#threat-tracker-panel.sciFiRed .tt-bar {
+  background: url('../assets/bars/sciFiRedFG.png') center/cover no-repeat;
+}
