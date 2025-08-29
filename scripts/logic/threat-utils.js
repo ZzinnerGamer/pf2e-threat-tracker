@@ -113,85 +113,12 @@ export function getThreatModifierIDR(enemy, params = {}) {
     return Math.max(multiplier, 0);
 }
 
-
-
-export async function applyThreatToEnemies(responsibleToken, baseThreat, traits = []) {
-    if (!game.user.isGM) return;
-    for (const enemy of canvas.tokens.placeables) {
-        if (!enemy.inCombat)
-            continue;
-        if (enemy.document.disposition === responsibleToken.document.disposition)
-            continue;
-        if (enemy.actor.hasPlayerOwner)
-            continue;
-        if (!Array.isArray(traits)) {
-            traits = traits != null ? [traits] : [];
-        }
-
-        traits = traits.map(t => t.toLowerCase());
-
-        const idrMult = getThreatModifierIDR(enemy, {
-            traits: context.traits || [],
-            slug: actionSlug,
-            damageType: context.damageType || ""
-        });
-        const finalThreat = Math.round(threatGlobal * idrMult);
-
-
-        if (finalThreat > 0) {
-            console.log(`[${MODULE}] Aplicando ${finalThreat} amenaza a ${enemy.name} (mod=${modifier})`);
-            await _applyThreat(enemy, responsibleToken.id, responsibleToken.name, finalThreat);
-        } else {
-            console.log(`[${MODULE}] ${enemy.name} es inmune a la amenaza (${traits.join(", ")})`);
-        }
-    }
-
-    _updateFloatingPanel();
-}
-
-function getVulnerabilityMultiplier(enemy, traits) {
-    const types = enemy?.actor?.system?.traits?.value ?? [];
-    let multiplier = 1;
-
-    for (const type of types) {
-        const vulnData = globalThis.TRAIT_VULNERABILITY?.[type.toLowerCase()];
-        if (!vulnData?.weakness)
-            continue;
-
-        for (const trait of traits) {
-            const traitMult = vulnData.weakness[trait.toLowerCase()];
-            if (traitMult && traitMult !== 1) {
-                multiplier *= traitMult;
-            }
-        }
-    }
-
-    return multiplier;
-}
-
 export function getEnemyTokens(responsibleToken, excludeIds = []) {
     return canvas.tokens.placeables.filter(t =>
         t.inCombat &&
         t.document.disposition !== responsibleToken.document.disposition &&
         !t.actor.hasPlayerOwner &&
         !excludeIds.includes(t.id));
-}
-
-// INMUNIDAD DE TRAITS
-
-function isImmuneToThreat(enemy, actionTraits) {
-    if (!enemy?.actor)
-        return false;
-    const enemyTypes = enemy.actor.system.traits?.value ?? [];
-    for (const type of enemyTypes) {
-        const vulnData = globalThis.TRAIT_VULNERABILITY[type.toLowerCase()];
-        if (!vulnData?.immunityTo)
-            continue;
-        if (vulnData.immunityTo.some(immuneTrait => actionTraits.includes(immuneTrait.toLowerCase()))) {
-            return true;
-        }
-    }
-    return false;
 }
 
 // OBTENER PUNTOS DE GOLPE Y ATACANTE RESPONSABLE
