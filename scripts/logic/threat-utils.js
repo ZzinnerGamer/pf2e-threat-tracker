@@ -362,9 +362,10 @@ if (!panel) {
   }
 
   // Aplicar tema/opacidad (por si cambian en runtime)
-  panel.classList.remove('dark','parchment','blueNeon');
+  panel.classList.remove('dark','parchment','blueNeon', 'fargo', 'darkGeoBlack', 'darkGeoWhite');
   panel.classList.add(themeClass);
   panel.style.opacity = String(panelOpacity);
+  panel.style.setProperty('--p', `${progress}%`);
 
   // Minimizado persistente
   const bodyEl = panel.querySelector('.tt-body');
