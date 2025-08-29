@@ -17,9 +17,6 @@
 - **Distance-Based Threat Modifiers**  
   Scale down threat based on how far the attacker is from the enemy (relative to their speed).
 
-- **Trait & Vulnerability Configuration** *(WIP)*  
-  Configure trait-based multipliers and vulnerabilities through a GUI. For example, if an enemy is vulnerable to fire, attacks with the `fire` trait will generate more threat. These settings dynamically affect threat calculation.
-
 - **Sequencer Visual Effects** *(Optional)*  
   If the [Sequencer](https://github.com/fantasycalendar/FoundryVTT-Sequencer) module is installed, PF2e Threat Tracker can trigger animations or effects on tokens when threat changes or thresholds are reached.  
   Example: a glowing effect when a new top-threat character overtakes another.
@@ -47,13 +44,10 @@ https://github.com/user-attachments/assets/ade84f2f-05df-4f72-bd0c-2159dfe89607
 ## ⚔️ Usage
 
 - **Opening the Threat Panel**  
-  The Threat Tracker panel opens automatically at the start of combat. It can also be toggled manually if needed (this is planned but not available now).
+  The Threat Tracker panel opens automatically at the start of combat. It can also be toggled manually if needed (this is planned but not available now) (V1.0 Note I FORGOT ABOUT THIS).
 
 - **Monitoring Threat**  
   During combat, any time a PC or allied token deals damage, heals, or uses a defined taunt or ability, their threat value increases against the relevant enemy. The panel displays the **top 3 threat-holders** per enemy so the GM knows who is most likely to be targeted.
-
-- **Configuring Traits & Vulnerabilities** *(WIP)*  
-  Open the trait configuration menu from the module settings or use the button in the floating panel. You can search traits and modify threat multipliers dynamically (e.g. "fire" attacks do ×1.5 threat to creatures with the `plant` trait).
 
 - **Sequencer Effects**  
   If Sequencer is available, the module will play a brief visual effect when threat is generated or when the top-threat character changes. These effects can be enabled/disabled in the module settings.
@@ -64,59 +58,35 @@ https://github.com/user-attachments/assets/ade84f2f-05df-4f72-bd0c-2159dfe89607
 
 Go to **Settings → Module Settings → PF2e Threat Tracker** to adjust:
 
-1. **Trait / Vulnerability Editor**  *(Not yet fully implemented)*
-   Opens a GUI to configure threat multipliers per trait and weaknesses per trait tag.
+1. **Threat Tracker Editor**
+   Opens a GUI to configure threat multipliers per action type (Attacks, Spells, Skills).
 
-3. **Panel Options**  *(Not yet fully implemented)*
-   Control the position. Panel size and number of top entries shown on the threat panel is WIP.
+2. **Custom Threat per Skill Action and/or Actor Actions**
 
-4. **Sequencer Integration**
+3. **Custom Threat from Effects (Self, to enemies or both)**
+
+4. **Threat Presets**
+   (For those lazy ones!)
+
+6. **Threat Tracker Appareance**
+   Control the position, opacity and theme of the threat tracker.
+
+7. **Sequencer Integration**
    Toggle on/off the use of Sequencer visual effects.
-
-6. **Logging & Thresholds**  (Not yet fully implemented)
-   Set thresholds or verbosity for when effects or logs are triggered.
 
 ---
 
-## 🛠️ Roadmap
-
-### ✅ Partially Implemented
-
-- **Trait Multipliers (basic)**  
-  Trait-based threat scaling is supported, but coverage and logic will expand.
-
-- **Vulnerability Settings**  
-  Creatures can be weak or resistant to specific traits. More nuanced logic (e.g. stacking or resistance negation) is in development.
-
 ### 🔧 In Progress
 
-- **Improved Trait Editor UI**  
-  Enhance layout, usability, and trait grouping.
-
-- **Threat Panel Styling**  
-  Improve responsiveness and allow theme/custom color support.
-
-- **Accessibility Options**  
-  Add hotkeys and UI affordances for faster toggling or panel movement.
+- **Themes!!! more themes!!!!!**
+- **Various Threat Templates in mind**
 
 ### 💡 Future Ideas
 
 - **Extra VFX Options**  
   Use Sequencer to flash icons or mark the top-threat character more clearly.
 
-- **More Threat Triggers**  
-  Expand beyond damage/healing to include auras, saves, special actions, etc.
-
-- **Threat Table Styles**
-  Maybe a menu like FFXIV where all the combat participants shows up in the table ([like this old module](https://foundryvtt.com/packages/mmo-hud)) and if enemy token is selected shows bars of who is having the attention on below a minitoken image/name text.
-  Image from [this reddit post](https://www.reddit.com/r/ffxiv/comments/zg72ta/til_that_if_your_current_health_is_less_than_your)
-  <img width="268" height="380" alt="image" src="https://github.com/user-attachments/assets/817fbed5-0595-4592-a864-2308ca83d0dc" />
-
 ---
-
-### Known Issues
-
-- I need to delete weapon traits from the documents, now weapons are overtuned due to this XD
 
 ### Credits
 
@@ -125,6 +95,7 @@ Go to **Settings → Module Settings → PF2e Threat Tracker** to adjust:
 - TheJoester for almost making me cry
 - The whole pathfinder community ♥
 - Foundry Team for making me use its program since v9 (2021 lmao)
+- Assets from GameDevMarket (Fargo theme from Ispolin, Sci-Fi theme from Ultra-Knight, Dark Geo theme from layerlabgames)
 
 ## 🙌 Contributing
 
