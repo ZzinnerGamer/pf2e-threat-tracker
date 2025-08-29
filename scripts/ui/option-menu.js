@@ -7,11 +7,11 @@ const SETTINGS_GROUPS = {
   ],
   Threat: [
     'baseAttackThreat', 'attackThreatMode', 'baseSpellThreat',
-    'threatPerSpellRank', 'baseHealThreat', 'skillBase', 'skillCritBonus'
+    'threatPerSpellRank', 'baseHealThreat', 'skillBase', 'skillCritBonus', 'enableThreatFromEffects'
   ],
-  Other: [ 'enableThreatPanel', 'topThreatEffect', 'enableTopThreatEffect', 'enableThreatFromEffects'
+  Sequencer: [ 'topThreatEffect', 'enableTopThreatEffect'
   ],
-  Appearance: [ 'panelTheme", "panelOpacity' ]
+  Appearance: [ 'enableThreatPanel', 'panelTheme', 'panelOpacity' ]
 };
 
 let currentThreatConfigApp = null;
@@ -52,14 +52,14 @@ export class ThreatConfigApp extends foundry.applications.api.ApplicationV2 {
     const categories = [
       { key: 'General',   title: game.i18n.localize("pf2e-threat-tracker.threatConfig.general"),        active: this.activeGroupKey === 'General' },
       { key: 'Threat',    title: game.i18n.localize("pf2e-threat-tracker.threatConfig.threat"),         active: this.activeGroupKey === 'Threat' },
-      { key: 'Other',     title: game.i18n.localize("pf2e-threat-tracker.threatConfig.other"),          active: this.activeGroupKey === 'Other' },
+      { key: 'Sequencer',     title: game.i18n.localize("pf2e-threat-tracker.threatConfig.sequencer"),          active: this.activeGroupKey === 'Sequencer' },
       { key: 'Custom',    title: game.i18n.localize("pf2e-threat-tracker.threatConfig.customThreat"),   active: this.activeGroupKey === 'Custom' },
       { key: 'Templates', title: game.i18n.localize("pf2e-threat-tracker.threatConfig.threatPresets"),  active: this.activeGroupKey === 'Templates' },
       { key: 'Appearance', title: game.i18n.localize("pf2e-threat-tracker.threatConfig.appearance"),    active: this.activeGroupKey === 'Appearance' }
     ];
 
     const groups = [];
-    if (['General', 'Threat', 'Other', 'Appareance'].includes(this.activeGroupKey)) {
+    if (['General', 'Threat', 'Sequencer', 'Appareance'].includes(this.activeGroupKey)) {
       const activeKeys = SETTINGS_GROUPS[this.activeGroupKey] || [];
       const items = this._buildSettingsItems(activeKeys);
       groups.push({ title: this.activeGroupKey, items });
@@ -67,7 +67,10 @@ export class ThreatConfigApp extends foundry.applications.api.ApplicationV2 {
 
     const effectExcludedPacks = game.settings.get(MODULE, 'effectExcludedPacks') || '';
 
-    return { categories, groups, activeGroupKey: this.activeGroupKey, effectExcludedPacks };
+    const panelTheme   = game.settings.get(MODULE, 'panelTheme')   ?? 'dark';
+    const panelOpacity = game.settings.get(MODULE, 'panelOpacity') ?? 1;
+
+    return { categories, groups, activeGroupKey: this.activeGroupKey, effectExcludedPacks, panelTheme, panelOpacity };
   }
 
   _buildSettingsItems(keys) {
