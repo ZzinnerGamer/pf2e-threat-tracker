@@ -21,7 +21,7 @@
        style="flex:1 1 auto; overflow:auto; padding:10px 6px 12px 10px; position:relative;">
 
     {{!-- Sección dinámica para las 3 primeras pestañas --}}
-    {{#if (or (eq activeGroupKey "General") (eq activeGroupKey "Threat") (eq activeGroupKey "Other"))}}
+    {{#if (or (eq activeGroupKey "General") (eq activeGroupKey "Threat") (eq activeGroupKey "Sequencer"))}}
       {{#each groups as |group|}}
         <fieldset style="margin-top:10px; border-radius:8px; padding:8px;">
           <legend style="font-weight:700; letter-spacing:.2px; padding:0 4px;">{{group.title}}</legend>
@@ -86,7 +86,7 @@
         <input type="text"
                name="settings.effectExcludedPacks"
                value="{{effectExcludedPacks}}"
-               placeholder="Divine Intercessions, Pathfinder Society Boons, Bestiary Effects, Campaign Effects, Kingmaker Features, otherModule">
+               placeholder="Divine Intercessions, Pathfinder Society Boons, Bestiary Effects, Campaign Effects, Kingmaker Features, otherCompendium">
     </div>
   </fieldset>
 {{/if}}
@@ -129,16 +129,28 @@
       <div class="notes" style="opacity:.8;">{{localize "pf2e-threat-tracker.Settings.panelTheme.hint"}}</div>
       <select name="settings.panelTheme">
         <option value="dark"  {{#if (eq panelTheme "dark")}}selected{{/if}}>{{localize "pf2e-threat-tracker.Settings.panelTheme.dark"}}</option>
-        <option value="glass"  {{#if (eq panelTheme "glass")}}selected{{/if}}>{{localize "pf2e-threat-tracker.Settings.panelTheme.glass"}}</option>
-        <option value="parchment" {{#if (eq panelTheme "parchment")}}selected{{/if}}>{{localize "pf2e-threat-tracker.Settings.panelTheme.parchment"}}</option>
+        <option value="white" {{#if (eq panelTheme "white")}}selected{{/if}}>{{localize "pf2e-threat-tracker.Settings.panelTheme.white"}}</option>
         <option value="blueNeon" {{#if (eq panelTheme "blueNeon")}}selected{{/if}}>{{localize "pf2e-threat-tracker.Settings.panelTheme.blueNeon"}}</option>
+        <option value="redNeon" {{#if (eq panelTheme "redNeon")}}selected{{/if}}>{{localize "pf2e-threat-tracker.Settings.panelTheme.redNeon"}}</option>
+        <option value="darkGeoBlack"  {{#if (eq panelTheme "darkGeoBlack")}}selected{{/if}}>{{localize "pf2e-threat-tracker.Settings.panelTheme.darkGeoBlack"}}</option>
+        <option value="darkGeoWhite"  {{#if (eq panelTheme "darkGeoWhite")}}selected{{/if}}>{{localize "pf2e-threat-tracker.Settings.panelTheme.darkGeoWhite"}}</option>
+        <option value="fargo" {{#if (eq panelTheme "fargo")}}selected{{/if}}>{{localize "pf2e-threat-tracker.Settings.panelTheme.fargo"}}</option>
+        <option value="sciFiBlue" {{#if (eq panelTheme "sciFiBlue")}}selected{{/if}}>{{localize "pf2e-threat-tracker.Settings.panelTheme.sciFiBlue"}}</option>
+        <option value="sciFiRed" {{#if (eq panelTheme "sciFiRed")}}selected{{/if}}>{{localize "pf2e-threat-tracker.Settings.panelTheme.sciFiRed"}}</option>
       </select>
     </div>
 
     <div class="pv-form-row" style="margin-bottom:10px; padding:6px 0; border-bottom:1px solid #6868684d;">
-      <label>{{localize "pf2e-threat-tracker.Settings.panelOpacity.name"}}</label>
-      <div class="notes" style="opacity:.8;">{{localize "pf2e-threat-tracker.Settings.panelOpacity.hint"}}</div>
-      <input type="range" name="settings.panelOpacity" min="0.3" max="1" step="0.1" value="{{panelOpacity}}" style="width:100%;">
+    <label>{{localize "pf2e-threat-tracker.Settings.panelOpacity.name"}}</label>
+    <div class="notes" style="opacity:.8;">{{localize "pf2e-threat-tracker.Settings.panelOpacity.hint"}}</div>
+
+    <div style="display:flex; align-items:center; gap:8px;">
+        <span style="flex:0 0 auto; font-size:12px; opacity:.7;">0.5</span>
+        <input type="range" name="settings.panelOpacity"
+            min="0.5" max="1" step="0.1" value="{{panelOpacity}}"
+            style="flex:1 1 auto;">
+        <span style="flex:0 0 auto; font-size:12px; opacity:.7;">1</span>
+    </div>
     </div>
   </fieldset>
 {{/if}}
