@@ -1,7 +1,6 @@
 {
   "pf2e-threat-tracker.SkillActions": "Skill Actions",
   "pf2e-threat-tracker.config.save": "Save",
-  "pf2e-threat-tracker.config.traits.label": "Trait Threats",
   "pf2e-threat-tracker.threatConfig.attackValue": "Attack Value",
   "pf2e-threat-tracker.threatConfig.actorSelect": "Select Actor",
   "pf2e-threat-tracker.threatConfig.actorsNotFound": "Actors not Found",
@@ -49,9 +48,6 @@
   "pf2e-threat-tracker.threatConfig.presetApplied": "Preset applied succesfully",
   "pf2e-threat-tracker.notifications.enableThreatPanel.updated": "Scene reload required to apply changes",
   "pf2e-threat-tracker.notifications.presetNotFound": "${presetPath} not found.",
-  "pf2e-threat-tracker.notifications.traitThreats.updated": "Trait Threats updated",
-  "pf2e-threat-tracker.notifications.traitVulnerabilities.invalid": "Invalid JSON in Trait Vulnerabilities.",
-  "pf2e-threat-tracker.notifications.traitVulnerabilities.updated": "Trait Vulnerabilities updated.",
   "pf2e-threat-tracker.notifications.threatPanelStyle.noCombat": "In order to see if the threat panel theme had effect, enter on combat, if you are already on combat, close it and open again.",
   "pf2e-threat-tracker.settings.attackThreatMode.hint": "Attacks reduce threat instead of applying it",
   "pf2e-threat-tracker.settings.attackThreatMode.name": "Reverse Attack Threat Mode",
@@ -79,8 +75,6 @@
   "pf2e-threat-tracker.settings.threatPerSpellRank.name": "Base Threat per Spell Rank",
   "pf2e-threat-tracker.settings.topThreatEffect.hint": "Path of the visual asset that will be displayed on the target with the most threat (recommended JB2A)",
   "pf2e-threat-tracker.settings.topThreatEffect.name": "Visual Effect for Top Threat (Requires Sequencer)",
-  "pf2e-threat-tracker.settings.traitVulnerabilities.hint": "Adds a multiplier to vulnerabilities by traits based on lore about Golarion",
-  "pf2e-threat-tracker.settings.traitVulnerabilities.name": "Lore Wise Vulnerabilities (Needs to be revamped, it does not work for now)",
   "pf2e-threat-tracker.settings.xFactor.hint": "Horizontal offset of the threat panel (in pixels)",
   "pf2e-threat-tracker.settings.xFactor.name": "Initial X Position of Panel",
   "pf2e-threat-tracker.settings.yFactor.hint": "Vertical offset of the threat panel (in pixels)",
@@ -102,6 +96,5 @@
   "pf2e-threat-tracker.Settings.panelTheme.darkGeoWhite": "Neo Geo White",
   "pf2e-threat-tracker.Settings.panelTheme.fargo": "Fargo",
   "pf2e-threat-tracker.Settings.panelTheme.sciFiBlue": "Sci-Fi Blue",
-  "pf2e-threat-tracker.Settings.panelTheme.sciFiRed": "Sci-Fi Red"
-  
+  "pf2e-threat-tracker.Settings.panelTheme.sciFiRed": "Sci-Fi Red"  
 }
