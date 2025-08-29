@@ -1,4 +1,4 @@
-import { getUserTargets, storePreHP, getEnemyTokens, getDistanceThreatMultiplier, getThreatModifierIDR, _applyThreat, applyThreatToEnemies, _updateFloatingPanel } from "../logic/threat-utils.js";
+import { getUserTargets, storePreHP, getEnemyTokens, getDistanceThreatMultiplier, getThreatModifierIDR, _applyThreat, _updateFloatingPanel } from "../logic/threat-utils.js";
 
 const MODULE = 'pf2e-threat-tracker';
 const hasSkillCheck = new Set(["seek,", "sense-motive", "balance", "maneuver-in-flight", "squeeze", "tumble-through", "identify-magic", "recall-knowledge", "climb", "disarm", "force-open", "grapple", "high-jump", "long-jump", "reposition", "shove", "swim", "trip", "create-a-diversion", "feint", "request", "demoralize", "administer-first-aid", "treat-poison", "command-an-animal", "perform", "hide", "sneak", "disable-device", "palm-an-object", "pick-a-lock", "steal"]);
@@ -520,7 +520,7 @@ Hooks.on('createChatMessage', async(msg) => {
                 logBlock += ` └─ Amenaza de Curación Final: +${amount}\n`;
 
                 console.log(logBlock);
-                await applyThreatToEnemies(enemy, responsibleToken.id, responsibleToken.name, amount);
+                await _applyThreat(enemy, responsibleToken.id, responsibleToken.name, amount);
             }
             _updateFloatingPanel();
         }
