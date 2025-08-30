@@ -1,8 +1,12 @@
 const MODULE = 'pf2e-threat-tracker';
 
-const L = (...a) => console.log(`[${MODULE}]`, ...a);
-const W = (...a) => console.warn(`[${MODULE}]`, ...a);
-const E = (...a) => console.error(`[${MODULE}]`, ...a);
+import { getLoggingMode } from "./logic/threat-utils.js";
+
+const log = {
+  all:  (...a) => { if (getLoggingMode() === 'all') console.log(...a); },
+  min:  (...a) => { const m = getLoggingMode(); if (m === 'minimal' || m === 'all') console.log(...a); },
+  warn: (...a) => { if (getLoggingMode() !== 'none') console.warn(...a); }
+};
 
 import { _updateFloatingPanel, handleThreatFromEffect } from "./threat-utils.js";
 
@@ -53,10 +57,10 @@ Hooks.on('combatTurn', async() => {
     if (!game.user.isGM) return;
     for (const token of canvas.tokens.placeables.filter(t => t.inCombat)) {
         await token.document.unsetFlag(MODULE, 'preHP');
-        console.log(`[${MODULE}] → unsetFlag preHP on ${token.name} (${token.id})`);
+        log.all(`[${MODULE}] → unsetFlag preHP on ${token.name} (${token.id})`);
         await token.document.unsetFlag(MODULE, 'attackThreat');
-        console.log(`[${MODULE}] → unsetFlag attackThreat on ${token.name} (${token.id})`);
-        console.log(`[${MODULE}] Flags limpiados para ${token.name}`);
+        log.all(`[${MODULE}] → unsetFlag attackThreat on ${token.name} (${token.id})`);
+        log.all(`[${MODULE}] Flags limpiados para ${token.name}`);
     }
     _updateFloatingPanel();
 });
@@ -79,7 +83,7 @@ Hooks.on('combatRound', async() => {
         for (const id of Object.keys(table)) {
             const oldValue = table[id].value;
             const newValue = Math.floor(avg + (oldValue - avg) * decayFactor);
-            console.log(
+            log.min(
                 `[${MODULE}] Reduciendo amenaza en ${tok.name} → ${table[id].name}:` + 
 ` ${oldValue} → ${newValue} (media ${Math.round(avg)})`);
             table[id].value = newValue;
@@ -92,8 +96,8 @@ Hooks.on('combatRound', async() => {
 });
 
 Hooks.on("preCreateItem", (itemData, options, userId) => {
-    console.log("preCreateItem:", itemData);
-    console.log("flags.origin:", itemData.system?.context?.origin);
+    log.all("preCreateItem:", itemData);
+    log.all("flags.origin:", itemData.system?.context?.origin);
 });
 
 
@@ -101,7 +105,7 @@ Hooks.on("createItem", (item, options, userId) => {
   if (!game.settings.get(MODULE, 'enableThreatFromEffects')) return;
 
   const chatMessage = options?.chatMessage ?? null; // captura si viene
-  console.log("Hook createItem:", { item: item.name, userId, chatMessage });
+  log.all("Hook createItem:", { item: item.name, userId, chatMessage });
 
   setTimeout(() => handleThreatFromEffect({ item, action: "create", userId, chatMessage }), 50);
 });
