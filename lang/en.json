@@ -15,7 +15,6 @@
   "pf2e-threat-tracker.threatConfig.general": "General",
   "pf2e-threat-tracker.threatConfig.globalThreatPerSkillAction": "Global Threat per Skill Action",
   "pf2e-threat-tracker.threatConfig.healValue": "Heal Value",
-  "pf2e-threat-tracker.threatConfig.sequencer": "Sequencer",
   "pf2e-threat-tracker.threatConfig.mode": "Mode",
   "pf2e-threat-tracker.threatConfig.modeApply": "Apply Threat",
   "pf2e-threat-tracker.threatConfig.modeReduce": "Reduce Threat",
@@ -148,3 +147,4 @@
   "pf2e-threat-tracker.logs.damage": "Damage:",
   "pf2e-threat-tracker.logs.massiveDamage": "Massive Damage Bonus:"
 }
+
