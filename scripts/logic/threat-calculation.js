@@ -4,7 +4,7 @@ const MODULE = 'pf2e-threat-tracker';
 const hasSkillCheck = new Set(["seek,", "sense-motive", "balance", "maneuver-in-flight", "squeeze", "tumble-through", "identify-magic", "recall-knowledge", "climb", "disarm", "force-open", "grapple", "high-jump", "long-jump", "reposition", "shove", "swim", "trip", "create-a-diversion", "feint", "request", "demoralize", "administer-first-aid", "treat-poison", "command-an-animal", "perform", "hide", "sneak", "disable-device", "palm-an-object", "pick-a-lock", "steal"]);
 const ATTACK_SKILLS = new Set(["disarm", "escape", "force-open", "grapple", "reposition", "shove", "trip"]);
 
-const loc = game.i18n.localize
+const loc = (k) => game?.i18n?.localize?.(k) ?? k;
 
 const log = {
   all:  (...a) => { if (getLoggingMode() === 'all') console.log(...a); },
@@ -709,3 +709,4 @@ if (isDamageTaken) {
 
 
 });
+
