@@ -99,13 +99,17 @@ Hooks.on('createChatMessage', async(msg) => {
             await storePreHP(enemy, null, responsibleToken, actionSlug);
         }
 
-        if (globalThis.ACTION_THREAT?.[actionSlug] !== undefined) {
+        if (actionSlug !== undefined) {
             const itemBase = Number(await item.getFlag(MODULE, "threatItemValue")) || 0;
             const itemMode = await item.getFlag(MODULE, "threatItemMode") || "apply";
             const settingsBase = Number(game.settings.get(MODULE, "skillBase")) || 0;
 
             const base = itemBase > 0 ? itemBase : settingsBase;
-            const bonus = globalThis.ACTION_THREAT[actionSlug];
+
+            const bonus =
+            Number(await item.getFlag(MODULE, "threatAttackValue")) ||
+            Number(await item.getFlag(MODULE, "threatDamageValue")) ||
+            0;
             const taunterLevel = responsibleToken.actor?.system?.details?.level?.value ?? 1;
             const levelAdjustment = taunterLevel * 0.1 + 1;
             let threatGlobal = (base + bonus) * levelAdjustment;
@@ -169,7 +173,7 @@ Hooks.on('createChatMessage', async(msg) => {
             if (!isNaN(spellRank)) {
                 const base = game.settings.get(MODULE, 'baseSpellThreat') || 0;
                 const threatPerRank = game.settings.get(MODULE, 'threatPerSpellRank') || 3;
-                const bonus = globalThis.ACTION_THREAT[spellSlug] || 0;
+                const bonus = Number(item.getFlag(MODULE, "threatAttackValue")) || 0;
                 const fixedRank = threatPerRank * 0.1;
                 const threatGlobal = (base + bonus) * fixedRank;
 
@@ -575,7 +579,16 @@ Hooks.on('createChatMessage', async(msg) => {
 
             const actionSlug = context?.options?.find(opt => opt.startsWith("item:slug:"))?.split(":")[2];
             if (actionSlug) {
-                const ab = globalThis.ACTION_THREAT[actionSlug] || 0;
+                let ab = 0;
+                if (item?.getFlag) {
+                ab =
+                    Number(item.getFlag(MODULE, "threatDamageValue")) ||
+                    Number(item.getFlag(MODULE, "threatAttackValue")) ||
+                    Number(item.getFlag(MODULE, "threatItemValue")) ||
+                    0;
+                const m = item.getFlag(MODULE, "threatItemMode") || "apply";
+                if (m === "reduce") ab = -Math.abs(ab);
+                }
                 if (ab)
                     threat += ab;
                 logBlock += ` ├─ Bonus por acción (${actionSlug}): +${ab}\n`;
