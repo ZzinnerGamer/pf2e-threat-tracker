@@ -179,19 +179,21 @@ function getHighestSpeed(actor) {
 }
 
 export function getDistanceThreatMultiplier(tokenTarget, tokenSource) {
-    const maxSpeed = getHighestSpeed(tokenTarget.actor);
-    const adjustedSpeed = Math.max(0, maxSpeed - 5);
-    const distance = canvas.grid.measureDistance(tokenSource, tokenTarget);
+  if (!canvas?.grid || !tokenSource?.center || !tokenTarget?.center) return 0.5;
+  const maxSpeed = getHighestSpeed(tokenTarget.actor);
+  const adjustedSpeed = Math.max(0, maxSpeed - 5);
+  
+  const p1 = tokenSource.center;
+  const p2 = tokenTarget.center;
 
-    if (distance <= 5)
-        return 1.0;
-    if (distance <= adjustedSpeed)
-        return 0.9;
-    if (distance <= adjustedSpeed * 2)
-        return 0.8;
-    if (distance <= adjustedSpeed * 3)
-        return 0.7;
-    return 0.5;
+  const result = canvas.grid.measurePath([p1, p2]);
+  const distance = result?.distance ?? Infinity;
+
+  if (distance <= 5) return 1.0;
+  if (distance <= adjustedSpeed) return 0.9;
+  if (distance <= adjustedSpeed * 2) return 0.8;
+  if (distance <= adjustedSpeed * 3) return 0.7;
+  return 0.5;
 }
 
 export async function _updateFloatingPanel() {
@@ -416,3 +418,4 @@ export async function handleThreatFromEffect({ item, action, userId }) {
   console.log(`[${MODULE}] handleThreatFromEffect finalizado.`);
   console.log(`[${MODULE}] --------------------`);
 }
+
