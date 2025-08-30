@@ -292,7 +292,6 @@ game.settings.register(MODULE, 'panelBgImage', {
 
 game.settings.register(MODULE, 'loggingMode', {
     name: game.i18n.localize("pf2e-threat-tracker.Settings.loggingMode.name"),
-    hint: game.i18n.localize("pf2e-threat-tracker.Settings.loggingMode.hint"),
     scope: 'client',
     config: true,
     type: String,
@@ -312,3 +311,4 @@ game.settings.register(MODULE, 'loggingMode', {
     });
 
 });
+
