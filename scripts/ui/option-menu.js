@@ -7,7 +7,7 @@ const SETTINGS_GROUPS = {
   ],
   Threat: [
     'baseAttackThreat', 'attackThreatMode', 'baseSpellThreat',
-    'threatPerSpellRank', 'baseHealThreat', 'skillBase', 'skillCritBonus', 'enableThreatFromEffects'
+    'threatPerSpellRank', 'baseHealThreat', 'skillBase', 'skillCritBonus', 'enableThreatFromEffects', 'enableIWR'
   ],
   Sequencer: [ 'topThreatEffect', 'enableTopThreatEffect'
   ],
@@ -709,4 +709,3 @@ Hooks.on("renderDialogV2", (dlg, html, data) => {
     if(searchButton) searchButton.addEventListener("click", applyFilter);
   }
 });
-
