@@ -52,7 +52,7 @@ export class ThreatConfigApp extends foundry.applications.api.ApplicationV2 {
     const categories = [
       { key: 'General',   title: game.i18n.localize("pf2e-threat-tracker.threatConfig.general"),        active: this.activeGroupKey === 'General' },
       { key: 'Threat',    title: game.i18n.localize("pf2e-threat-tracker.threatConfig.threat"),         active: this.activeGroupKey === 'Threat' },
-      { key: 'Sequencer',     title: game.i18n.localize("pf2e-threat-tracker.threatConfig.sequencer"),          active: this.activeGroupKey === 'Sequencer' },
+      { key: 'Sequencer',     title: 'Sequencer',          active: this.activeGroupKey === 'Sequencer' },
       { key: 'Custom',    title: game.i18n.localize("pf2e-threat-tracker.threatConfig.customThreat"),   active: this.activeGroupKey === 'Custom' },
       { key: 'Templates', title: game.i18n.localize("pf2e-threat-tracker.threatConfig.threatPresets"),  active: this.activeGroupKey === 'Templates' },
       { key: 'Appearance', title: game.i18n.localize("pf2e-threat-tracker.threatConfig.appearance"),    active: this.activeGroupKey === 'Appearance' }
@@ -709,3 +709,4 @@ Hooks.on("renderDialogV2", (dlg, html, data) => {
     if(searchButton) searchButton.addEventListener("click", applyFilter);
   }
 });
+
