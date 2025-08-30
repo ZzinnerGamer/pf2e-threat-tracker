@@ -317,7 +317,7 @@ async function openActorThreatDialog(actor) {
     if (feats.length) {
     const featCategories = ["ancestry", "general", "class", "bonus", "skill", "calling", "classfeature", "curse", "deityboon", "pfsboon", "ancestryfeature"];
 
-    content += `<h2 style="margin-top:12px; text-align:center;">${game.i18n.localize("pf2e-threat-tracker.Feats")}</h2>`;
+    content += `<h2 style="margin-top:12px; text-align:center;">${game.i18n.localize("pf2e-threat-tracker.Features")}</h2>`;
 
     for (const category of featCategories) {
         const featsInCategory = feats.filter(f => f.system.category === category);
