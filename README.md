@@ -101,7 +101,7 @@ Go to **Settings → Module Settings → PF2e Threat Tracker** to adjust:
 ## 🙌 Contributing
 
 Contributions and feedback are welcome!  
-Feel free to open issues or pull requests via GitHub.
+Feel free to open issues or pull requests via GitHub.  
 Also the project is on [GitLocalize](https://gitlocalize.com/repo/10413), the language barrier will not be a problem here! 
 
 ## Disclaimer
