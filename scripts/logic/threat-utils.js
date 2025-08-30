@@ -3,6 +3,15 @@ const MODULE = 'pf2e-threat-tracker';
 
 import { ThreatConfigApp } from "../ui/option-menu.js";
 
+
+export const getLoggingMode = () => globalThis.game?.settings?.get?.(MODULE, 'loggingMode') ?? 'none';
+
+const log = {
+  all:  (...a) => { if (getLoggingMode() === 'all') console.log(...a); },
+  min:  (...a) => { const m = getLoggingMode(); if (m === 'minimal' || m === 'all') console.log(...a); },
+  warn: (...a) => { if (getLoggingMode() !== 'none') console.warn(...a); }
+};
+
 export function getUserTargets(context, msg, responsibleToken) {
     if (Array.isArray(context.targets) && context.targets.length > 0) {
         if (typeof context.targets[0] === "object" && context.targets[0].id) {
@@ -59,59 +68,149 @@ export async function _applyThreat(enemy, srcId, srcName, amount) {
     await enemy.document.setFlag(MODULE, 'threatTable', current);
 }
 
-export function getThreatModifierIDR(enemy, params = {}) {
-    if (!enemy?.actor) return 1;
+function buildTokenSet({ traitsLC = [], slugLC = "", dmgLC = "", options = [] }) {
+  const set = new Set();
 
-    const { traits = [], slug = "", damageType = "" } = params || {};
+  for (const t of traitsLC) if (t) set.add(t);
+  if (slugLC) set.add(slugLC);
+  if (dmgLC)  set.add(dmgLC);
 
-    const traitsArr = Array.isArray(traits) ? traits : (traits != null ? [traits] : []);
-    const traitsLC = traitsArr.filter(Boolean).map(t => String(t).toLowerCase());
-    const slugLC = slug ? String(slug).toLowerCase() : "";
-    const dmgLC  = damageType ? String(damageType).toLowerCase() : "";
-
-    const I = enemy.actor.system.attributes?.immunities ?? [];
-    const W = enemy.actor.system.attributes?.weaknesses ?? [];
-    const R = enemy.actor.system.attributes?.resistances ?? [];
-
-    const immunTypes = I.map(i => (i?.type ?? i?.label ?? "").toLowerCase()).filter(Boolean);
-
-    if (traitsLC.some(t => immunTypes.includes(t))) {
-        console.log(`[${MODULE}] ${enemy.name} es inmune a alguno de los traits: ${traitsLC.join(", ")}`);
-        return 0;
+  for (const opt of options ?? []) {
+    const o = String(opt).toLowerCase();
+    if (!o) continue;
+    set.add(o);
+    for (const seg of o.split(":")) {
+      if (seg) set.add(seg);
+      for (const sub of seg.split("-")) if (sub) set.add(sub);
     }
-    if (dmgLC && immunTypes.includes(dmgLC)) {
-        console.log(`[${MODULE}] ${enemy.name} es inmune al tipo de daño '${dmgLC}', amenaza anulada`);
-        return 0;
-    }
-    if (slugLC && immunTypes.includes(slugLC)) {
-        console.log(`[${MODULE}] ${enemy.name} es inmune a la acción '${slugLC}', amenaza anulada`);
-        return 0;
-    }
+    const mat = o.match(/item:material:([a-z0-9-]+)/);
+    if (mat?.[1]) set.add(mat[1]);
+  }
 
-    let multiplier = 1;
+  const hasSpell  = [...set].some(s => s === "spell" || s.includes("item:type:spell"));
+  const hasWeapon = [...set].some(s => s === "weapon" || s.includes("item:type:weapon"));
+  const isMagical = [...set].some(s => s === "magical" || s.includes("item:magical") || s.includes("magical"));
+  const hasDamage = [...set].some(s => s.startsWith("damage") || s.includes(":damage"));
 
-    for (const w of W) {
-        const t = (w?.type ?? "").toLowerCase();
-        const v = Number(w?.value ?? 0);
-        if (!t || !v) continue;
-        if (traitsLC.includes(t) || (dmgLC && t === dmgLC) || (slugLC && t === slugLC)) {
-            console.log(`[${MODULE}] ${enemy.name} tiene debilidad contra '${t}' (+${v})`);
-            multiplier += (v * 2);
-        }
-    }
+  if (hasSpell)  set.add("spells");
+  if (hasWeapon) set.add("weapons");
+  if (isMagical) set.add("magical");
+  if (hasSpell && hasDamage) set.add("damage-from-spells");
 
-    for (const r of R) {
-        const t = (r?.type ?? "").toLowerCase();
-        const v = Number(r?.value ?? 0);
-        if (!t || !v) continue;
-        if (traitsLC.includes(t) || (dmgLC && t === dmgLC) || (slugLC && t === slugLC)) {
-            console.log(`[${MODULE}] ${enemy.name} tiene resistencia contra '${t}' (-${v})`);
-            multiplier -= (v / 2);
-        }
-    }
+  if (!isMagical) set.add("non-magical");
 
-    return Math.max(multiplier, 0);
+  return set;
 }
+
+
+      // ----- [ Función del IWR ] -----
+
+function isIWREnabled() {
+  try { return game.settings.get(MODULE, 'enableIWR') === true; }
+  catch { return false; }
+}
+
+export function getThreatModifierIWR(enemy, params = {}) {
+  if (!enemy?.actor) return 1;
+  if (!isIWREnabled()) return 1;
+
+  let traits = [], slug = "", damageType = "", options = [];
+  if (Array.isArray(params)) {
+    traits = params;
+  } else if (typeof params === "string") {
+    slug = params;
+  } else if (params && typeof params === "object") {
+    ({ traits = [], slug = "", damageType = "", options = [] } = params);
+  }
+
+  const traitsArr = Array.isArray(traits) ? traits : (traits != null ? [traits] : []);
+  const traitsLC  = traitsArr.filter(Boolean).map(t => String(t).toLowerCase());
+  const slugLC    = slug ? String(slug).toLowerCase() : "";
+  const dmgLC     = damageType ? String(damageType).toLowerCase() : "";
+
+  const targetTokens = buildTokenSet({ traitsLC, slugLC, dmgLC, options });
+
+  const I = enemy.actor.system.attributes?.immunities  ?? [];
+  const W = enemy.actor.system.attributes?.weaknesses  ?? [];
+  const R = enemy.actor.system.attributes?.resistances ?? [];
+
+  // ---------- INMUNIDADES ----------
+  for (const i of I) {
+    const t = String(i?.type ?? i?.label ?? "").toLowerCase();
+    if (!t) continue;
+
+    let exc = i?.exceptions ?? i?.exception ?? [];
+    if (typeof exc === "string") exc = exc.split(",").map(s => s.trim());
+    const excLC = Array.isArray(exc) ? exc.map(e => String(e).toLowerCase()) : [];
+
+    if (!targetTokens.has(t)) continue;
+
+    const excepted = excLC.length > 0 && [...targetTokens].some(tok => excLC.includes(tok));
+    if (excepted) {
+      log.all?.(`[${MODULE}] Inmunidad '${t}' ignorada por excepción: ${excLC.join(", ")}`);
+      continue;
+    }
+
+    log.all?.(`[${MODULE}] ${enemy.name} es INMUNE por '${t}' → x0`);
+    return 0;
+  }
+
+  // ---------- DEBILIDADES ----------
+  let mult = 1;
+  for (const w of W) {
+    const t = String(w?.type ?? "").toLowerCase();
+    const v = Number(w?.value ?? 0);
+    if (!t || !v) continue;
+
+    let exc = w?.exceptions ?? w?.exception ?? [];
+    if (typeof exc === "string") exc = exc.split(",").map(s => s.trim());
+    const excLC = Array.isArray(exc) ? exc.map(e => String(e).toLowerCase()) : [];
+
+    if (!targetTokens.has(t)) continue;
+
+    const excepted = excLC.length > 0 && [...targetTokens].some(tok => excLC.includes(tok));
+    if (excepted) {
+      log.all?.(`[${MODULE}] Debilidad '${t}' ignorada por excepción: ${excLC.join(", ")}`);
+      continue;
+    }
+
+    log.all?.(`[${MODULE}] ${enemy.name} tiene debilidad '${t}' (+${v})`);
+    mult += v;
+  }
+
+  // ---------- RESISTENCIAS ----------
+  for (const r of R) {
+    const t = String(r?.type ?? "").toLowerCase();
+    const v = Number(r?.value ?? 0);
+    if (!t || !v) continue;
+
+    let exc = r?.exceptions ?? r?.exception ?? [];
+    if (typeof exc === "string") exc = exc.split(",").map(s => s.trim());
+    const excLC = Array.isArray(exc) ? exc.map(e => String(e).toLowerCase()) : [];
+
+    if (!targetTokens.has(t)) continue;
+
+    const excepted = excLC.length > 0 && [...targetTokens].some(tok => excLC.includes(tok));
+    if (excepted) {
+      log.all?.(`[${MODULE}] Resistencia '${t}' ignorada por excepción: ${excLC.join(", ")}`);
+      continue;
+    }
+
+    log.all?.(`[${MODULE}] ${enemy.name} tiene resistencia '${t}' (-${v})`);
+    mult -= v;
+  }
+
+  log.all?.(
+    `[${MODULE}] IWR → enemy=${enemy.name} | tokens=[${[...targetTokens].join(", ")}] | mult-base=${mult}`
+  );
+
+  mult = mult / 10 + 1;
+  if (mult === 1.1) mult = 1;
+
+  return Math.max(mult, 0);
+}
+
+// ---------------------------------------------------------
 
 export function getEnemyTokens(responsibleToken, excludeIds = []) {
     return canvas.tokens.placeables.filter(t =>
@@ -129,11 +228,15 @@ export async function storePreHP(token, threat = null, responsibleToken = null, 
     const alreadyStored = await token.document.getFlag(MODULE, 'preHP');
     const hp = token.actor.system.attributes.hp?.value;
 
-    console.log(`[${MODULE}] storePreHP called for ${token.name} | alreadyStored=${!!alreadyStored} | HP=${hp} | threat=${threat} | attacker=${responsibleToken?.name ?? "N/A"} | slug=${slug ?? "N/A"}`);
+    if (game.settings.get(MODULE, 'loggingMode') === 'all') {
+    log.all(`[${MODULE}] storePreHP called for ${token.name} | alreadyStored=${!!alreadyStored} | HP=${hp} | threat=${threat} | attacker=${responsibleToken?.name ?? "N/A"} | slug=${slug ?? "N/A"}`);
+    }
 
     if (alreadyStored) {
         await token.document.unsetFlag(MODULE, 'preHP');
-        console.log(`[${MODULE}] preHP flag removed for ${token.name}`);
+    if (game.settings.get(MODULE, 'loggingMode') === 'all') {
+        log.all(`[${MODULE}] preHP flag removed for ${token.name}`);
+    }
     }
 
     if (typeof hp === 'number') {
@@ -146,7 +249,9 @@ export async function storePreHP(token, threat = null, responsibleToken = null, 
         if (slug) data.slug = slug;
 
         await token.document.setFlag(MODULE, 'preHP', data);
-        console.log(`[${MODULE}] preHP flag set for ${token.name}:`, data);
+    if (game.settings.get(MODULE, 'loggingMode') === 'all') {
+        log.all(`[${MODULE}] preHP flag set for ${token.name}:`, data);
+    }
     }
 }
 
@@ -179,21 +284,19 @@ function getHighestSpeed(actor) {
 }
 
 export function getDistanceThreatMultiplier(tokenTarget, tokenSource) {
-  if (!canvas?.grid || !tokenSource?.center || !tokenTarget?.center) return 0.5;
-  const maxSpeed = getHighestSpeed(tokenTarget.actor);
-  const adjustedSpeed = Math.max(0, maxSpeed - 5);
-  
-  const p1 = tokenSource.center;
-  const p2 = tokenTarget.center;
+    const maxSpeed = getHighestSpeed(tokenTarget.actor);
+    const adjustedSpeed = Math.max(0, maxSpeed - 5);
+    const distance = canvas.grid.measureDistance(tokenSource, tokenTarget);
 
-  const result = canvas.grid.measurePath([p1, p2]);
-  const distance = result?.distance ?? Infinity;
-
-  if (distance <= 5) return 1.0;
-  if (distance <= adjustedSpeed) return 0.9;
-  if (distance <= adjustedSpeed * 2) return 0.8;
-  if (distance <= adjustedSpeed * 3) return 0.7;
-  return 0.5;
+    if (distance <= 5)
+        return 1.0;
+    if (distance <= adjustedSpeed)
+        return 0.9;
+    if (distance <= adjustedSpeed * 2)
+        return 0.8;
+    if (distance <= adjustedSpeed * 3)
+        return 0.7;
+    return 0.5;
 }
 
 export async function _updateFloatingPanel() {
@@ -351,8 +454,10 @@ if (!panel) {
 }
 
 export async function handleThreatFromEffect({ item, action, userId }) {
-  console.log(`[${MODULE}] --------------------`);
-  console.log(`[${MODULE}] Iniciando handleThreatFromEffect: ${item.name}, ${action}`);
+    if (game.settings.get(MODULE, 'loggingMode') === 'all') {
+  let logBlock = `[${MODULE}] --------------------\n`;
+  logBlock = `[${MODULE}] Iniciando handleThreatFromEffect: ${item.name}, ${action}\n`;
+    }
 
   const uuid = item?._stats?.compendiumSource;
   if (!uuid) return;
@@ -367,12 +472,16 @@ export async function handleThreatFromEffect({ item, action, userId }) {
   // Tokens
   const affectedToken = canvas.tokens.placeables.find(t => t.actor?.id === item.actor.id);
   if (!affectedToken) return;
-  console.log(`[${MODULE}] Token afectado:`, affectedToken.name);
+    if (game.settings.get(MODULE, 'loggingMode') === 'all') {
+  logBlock = `[${MODULE}] Token afectado:`, affectedToken.name`\n`;
+    }
 
   const origin = item.system?.context?.origin;
   if (!origin?.actor) return;
   const originToken = origin?.token ? canvas.tokens.get(origin.token.split('.').pop()) : affectedToken;
-  console.log(`[${MODULE}] Token responsable:`, originToken.name);
+    if (game.settings.get(MODULE, 'loggingMode') === 'all') {
+  logBlock = `[${MODULE}] Token responsable:`, originToken.name`\n`;
+    }
 
   // Ajustar cantidad según acción
   if (action === "delete" && originToken.id === affectedToken.id) {
@@ -380,7 +489,9 @@ export async function handleThreatFromEffect({ item, action, userId }) {
   } else {
     amount = cfg.mode === "reduce" ? -amount : amount;
   }
-  console.log(`[${MODULE}] Monto de amenaza ajustado:`, amount);
+    if (game.settings.get(MODULE, 'loggingMode') === 'all') {
+  logBlock = `[${MODULE}] Monto de amenaza ajustado:`, amount`\n`;
+    }
 
   const isAlly = affectedToken.document.disposition === 1;
   const isSelf = originToken.id === affectedToken.id || isAlly;
@@ -391,31 +502,38 @@ export async function handleThreatFromEffect({ item, action, userId }) {
   if (isSelf) {
     for (const enemy of allEnemies) {
       _applyThreat(enemy, affectedToken.id, affectedToken.name, amount);
-      console.log(`[${MODULE}] Apply self: ${affectedToken.name} -> ${enemy.name} = ${amount}`);
+    if (game.settings.get(MODULE, 'loggingMode') === 'all') {
+      logBlock = `[${MODULE}] Apply self: ${affectedToken.name} -> ${enemy.name} = ${amount}\n`;
+    }
     }
 
     if (isAlly && originToken.id !== affectedToken.id) {
       const halfAmount = Math.floor(amount / 2);
       for (const enemy of allEnemies) {
         _applyThreat(enemy, originToken.id, originToken.name, halfAmount);
-        console.log(`[${MODULE}] Apply half to origin: ${originToken.name} -> ${enemy.name} = ${halfAmount}`);
+    if (game.settings.get(MODULE, 'loggingMode') === 'all') {
+        logBlock = `[${MODULE}] Apply half to origin: ${originToken.name} -> ${enemy.name} = ${halfAmount}\n`;
+    }
       }
     }
   }
 
   if (isEnemy) {
     _applyThreat(affectedToken, originToken.id, originToken.name, amount);
-    console.log(`[${MODULE}] Apply target: ${originToken.name} -> ${affectedToken.name} = ${amount}`);
+    logBlock = (`[${MODULE}] Apply target: ${originToken.name} -> ${affectedToken.name} = ${amount}\n`);
 
     const halfAmount = Math.floor(amount / 2);
     for (const enemy of allEnemies) {
       if (enemy.id === affectedToken.id) continue;
       _applyThreat(enemy, originToken.id, originToken.name, halfAmount);
-      console.log(`[${MODULE}] Apply half to origin (excluding target): ${originToken.name} -> ${enemy.name} = ${halfAmount}`);
+    if (game.settings.get(MODULE, 'loggingMode') === 'all') {
+      logBlock = `[${MODULE}] Apply half to origin (excluding target): ${originToken.name} -> ${enemy.name} = ${halfAmount}\n`;
+    }
     }
   }
 
-  console.log(`[${MODULE}] handleThreatFromEffect finalizado.`);
-  console.log(`[${MODULE}] --------------------`);
+  logBlock = `[${MODULE}] handleThreatFromEffect finalizado.\n`;
+  logBlock = `[${MODULE}] --------------------\n`;
+  
+  log.all(logBlock)
 }
-
