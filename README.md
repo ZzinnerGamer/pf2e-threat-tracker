@@ -102,7 +102,7 @@ Go to **Settings → Module Settings → PF2e Threat Tracker** to adjust:
 
 Contributions and feedback are welcome!  
 Feel free to open issues or pull requests via GitHub.  
-Also the project is on [GitLocalize](https://gitlocalize.com/repo/10413), the language barrier will not be a problem here! You can ask me to add new languages on MD discord or the thread from the **Pathfinder on FoundryVTT Community Development Server** itself.
+Also the project is on [GitLocalize](https://gitlocalize.com/repo/10413), the language barrier will not be a problem here! You can ask me to add new languages as a PR, on MD discord or the thread from the **Pathfinder on FoundryVTT Community Development Server** itself.
 
 ## Disclaimer
 I am not a JS developer, neither an knowledged person about it, AI was used in the creation of this module just because I lack of the knowledge of how coding works and I learned a lot with the creation of this module. I hope you understand and appreciate every module developer for their ability to do such incredible things day after day.
