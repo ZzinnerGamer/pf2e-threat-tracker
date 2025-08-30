@@ -82,6 +82,11 @@
   "pf2e-threat-tracker.ui.decayFactor": "Decay Factor assigned to ${value}",
   "pf2e-threat-tracker.Settings.decayFactor.hint": "Determines how quickly threat values converge to the average each round. 0 equalizes all threats to the average, 1 applies only decay without additional convergence.",
   "pf2e-threat-tracker.Settings.decayFactor.name": "Threat Decay Convergence Factor",
+  "pf2e-threat-tracker.Settings.loggingMode.name": "Logging Mode",
+  "pf2e-threat-tracker.Settings.loggingMode.hint": "Adjust how much of the logs appears on console.",
+  "pf2e-threat-tracker.Settings.loggingMode.none": "None",
+  "pf2e-threat-tracker.Settings.loggingMode.minimal": "Minimal",
+  "pf2e-threat-tracker.Settings.loggingMode.all": "All",
   "pf2e-threat-tracker.Settings.panelTheme.name": "Threat Panel Theme",
   "pf2e-threat-tracker.Settings.panelTheme.hint": "Panel theme class. The theme does not apply automatically, specially for those themes that has any kind of background image. You have to close combat and enter again or change scene to reload the game canvas, or reload the foundry application with F5.",
   "pf2e-threat-tracker.Settings.panelOpacity.name": "Threat Panel Opacity",
@@ -98,3 +103,4 @@
   "pf2e-threat-tracker.Settings.panelTheme.sciFiBlue": "Sci-Fi Blue",
   "pf2e-threat-tracker.Settings.panelTheme.sciFiRed": "Sci-Fi Red"  
 }
+
