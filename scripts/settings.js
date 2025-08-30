@@ -273,8 +273,7 @@ Hooks.once('init', async() => {
     type: String,
     choices: {
         none: "pf2e-threat-tracker.Settings.loggingMode.none",
-        errors: "pf2e-threat-tracker.Settings.loggingMode.errors",
-        warnings: "pf2e-threat-tracker.Settings.loggingMode.warnings",
+        minimal: "pf2e-threat-tracker.Settings.loggingMode.minimal",
         all: "pf2e-threat-tracker.Settings.loggingMode.all"
     },
     default: 'none'
@@ -288,4 +287,5 @@ Hooks.once('init', async() => {
     });
 
 });
+
 
