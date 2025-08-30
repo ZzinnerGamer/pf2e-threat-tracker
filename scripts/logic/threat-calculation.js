@@ -1,8 +1,17 @@
-import { getUserTargets, storePreHP, getEnemyTokens, getDistanceThreatMultiplier, getThreatModifierIDR, _applyThreat, _updateFloatingPanel } from "../logic/threat-utils.js";
+import { getUserTargets, storePreHP, getEnemyTokens, getDistanceThreatMultiplier, getThreatModifierIWR, _applyThreat, _updateFloatingPanel, getLoggingMode } from "../logic/threat-utils.js";
 
 const MODULE = 'pf2e-threat-tracker';
 const hasSkillCheck = new Set(["seek,", "sense-motive", "balance", "maneuver-in-flight", "squeeze", "tumble-through", "identify-magic", "recall-knowledge", "climb", "disarm", "force-open", "grapple", "high-jump", "long-jump", "reposition", "shove", "swim", "trip", "create-a-diversion", "feint", "request", "demoralize", "administer-first-aid", "treat-poison", "command-an-animal", "perform", "hide", "sneak", "disable-device", "palm-an-object", "pick-a-lock", "steal"]);
 const ATTACK_SKILLS = new Set(["disarm", "escape", "force-open", "grapple", "reposition", "shove", "trip"]);
+
+const loc = game.i18n.localize
+
+const log = {
+  all:  (...a) => { if (getLoggingMode() === 'all') console.log(...a); },
+  min:  (...a) => { const m = getLoggingMode(); if (m === 'minimal' || m === 'all') console.log(...a); },
+  warn: (...a) => { if (getLoggingMode() !== 'none') console.warn(...a); }
+};
+
 
 Hooks.on('createChatMessage', async(msg) => {
     const combat = game.combats.active
@@ -15,8 +24,7 @@ Hooks.on('createChatMessage', async(msg) => {
     const actor = msg.actor;
     if (!actor || !msg.author || !msg.flags?.pf2e)
         return;
-    
-    console.log(`[${MODULE}] Contexto:`, context);
+    log.all(`[${MODULE}] `, loc("pf2e-threat-tracker.logs.context"), context);
 
     const originUUID = msg.flags.pf2e.origin?.uuid;
     const origin = originUUID ? await fromUuid(originUUID) : null;
@@ -70,12 +78,12 @@ Hooks.on('createChatMessage', async(msg) => {
 
     const isKnown = knownTypes.some(Boolean);
 
-    console.log(`[${MODULE}] sourceType: ${context.type}`, {
-        domains: context.domains
+    log.all(`[${MODULE}] `, loc("pf2e-threat-tracker.logs.sourceType"), context.type, {
+            domains: context.domains
     });
 
     if (!isKnown && !hasSkillCheck) {
-        console.log(`[${MODULE}] Tipo de mensaje desconocido. Guardando preHP por precaución.`);
+        log.warn(`[${MODULE}] `, loc("pf2e-threat-tracker.logs.unknownMessageType"));
 
         for (const token of canvas.tokens.placeables) {
             if (token.inCombat) {
@@ -84,551 +92,620 @@ Hooks.on('createChatMessage', async(msg) => {
         }
     }
 
-    if (Object.keys(context).length === 0) {
-        console.log(`[${MODULE}] Contexto vacío, buscando por slug previamente definido`);
+if (Object.keys(context).length === 0) {
+  log.all(`[${MODULE}] `, loc("pf2e-threat-tracker.logs.emptyContextSlug"));
 
-        if (!actionSlug) {
-            console.log(`[${MODULE}] No se pudo obtener un slug para este mensaje`);
-            return;
-        }
+  if (!actionSlug) {
+    log.warn(`[${MODULE}] `, loc("pf2e-threat-tracker.logs.cannotGetSlug"));
+    return;
+  }
 
-        for (const enemy of canvas.tokens.placeables.filter(t =>
-                t.inCombat &&
-                t.document.disposition !== responsibleToken.document.disposition &&
-                !t.actor.hasPlayerOwner)) {
-            await storePreHP(enemy, null, responsibleToken, actionSlug);
-        }
+  for (const enemy of canvas.tokens.placeables.filter(t =>
+    t.inCombat &&
+    t.document.disposition !== responsibleToken.document.disposition &&
+    !t.actor.hasPlayerOwner
+  )) {
+    await storePreHP(enemy, null, responsibleToken, actionSlug);
+  }
 
-        if (actionSlug !== undefined) {
-            const itemBase = Number(await item.getFlag(MODULE, "threatItemValue")) || 0;
-            const itemMode = await item.getFlag(MODULE, "threatItemMode") || "apply";
-            const settingsBase = Number(game.settings.get(MODULE, "skillBase")) || 0;
 
-            const base = itemBase > 0 ? itemBase : settingsBase;
+  const itemBase     = Number(await item.getFlag(MODULE, "threatItemValue")) || 0;
+  const itemMode     = (await item.getFlag(MODULE, "threatItemMode")) || "apply";
+  const settingsBase = Number(game.settings.get(MODULE, "skillBase")) || 0;
 
-            const bonus =
-            Number(await item.getFlag(MODULE, "threatAttackValue")) ||
-            Number(await item.getFlag(MODULE, "threatDamageValue")) ||
-            0;
-            const taunterLevel = responsibleToken.actor?.system?.details?.level?.value ?? 1;
-            const levelAdjustment = taunterLevel * 0.1 + 1;
-            let threatGlobal = (base + bonus) * levelAdjustment;
+  const base  = itemBase > 0 ? itemBase : settingsBase;
+  const bonus =
+    Number(await item.getFlag(MODULE, "threatAttackValue")) ||
+    Number(await item.getFlag(MODULE, "threatDamageValue")) ||
+    0;
 
-            if (itemMode === "reduce") {
-                threatGlobal = -threatGlobal;
-                console.log(`[${MODULE}] Modo 'reduce' detectado, invirtiendo amenaza`);
-            }
+  const taunterLevel    = responsibleToken.actor?.system?.details?.level?.value ?? 1;
+  const levelAdjustment = taunterLevel * 0.1 + 1;
+  let threatGlobal      = (base + bonus) * levelAdjustment;
 
-            for (const enemy of getEnemyTokens(responsibleToken)) {
-                const traits = context.traits ?? item?.system?.traits?.value ?? [];
-                const idrMult = getThreatModifierIDR(enemy, traits);
-                if (idrMult <= 0) {
-                    console.log(`[${MODULE}] ${enemy.name} es inmune a ${traits.join(", ")}`);
-                    continue;
-                }
+  if (itemMode === "reduce") {
+    threatGlobal = -threatGlobal;
+    log.all(`[${MODULE}] `, loc("pf2e-threat-tracker.logs.reduceModeDetected"));
+  }
 
-                const finalThreat = Math.round(threatGlobal * idrMult);
+  const traits   = context.traits ?? item?.system?.traits?.value ?? [];
+  const slug     = actionSlug;
+  const options  = context?.options ?? [];
+  const damageType = (() => {
+    const d = item?.system?.damage;
+    if (!d) return "";
+    const first = typeof d === "object" ? Object.values(d).find(Boolean) : null;
+    return first?.damageType ?? d?.damageType ?? "";
+  })();
 
-                let logBlock = `[${MODULE}] Amenaza por provocación:\n`;
-                logBlock += ` ├─ Provocación por Habilidad ${base}.\n`;
-                logBlock += ` ├─ Bonus por Slug ${bonus}.\n`;
-                logBlock += ` ├─ Cálculo de amenaza: (${base}(Provocación Base) + ${bonus}(Cantidad por Slug)) × ${levelAdjustment}(Ajuste de nivel)\n`;
-                logBlock += ` └─ Amenaza Final: ${finalThreat}\n`;
-                console.log(logBlock);
+  // Aplicación por enemigo con IWR
+  for (const enemy of getEnemyTokens(responsibleToken)) {
+    const IWRMult = getThreatModifierIWR(enemy, { traits, slug, damageType, options });
 
-                console.log(`[${MODULE}] Chat habilidad/dote detectado: slug='${actionSlug}' → base=${base}, bonus=${bonus}, total=${finalThreat}`);
-
-                if (finalThreat >= 0) {
-                    console.log(`[${MODULE}] Burla a ${enemy.name}: +${finalThreat}`);
-                } else {
-                    console.log(`[${MODULE}] Reducción de amenaza a ${enemy.name}: ${finalThreat}`);
-                }
-                await _applyThreat(enemy, responsibleToken.id, responsibleToken.name, finalThreat);
-            }
-            _updateFloatingPanel();
-
-        }
+    if (IWRMult <= 0) {
+      log.min(`[${MODULE}] `, enemy.name, loc("pf2e-threat-tracker.logs.isImmuneTo"), traits.join(", ") || "—");
+      continue;
     }
 
-    if (isSpellCast) {
-        for (const token of canvas.tokens.placeables) {
-            if (token.inCombat) {
-                const hp = token.actor.system.attributes.hp?.value;
-                if (typeof hp === 'number') {
-                    await storePreHP(token, null, responsibleToken);
-                    console.log(`[${MODULE}] HP previo guardado para ${token.name}: ${hp}`);
-                }
-            }
-        }
+    const finalThreat = Math.round(threatGlobal * IWRMult);
 
-        const ignoredTraits = ['healing'];
-        const hasIgnoredTrait = context?.options?.some(opt =>
-                ignoredTraits.some(trait => opt === `${trait}`));
+    let logBlock = `[${MODULE}] ${loc("pf2e-threat-tracker.logs.actionThreat")}\n`;
+        logBlock += ` ├─ ${loc("pf2e-threat-tracker.logs.baseThreat")} ${base}.\n`;
+        logBlock += ` ├─ ${loc("pf2e-threat-tracker.logs.originActorLevel")} ${taunterLevel}.\n`;
+        logBlock += ` ├─ ${loc("pf2e-threat-tracker.logs.levelAdjustment")} ${levelAdjustment}.\n`;
+    if (game.settings.get(MODULE, 'enableIWR') === true){
+        logBlock += ` ├─ ${loc("pf2e-threat-tracker.logs.IWRMultiplier")} ${IWRMult}\n`;
+    }
+        logBlock += ` └─ ${loc("pf2e-threat-tracker.logs.finalThreat")} ${finalThreat}\n`;
 
-        if (!hasIgnoredTrait) {
-            const spellSlug = context?.options?.find(opt => opt.startsWith("item:slug:"))?.split(":")[2];
-            const spellRankRaw = context?.options?.find(opt => opt.startsWith("item:rank:"))?.split(":")[2];
-            const spellRank = Number(spellRankRaw);
+    log.min(logBlock);
 
-            if (!isNaN(spellRank)) {
-                const base = game.settings.get(MODULE, 'baseSpellThreat') || 0;
-                const threatPerRank = game.settings.get(MODULE, 'threatPerSpellRank') || 3;
-                const bonus = Number(item.getFlag(MODULE, "threatAttackValue")) || 0;
-                const fixedRank = threatPerRank * 0.1;
-                const threatGlobal = (base + bonus) * fixedRank;
+    await _applyThreat(enemy, responsibleToken.id, responsibleToken.name, finalThreat);
+  }
 
-                for (const enemy of getEnemyTokens(responsibleToken)) {
-                    const traits = context.traits ?? item?.system?.traits?.value ?? [];
-                    const idrMult = getThreatModifierIDR(enemy, traits);
-                    if (idrMult <= 0) {
-                        console.log(`[${MODULE}] ${enemy.name} es inmune a ${traits.join(", ")}`);
-                        continue;
-                    }
+  _updateFloatingPanel();
+}
 
-                    const finalThreat = Math.round(threatGlobal * idrMult);
-                    console.log(`[${MODULE}] Conjuro lanzado (${base} + ${bonus}) x ${fixedRank} = ${finalThreat}`);
-                    console.log(`[${MODULE}] Amenaza global aplicada a ${enemy.name}: +${finalThreat}`);
+if (isSpellCast) {
+  for (const token of canvas.tokens.placeables) {
+    if (!token.inCombat) continue;
+    const hp = token.actor.system.attributes.hp?.value;
+    if (typeof hp === "number") {
+      await storePreHP(token, null, responsibleToken);
+      log.all(`[${MODULE}] ${loc("pf2e-threat-tracker.logs.tokenDataSavedFor")} ${token.name}: ${hp}`);
+    }
+  }
 
-                    await _applyThreat(enemy, responsibleToken.id, responsibleToken.name, finalThreat);
-                }
+  const spellTraits = context?.options ?? item?.system?.options?.value ?? [];
+  const hasIgnoredTrait = spellTraits.some(t => String(t).toLowerCase() === "healing");
+  if (hasIgnoredTrait) {
+    log.min(`[${MODULE}] `, loc("pf2e-threat-tracker.logs.healingSpellDetected"));
+    return;
+  }
 
-                _updateFloatingPanel();
-            } else {
-                console.log(`[${MODULE}] Conjuro lanzado pero no tiene rank numérico válido`);
-            }
-        } else {
-            console.log(`[${MODULE}] Conjuro con trait 'healing', amenaza no aplicada (se manejará como curación)`);
-        }
+  const spellRankRaw = context?.options?.find(opt => opt.startsWith("item:rank:"))?.split(":")[2];
+  const spellRank = Number(spellRankRaw);
+  if (Number.isNaN(spellRank)) {
+    log.warn(`[${MODULE}] `, loc("pf2e-threat-tracker.logs.spellNoRank"));
+    return;
+  }
+
+  const base          = Number(game.settings.get(MODULE, "baseSpellThreat")) || 0;
+  const threatPerRank = Number(game.settings.get(MODULE, "threatPerSpellRank")) || 3;
+  const bonus         = Number(await item.getFlag(MODULE, "threatAttackValue")) || 0;
+
+  const rankAdjustment = threatPerRank * 0.1;
+  const threatGlobal   = (base + bonus) * rankAdjustment;
+
+  const traits      = spellTraits;
+  const slug        = item?.system?.slug ?? item?.slug ?? "";
+  const options     = context?.options ?? [];
+
+  const damageType = (() => {
+    const dmg = item?.system?.damage;
+    if (!dmg) return "";
+    const first = Object.values(dmg).find(Boolean);
+    return first?.damageType ?? "";
+  })();
+
+  for (const enemy of getEnemyTokens(responsibleToken)) {
+    const IWRMult = getThreatModifierIWR(enemy, { traits, slug, damageType, options });
+    const finalThreat = Math.round(threatGlobal * IWRMult);
+
+    let logBlock  = `[${MODULE}] ${loc("pf2e-threat-tracker.logs.threatCalculation")}\n`;
+        logBlock += ` ├─ ${loc("pf2e-threat-tracker.logs.baseThreat")} ${base}.\n`;
+        logBlock += ` ├─ ${loc("pf2e-threat-tracker.logs.configurableBonus")} ${bonus}.\n`;
+        logBlock += ` ├─ ${loc("pf2e-threat-tracker.logs.spellRank")} ${spellRank}.\n`;
+        logBlock += ` ├─ ${loc("pf2e-threat-tracker.logs.threatPerRank")} ${threatPerRank}.\n`;
+        logBlock += ` ├─ ${loc("pf2e-threat-tracker.logs.rankMultiplier")} ${rankAdjustment}.\n`;
+    if (game.settings.get(MODULE, 'enableIWR') === true){
+        logBlock += ` ├─ ${loc("pf2e-threat-tracker.logs.IWRMultiplier")} ${IWRMult}\n`;
+    }
+        logBlock += ` └─ ${loc("pf2e-threat-tracker.logs.finalThreat")} ${finalThreat}\n`;
+        logBlock += `${loc("pf2e-threat-tracker.logs.threatAppliedTo")} ${enemy.name}: ${finalThreat >= 0 ? "+" : ""}${finalThreat}\n`;
+
+    log.min(logBlock);
+
+    await _applyThreat(enemy, responsibleToken.id, responsibleToken.name, finalThreat);
+  }
+
+  _updateFloatingPanel();
+}
+
+if (isSkillAttack) {
+  const slug =
+    context.options?.find(opt => opt.startsWith("action:"))?.split(":")[1] ??
+    context.options?.find(opt => opt.startsWith("origin:action:"))?.split(":")[2] ??
+    msg.flags?.[MODULE]?.slug ??
+    (await msg.getFlag(MODULE, "slug")) ??
+    undefined;
+
+  if (!slug || !ATTACK_SKILLS.has(slug)) {
+    log.warn(`[${MODULE}] ${loc("pf2e-threat-tracker.logs.attackSkillNotRecogniced")} ${slug}`);
+    return;
+  }
+
+  const outcome = context.outcome ?? "failure";
+  const level   = actor.system.details.level.value ?? 0;
+  const base    = Number(game.settings.get(MODULE, "baseAttackThreat")) || 0;
+
+  // 1) Intentar valor personalizado (actor flags o global settings)
+  let threatGlobal;
+  let value = await actor.getFlag(MODULE, `skillActionValue.${slug}`);
+  let mode  = await actor.getFlag(MODULE, `skillActionMode.${slug}`);
+  if (value == null) value = game.settings.get(MODULE, `globalSkillActionValue.${slug}`);
+  if (mode  == null) mode  = game.settings.get(MODULE, `globalSkillActionMode.${slug}`);
+
+  if (typeof value === "number" && value > 0) {
+    threatGlobal = value;
+    if (mode === "reduce") threatGlobal *= -1;
+    log.min(`[${MODULE}] ${loc("pf2e-threat-tracker.logs.reduceModeDetected")} '${slug}': ${value} (${mode ?? "apply"})`);
+  }
+
+  // 2) Si no hay valor custom, calcular por outcome
+  if (threatGlobal == null) {
+    const levelAdj = 1 + level * 0.1;
+    switch (outcome) {
+      case "criticalFailure": threatGlobal = 0; break;
+      case "failure":         threatGlobal = Math.ceil(base * levelAdj); break;
+      case "success":         threatGlobal = Math.ceil((base + 10) * levelAdj); break;
+      case "criticalSuccess": threatGlobal = Math.ceil((base + 20) * levelAdj); break;
+      default:                threatGlobal = base; break;
+    }
+  }
+
+  const targets = getUserTargets(context, msg, responsibleToken);
+  if (!targets.length) {
+    log.warn(`[${MODULE}] `, loc("pf2e-threat-tracker.logs.reduceModeDetected"));
+    return;
+  }
+
+  const tokenTargets = targets.map(tid => canvas.tokens.get(tid)).filter(Boolean);
+
+  for (const enemy of getEnemyTokens(responsibleToken, tokenTargets)) {
+       const traits   = context.traits ?? item?.system?.traits?.value ?? [];
+       const options  = context?.options ?? [];
+       const IWRMult  = getThreatModifierIWR(enemy, { traits, slug, options });
+
+    if (IWRMult <= 0) {
+      log.min(`[${MODULE}] ${enemy.name} ${loc("pf2e-threat-tracker.logs.isImmuneTo")} ${traits.join(", ")}`);
+      continue;
     }
 
-    if (isSkillAttack) {            
-        const slug =
-            context.options?.find(opt => opt.startsWith("action:"))?.split(":")[1] ??
-            context.options?.find(opt => opt.startsWith("origin:action:"))?.split(":")[2] ??
-            msg.flags?.[MODULE]?.slug ??
-            (await msg.getFlag(MODULE, "slug")) ??
-            undefined;
+    const finalThreat = Math.round(threatGlobal * IWRMult);
 
-        if (!slug || !ATTACK_SKILLS.has(slug)) {
-            console.log(`[${MODULE}] Acción de skill-attack no reconocida o no en ATTACK_SKILLS: ${slug}`);
-            return;
-        }
+    // Log detallado al estilo del bloque "sin contexto"
+    let logBlock  = `[${MODULE}] ${loc("pf2e-threat-tracker.logs.threatCalculation")}\n`;
+        logBlock += ` ├─ ${loc("pf2e-threat-tracker.logs.skillSlug")} ${slug}.\n`;
+        logBlock += ` ├─ ${loc("pf2e-threat-tracker.logs.baseThreat")} ${base}.\n`;
+        logBlock += ` ├─ ${loc("pf2e-threat-tracker.logs.originActorLevel")} ${level}.\n`;
+        logBlock += ` ├─ ${loc("pf2e-threat-tracker.logs.rollOutcome")} ${outcome}.\n`;
+    if (game.settings.get(MODULE, 'enableIWR') === true){
+        logBlock += ` ├─ ${loc("pf2e-threat-tracker.logs.IWRMultiplier")}  ${IWRMult}\n`;
+    }
+        logBlock += ` └─ ${loc("pf2e-threat-tracker.logs.finalThreat")} ${finalThreat}\n`;
+    log.min(logBlock);
 
-        const outcome = context.outcome ?? "failure";
-        const level = actor.system.details.level.value;
-        const base = game.settings.get(MODULE, "baseAttackThreat") || 0;
-
-        let threatGlobal;
-
-        let value = await actor.getFlag(MODULE, `skillActionValue.${slug}`);
-        let mode  = await actor.getFlag(MODULE, `skillActionMode.${slug}`);
-
-        if (value == null) value = game.settings.get(MODULE, `globalSkillActionValue.${slug}`);
-        if (mode == null)  mode  = game.settings.get(MODULE, `globalSkillActionMode.${slug}`);
-
-        if (value && value > 0) {
-            threatGlobal = value;
-            if (mode === "reduce") threatGlobal *= -1;
-            console.log(`[${MODULE}] Usando amenaza personalizada para skill-attack '${slug}': ${value} (${mode})`);
-        }
-
-        switch (outcome) {
-            case "criticalFailure": threatGlobal = 0; break;
-            case "failure": threatGlobal = Math.ceil(base * (1 + level * 0.1)); break;
-            case "success": threatGlobal = Math.ceil((base + 10) * (1 + level * 0.1)); break;
-            case "criticalSuccess": threatGlobal = Math.ceil((base + 20) * (1 + level * 0.1)); break;
-            default: threatGlobal = base;
-        }
-
-        const targets = getUserTargets(context, msg, responsibleToken);
-        if (!targets.length) {
-            console.warn(`[${MODULE}] No se encontraron objetivos para aplicar amenaza`);
-            return;
-        }
-
-        const tokenTargets = targets
-            .map(tid => canvas.tokens.get(tid))
-            .filter(t => !!t);
-
-        for (const enemy of getEnemyTokens(responsibleToken, tokenTargets)) {
-            const damageType = item?.system?.damage?.damageType ?? null;
-            const traits = context.traits ?? item?.system?.traits?.value ?? [];
-            const idrMult = getThreatModifierIDR(enemy, traits, damageType);
-
-            if (idrMult <= 0) {
-                console.log(`[${MODULE}] ${enemy.name} es inmune a ${traits.join(", ")}`);
-                continue;
-            }
-
-            const finalThreat = Math.round(threatGlobal * idrMult);
-            console.log(`[${MODULE}] Skill-Attack '${slug}' (${outcome}) → threatGlobal = ${finalThreat}`);
-
-            await _applyThreat(enemy, responsibleToken.id, responsibleToken.name, finalThreat);
-        }
-
-        _updateFloatingPanel();
+    if (finalThreat >= 0) {
+      log.min(`[${MODULE}] ${loc("pf2e-threat-tracker.logs.threatAppliedTo")} ${enemy.name}: +${finalThreat}`);
+    } else {
+      log.min(`[${MODULE}] ${loc("pf2e-threat-tracker.logs.threatReduction")} ${enemy.name}: ${finalThreat}`);
     }
 
+    await _applyThreat(enemy, responsibleToken.id, responsibleToken.name, finalThreat);
+  }
 
-    if (isSkillAction && !ATTACK_SKILLS.has(actionSlug)) {
-        let slug =
-            context.options?.find(opt => opt.startsWith("action:"))?.split(":")[1] ??
-            context.options?.find(opt => opt.startsWith("origin:action:"))?.split(":")[2] ??
-            msg.flags?.[MODULE]?.slug ??
-            (await msg.getFlag(MODULE, "slug")) ??
-            undefined;
+  _updateFloatingPanel();
+}
 
-        if (!slug) {
-            console.log(`[${MODULE}] No se pudo detectar un slug para acción de habilidad`);
-            return;
-        }
+if (isSkillAction && !ATTACK_SKILLS.has(actionSlug)) {
+  const slug =
+    context.options?.find(opt => opt.startsWith("action:"))?.split(":")[1] ??
+    context.options?.find(opt => opt.startsWith("origin:action:"))?.split(":")[2] ??
+    msg.flags?.[MODULE]?.slug ??
+    (await msg.getFlag(MODULE, "slug")) ??
+    undefined;
 
-        if (slug === "treat-wounds") {
-            return;
-        }
+  if (!slug) {
+    log.warn(`[${MODULE}] `, loc("pf2e-threat-tracker.logs.cannotGetSlug"));
+    return;
+  }
+  if (slug === "treat-wounds") return;
 
-        console.log(`[${MODULE}] Slug detectado para acción de habilidad: ${slug}`);
+  log.all(`[${MODULE}] ${loc("pf2e-threat-tracker.logs.skillSlug")} ${slug}`);
 
-        const actorLevel = Number(
-                context.options?.find(opt => opt.startsWith("self:level:"))?.split(":")[2]) || 1;
+  const actorLevel = Number(context.options?.find(opt => opt.startsWith("self:level:"))?.split(":")[2]) || 1;
+  const outcome    = context.outcome ?? "failure";
+  const traits     = context.traits ?? [];
 
-        const outcome = context.outcome ?? 'failure';
-        let threatGlobal = 0;
+  let value = await actor.getFlag(MODULE, `customSkillValue.${slug}`);
+  let mode  = await actor.getFlag(MODULE, `customSkillMode.${slug}`);
 
-        
-        let value = await actor.getFlag(MODULE, `customSkillValue.${slug}`);
-        let mode  = await actor.getFlag(MODULE, `customSkillMode.${slug}`);
+  if (value == null) value = game.settings.get(MODULE, `globalSkillActionValue.${slug}`);
+  if (mode  == null) mode  = game.settings.get(MODULE, `globalSkillActionMode.${slug}`);
 
-        if (value == null) value = game.settings.get(MODULE, `globalSkillActionValue.${slug}`);
-        if (mode == null)  mode  = game.settings.get(MODULE, `globalSkillActionMode.${slug}`);
+  let threatGlobal = 0;
 
-        if (value > 0) {
-            threatGlobal = value
-                if (mode === "reduce")
-                    threatGlobal *= -1;
-                console.log(`[${MODULE}] Usando amenaza personalizada del actor para ${slug}: ${value} (${mode})`);
-        } else {
-            if (outcome === 'failure')
-                return;
+  if (Number(value) > 0) {
+    threatGlobal = Number(value);
+    if (mode === "reduce") threatGlobal = -Math.abs(threatGlobal);
+    log.all(`[${MODULE}] Usando amenaza personalizada para ${slug}: ${value} (mode=${mode})`);
+  } else {
+    if (outcome === "failure") {
+      log.min(`[${MODULE}] ${loc("pf2e-threat-tracker.logs.usingCustomThreat")} ${slug}`);
+      return;
+    }
+    
 
-            const baseSkillThreat = game.settings.get(MODULE, 'skillBase') || 0;
-            const baseSkillCrit = game.settings.get(MODULE, 'skillCritBonus') || 0;
+    const baseSkillThreat = Number(game.settings.get(MODULE, "skillBase")) || 0;
+    const baseSkillCrit   = Number(game.settings.get(MODULE, "skillCritBonus")) || 0;
+    const levelFactor     = 1 + actorLevel * 0.1;
 
-            let outcomeThreat = baseSkillThreat;
-            if (outcome === "failure")
-                outcomeThreat === baseSkillThreat;
-            if (outcome === "success")
-                outcomeThreat += Math.ceil(baseSkillThreat * (1 + actorLevel * 0.1));
-            if (outcome === "criticalSuccess")
-                outcomeThreat += Math.ceil(baseSkillThreat + baseSkillCrit * (1 + actorLevel * 0.1));
-
-            threatGlobal = outcomeThreat;
-            console.log(`[${MODULE}] Usando configuración global para skillAction: ${threatGlobal}`);
-        }
-
-        for (const enemy of getEnemyTokens(responsibleToken)) {
-            const idrMult = getThreatModifierIDR(enemy, traits);
-            if (idrMult <= 0) {
-                console.log(`[${MODULE}] ${enemy.name} es inmune a ${traits.join(", ")}`);
-                continue;
-            }
-
-            const finalThreat = Math.round(threatGlobal * idrMult);
-
-            let logBlock = `[${MODULE}] Amenaza por acción de habilidad:\n`;
-            logBlock += ` ├─ Acción: ${slug}\n`;
-            logBlock += ` └─ Amenaza Final: ${finalThreat}\n`;
-            console.log(logBlock);
-
-            console.log(`[${MODULE}] Amenaza aplicada a ${enemy.name}: ${finalThreat >= 0 ? "+" : ""}${finalThreat}`);
-            await _applyThreat(enemy, responsibleToken.id, responsibleToken.name, finalThreat);
-        }
-
-        _updateFloatingPanel();
+    let outcomeThreat = baseSkillThreat;
+    if (outcome === "success") {
+      outcomeThreat += Math.ceil(baseSkillThreat * levelFactor);
+    } else if (outcome === "criticalSuccess") {
+      outcomeThreat += Math.ceil(baseSkillThreat + baseSkillCrit * levelFactor);
+    } else if (outcome === "criticalFailure") {
+      outcomeThreat += -baseSkillThreat * levelFactor;
     }
 
-    if (isAttack) {
-        const outcome = context.outcome ?? 'failure';
-        let actionSlug =
-            context.options?.find(o => o.startsWith("origin:action:slug:"))?.split(":")[3] ??
-            context.options?.find(o => o.startsWith("item:slug:"))?.split(":")[2] ??
-            origin?.system?.slug ?? origin?.slug ?? "";
+    threatGlobal = outcomeThreat;
+    log.all(`[${MODULE}] ${loc("pf2e-threat-tracker.logs.usingGlobalThreat")} "${slug}": ${threatGlobal} (outcome=${outcome}, level=${actorLevel})`);
+  }
 
-        let item = origin instanceof Item ? origin : null;
-
-        let base = game.settings.get(MODULE, 'baseAttackThreat') || 0;
-        if (origin instanceof Item && ['weapon', 'shield', 'spell'].includes(origin.type)) {
-            const customValue = Number(await origin.getFlag(MODULE, "threatAttackValue")) || 0;
-            if (customValue > 0) {
-                base = customValue;
-                console.log(`[${MODULE}] Usando amenaza de ataque personalizada del ítem: ${base}`);
-            } else {
-                console.log(`[${MODULE}] Amenaza de ataque del ítem no configurada, usando valor global: ${base}`);
-            }
-        } else {
-            console.log(`[${MODULE}] No es ítem con ataque configurado, usando valor global: ${base}`);
-        }
-
-        let threatGlobal = base;
-        switch (outcome) {
-        case 'success':
-            threatGlobal += 10;
-            break;
-        case 'criticalSuccess':
-            threatGlobal += 20;
-            break;
-        case 'failure':
-        default:
-            break;
-        }
-
-        console.log(`[${MODULE}] Attack outcome: ${outcome}, base threat: ${base}, total base threat: ${threatGlobal}`);
-
-        const targets = getUserTargets(context, msg, responsibleToken);
-        console.log(`[${MODULE}] Targets array:`, targets);
-
-        for (const target of targets) {
-            const targetToken = canvas.tokens.get(target.id);
-            if (targetToken) {
-                await storePreHP(targetToken, null, responsibleToken, actionSlug);
-                console.log(`[${MODULE}] preHP registrado para ${targetToken.name} antes del daño.`);
-            }
-        }
-
-        for (const enemy of getEnemyTokens(responsibleToken, targets)) {
-            const damageType = item?.system?.damage?.damageType ?? null;
-            const distMult = getDistanceThreatMultiplier(enemy, responsibleToken);
-            const itemMode = await origin?.getFlag(MODULE, "threatItemMode") || "apply";
-
-            let amount = Math.round(threatGlobal * distMult);
-            if (itemMode === "reduce" || game.settings.get(MODULE, 'attackThreatMode') === true) {
-                amount = -amount;
-                console.log(`[${MODULE}] Modo 'reduce' detectado, invirtiendo amenaza`);
-            }
-            const traits = context.traits ?? item?.system?.traits?.value ?? [];
-            const idrMult = getThreatModifierIDR(enemy, {
-                traits,
-                damageType,
-                slug: actionSlug
-            });
-            if (idrMult <= 0) {
-                console.log(`[${MODULE}] ${enemy.name} es inmune a ${traits.join(", ")}`);
-                continue;
-            }
-            const finalThreat = Math.round(amount * idrMult);
-
-            console.log(`[${MODULE}] ${enemy.name}: Distance mult ${distMult}, Vulnerability mult ${idrMult}, final threat ${finalThreat}`);
-            await _applyThreat(enemy, responsibleToken.id, responsibleToken.name, finalThreat);
-        }
-
-        _updateFloatingPanel();
+  for (const enemy of getEnemyTokens(responsibleToken)) {
+       const options = context?.options ?? [];
+       const IWRMult = getThreatModifierIWR(enemy, { traits, slug, options });
+    if (IWRMult <= 0) {
+      log.min(`[${MODULE}] ${enemy.name} ${loc("pf2e-threat-tracker.logs.isImmuneTo")} ${traits.join(", ") || "—"}`);
+      continue;
     }
 
-    if (isHeal) {
-        const originItem = origin instanceof Item ? origin : responsibleToken?.actor?.items?.get(origin?.id);
+    const finalThreat = Math.round(threatGlobal * IWRMult);
 
-        let baseHealThreat = 0;
-        let baseHeal = 0;
+    let logBlock = `[${MODULE}] ${loc("pf2e-threat-tracker.logs.threatCalculation")}\n`;
+    logBlock += ` ├─ ${loc("pf2e-threat-tracker.logs.actionSlug")} ${slug}\n`;
+    logBlock += ` ├─ ${loc("pf2e-threat-tracker.logs.mode")} ${mode ?? "apply"}\n`;
+    logBlock += ` ├─ ${loc("pf2e-threat-tracker.logs.rollOutcome")} ${outcome}\n`;
+    if (outcome === "criticalFailure") {
+    logBlock += ` ├─ ${loc("pf2e-threat-tracker.logs.criticalFailureRevert")}\n`;
+    }
+    logBlock += ` ├─ ${loc("pf2e-threat-tracker.logs.originActorLevel")} ${actorLevel}\n`;
+    logBlock += ` ├─ ${loc("pf2e-threat-tracker.logs.levelAdjustment")} ${1 + actorLevel * 0.1}\n`;
+    if (game.settings.get(MODULE, 'enableIWR') === true){
+    logBlock += ` ├─ ${loc("pf2e-threat-tracker.logs.IWRMultiplier")} ${IWRMult}\n`;
+    }
+    logBlock += ` └─ ${loc("pf2e-threat-tracker.logs.finalThreat")} ${finalThreat}\n`;
+    logBlock += `${loc("pf2e-threat-tracker.logs.threatAppliedTo")} ${enemy.name}: ${finalThreat >= 0 ? "+" : ""}${finalThreat}\n`;
 
-        const lastHealAction = await responsibleToken?.document?.getFlag(MODULE, "lastHealAction");
+    log.min(logBlock);
 
-        const isTreatWounds =
-            (context.type?.toLowerCase() === "skill-check" &&
-            context.options?.some(opt => opt.toLowerCase().includes("action:treat-wounds"))) ||
-        lastHealAction === "treat-wounds";
+    await _applyThreat(enemy, responsibleToken.id, responsibleToken.name, finalThreat);
+  }
 
-        if (isTreatWounds) {
-            baseHealThreat = Number(await responsibleToken.actor?.getFlag(MODULE, "skillActionValue.treat-wounds"));
-            if (!baseHealThreat || baseHealThreat <= 0) {
-                baseHealThreat = game.settings.get(MODULE, 'baseHealThreat') || 0;
-                console.log(`[${MODULE}] Amenaza Treat Wounds no configurada en el actor, usando valor global: ${baseHealThreat}`);
-            }
-            baseHeal = baseHealThreat;
-            console.log(`[${MODULE}] Detectado Treat Wounds → Amenaza del actor: ${baseHeal}`);
-            await responsibleToken?.document?.unsetFlag(MODULE, "lastHealAction");
-        } else {
-            let foundItem = originItem;
-            if (!foundItem || !(foundItem instanceof Item)) {
-                const actor = origin?.actor ?? responsibleToken?.actor;
-                if (actor && origin?.id) {
-                    const found = actor.items.get(origin.id);
-                    if (found)
-                        foundItem = found;
-                }
-            }
+  _updateFloatingPanel();
+}
 
-            if (foundItem?.getFlag) {
-                baseHealThreat = Number(await foundItem.getFlag(MODULE, "threatHealValue"));
-                if (!baseHealThreat || baseHealThreat <= 0) {
-                    baseHealThreat = game.settings.get(MODULE, 'baseHealThreat') || 0;
-                    console.log(`[${MODULE}] Amenaza de curación del ítem no configurada, usando valor global: ${baseHealThreat}`);
-                } else {
-                    console.log(`[${MODULE}] Amenaza de curación personalizada del ítem: ${baseHealThreat}`);
-                }
-            } else {
-                baseHealThreat = game.settings.get(MODULE, 'baseHealThreat') || 0;
-                console.log(`[${MODULE}] Amenaza de curación del ítem no configurada, usando valor global: ${baseHealThreat}`);
-            }
-            baseHeal = baseHealThreat;
-        }
 
-        baseHeal = baseHealThreat > 0
-             ? baseHealThreat
-             : game.settings.get(MODULE, 'baseHealThreat') || 0;
+if (isAttack) {
 
-        const targets = getUserTargets(context, msg, responsibleToken);
+  const outcome = context.outcome ?? "failure";
 
-        let token = null;
-        for (const tgtId of targets) {
-            const tempToken = canvas.tokens.get(tgtId);
-            if (!tempToken || tempToken.document.disposition !== responsibleToken.document.disposition) {
-                if (tempToken)
-                    console.log(`[${MODULE}] Curación a enemigo ignorada: ${tempToken.name}`);
-                continue;
-            }
-            token = tempToken;
-            break;
-        }
+  let actionSlug =
+    context.options?.find(o => o.startsWith("origin:action:slug:"))?.split(":")[3] ??
+    context.options?.find(o => o.startsWith("item:slug:"))?.split(":")[2] ??
+    origin?.system?.slug ?? origin?.slug ?? "";
 
-        if (!token) {
-            console.log(`[${MODULE}] No hay token válido para curar`);
-            return;
-        }
+  const item = origin instanceof Item ? origin : null;
 
-        const preData = await token.document.getFlag(MODULE, 'preHP');
-        let preHP = preData?.hp;
-        const { hp } = token.actor.system.attributes;
-        const maxHP = hp.max;
-        const healedOpt = context.options?.find(o => o.startsWith('hp-remaining:'));
-        const healAmt = Math.max(0, hp.value - preHP);
-        const healPossible = Math.max(0, maxHP - preHP);
-        const threatLocal = Math.ceil(baseHeal + healAmt);
+  let base = Number(game.settings.get(MODULE, "baseAttackThreat")) || 0;
 
-        if (threatLocal > 0) {
-            for (const enemy of canvas.tokens.placeables.filter(t =>
-                    t.inCombat &&
-                    t.document.disposition !== responsibleToken.document.disposition &&
-                    t.document.disposition !== 0 &&
-                    responsibleToken.document.disposition !== 0 &&
-                    !t.actor.hasPlayerOwner)) {
-                const primary = targets.includes(enemy.id);
-                let amount = primary ? threatLocal : threatLocal;
-                if (amount <= 0)
-                    continue;
+  if (origin instanceof Item && ["weapon", "shield", "spell"].includes(origin.type)) {
+    const customValue = Number(await origin.getFlag(MODULE, "threatAttackValue")) || 0;
+    if (customValue > 0) {
+      base = customValue;
+      log.min(`[${MODULE}] ${loc("pf2e-threat-tracker.logs.usingCustomThreat")}: ${base}`);
+    } else {
+      log.min(`[${MODULE}] ${loc("pf2e-threat-tracker.logs.usingGlobalThreat")}: ${base}`);
+    }
+  } else {
+    log.min(`[${MODULE}] ${loc("pf2e-threat-tracker.logs.usingGlobalThreat")}: ${base}`);
+  }
 
-                let logBlock = `[${MODULE}] Amenaza por curación general:\n`;
-                logBlock += ` ├─ Puntos de golpe previos del objetivo a curar ${healedOpt}\n`;
-                logBlock += ` ├─ Puntos de golpe máximos ${maxHP}\n`;
-                logBlock += ` ├─ Cantidad de curación posible ${healPossible}\n`;
-                logBlock += ` ├─ Cálculo de curación: (${baseHeal}(Curación Base) + ${healAmt}(Cantidad Curada))\n`;
-                logBlock += ` └─ Amenaza de Curación Final: +${amount}\n`;
+  let threatGlobal = base;
+  switch (outcome) {
+    case "success":          threatGlobal += 10; break;
+    case "criticalSuccess":  threatGlobal += 20; break;
+    case "failure":
+    default: break;
+  }
 
-                console.log(logBlock);
-                await _applyThreat(enemy, responsibleToken.id, responsibleToken.name, amount);
-            }
-            _updateFloatingPanel();
-        }
-        return;
+  const targets = getUserTargets(context, msg, responsibleToken);
+  log.all(`[${MODULE}] ${loc("pf2e-threat-tracker.logs.targets")}:`, targets);
+
+  for (const target of targets) {
+    const targetToken = canvas.tokens.get(target.id);
+    if (targetToken) {
+      await storePreHP(targetToken, null, responsibleToken, actionSlug);
+      log.all(`[${MODULE}] ${loc("pf2e-threat-tracker.logs.tokenDataSavedFor")}: ${targetToken.name}`);
+    }
+  }
+
+  for (const enemy of getEnemyTokens(responsibleToken, targets)) {
+       const damageType = (() => {
+         const d = item?.system?.damage;
+         if (!d) return "";
+         // coge el primer “part” con damageType si existe
+         const first = typeof d === "object" ? Object.values(d).find(Boolean) : null;
+         return first?.damageType ?? d?.damageType ?? "";
+       })();
+    const distMult   = getDistanceThreatMultiplier(enemy, responsibleToken);
+    const itemMode   = (await origin?.getFlag(MODULE, "threatItemMode")) || "apply";
+
+    let amount = Math.round(threatGlobal * distMult);
+    if (itemMode === "reduce" || game.settings.get(MODULE, "attackThreatMode") === true) {
+      amount = -amount;
+      log.all(`[${MODULE}] `, loc("pf2e-threat-tracker.logs.reduceModeDetected"));
     }
 
-    if (isDamageTaken) {
-        console.log(`[${MODULE}] Entering damage block`);
+    const traits  = context.traits ?? item?.system?.traits?.value ?? [];
+    const options = context?.options ?? [];
+    const IWRMult = getThreatModifierIWR(enemy, { traits, slug: actionSlug, damageType, options });
 
-        const damagedTokens = canvas.tokens.placeables.filter(t => {
-                t.inCombat &&
-                t.document.disposition !== responsibleToken.document.disposition &&
-                !t.actor.hasPlayerOwner
-            const preHP = t.document.getFlag(MODULE, 'preHP')?.hp;
-            return typeof preHP === 'number';
-        });
-        console.log(`[${MODULE}] Tokens con preHP registrado: ${damagedTokens.map(t => t.name).join(", ")}`);
-
-        for (const token of damagedTokens) {
-            console.log(`[${MODULE}] Procesando token: ${token.name}`);
-            const preData = await token.document.getFlag(MODULE, 'preHP');
-            console.log(`[${MODULE}] preData:`, preData);
-            const { hp: preHP, attackerId } = preData || {};
-
-            if (!attackerId) {
-                console.warn(`[${MODULE}] ${token.name} no tiene attackerId, se omite`);
-                continue;
-            }
-
-            const responsibleToken = canvas.tokens.get(attackerId);
-            console.log(`[${MODULE}] Attacker encontrado: ${responsibleToken?.name ?? "NINGUNO"}`);
-            if (!responsibleToken)
-                continue;
-
-            const currHP = token.actor.system.attributes.hp?.value ?? 0;
-            const damage = Math.max(0, preHP - currHP);
-            console.log(`[${MODULE}] HP actual: ${currHP}, Daño calculado: ${damage}`);
-            if (damage === 0)
-                continue;
-
-            let threat = damage;
-            let logBlock = `[${MODULE}] Amenaza para ${token.name}:\n`;
-            logBlock += ` ├─ Daño infligido: ${damage} (de ${preHP} a ${currHP})\n`;
-
-            if (damage > preHP * 0.5) {
-                const bonusExcess = Math.floor(damage - preHP * 0.5);
-                threat += bonusExcess;
-                logBlock += ` ├─ Bonus por exceso de daño: +${bonusExcess}\n`;
-            } else {
-                logBlock += ` ├─ Bonus por exceso de daño: +0\n`;
-            }
-
-            const actionSlug = context?.options?.find(opt => opt.startsWith("item:slug:"))?.split(":")[2];
-            if (actionSlug) {
-                let ab = 0;
-                if (item?.getFlag) {
-                ab =
-                    Number(item.getFlag(MODULE, "threatDamageValue")) ||
-                    Number(item.getFlag(MODULE, "threatAttackValue")) ||
-                    Number(item.getFlag(MODULE, "threatItemValue")) ||
-                    0;
-                const m = item.getFlag(MODULE, "threatItemMode") || "apply";
-                if (m === "reduce") ab = -Math.abs(ab);
-                }
-                if (ab)
-                    threat += ab;
-                logBlock += ` ├─ Bonus por acción (${actionSlug}): +${ab}\n`;
-            }
-
-            const distMult = getDistanceThreatMultiplier(token, responsibleToken);
-            console.log(`[${MODULE}] distMult = ${distMult}`);
-
-            const traits = context.traits ?? item?.system?.traits?.value ?? [];
-            console.log(`[${MODULE}] Traits detectados: ${JSON.stringify(traits)}`);
-
-            const damageType = item?.system?.damage?.damageType ?? null;
-            console.log(`[${MODULE}] Damage type detectado: ${damageType}`);
-
-            const traitMult = getThreatModifierIDR(token, traits);
-            console.log(`[${MODULE}] traitMult = ${traitMult}`);
-
-            const dmgTypeMult = damageType ? getThreatModifierIDR(token, [damageType]) : 1;
-            console.log(`[${MODULE}] dmgTypeMult = ${dmgTypeMult}`);
-
-            if (traitMult <= 0 || dmgTypeMult <= 0) {
-                console.log(`[${MODULE}] ${token.name} es inmune a ${[...traits, damageType].filter(Boolean).join(", ")}`);
-                continue;
-            }
-
-            logBlock += ` ├─ Multiplicadores: ${threat} × ${distMult}(distancia) × ${traitMult}(traits)\n`;
-
-            threat = Math.round(threat * distMult * traitMult * dmgTypeMult);
-            logBlock += ` └─ Amenaza Final: +${threat}\n`;
-
-            console.log(logBlock);
-
-            await _applyThreat(token, responsibleToken.id, responsibleToken.name, threat);
-            console.log(`[${MODULE}] Amenaza aplicada a ${token.name}`);
-
-            await token.document.unsetFlag(MODULE, 'preHP');
-            await token.document.unsetFlag(MODULE, 'attackThreat');
-        }
-        console.log(`[${MODULE}] Finalizando damage block, actualizando panel`);
-        _updateFloatingPanel();
+    if (IWRMult <= 0) {
+      log.min(`[${MODULE}] ${enemy.name} es inmune a ${traits.join(", ") || "—"}`);
+      continue;
     }
+
+    const finalThreat = Math.round(amount * IWRMult);
+
+    let logBlock = `[${MODULE}] ${loc("pf2e-threat-tracker.logs.threatCalculation")} ${enemy.name}:\n`;
+    logBlock += ` ├─ ${loc("pf2e-threat-tracker.logs.actionSlug")} ${actionSlug || "—"}\n`;
+    logBlock += ` ├─ ${loc("pf2e-threat-tracker.logs.damageType")} ${damageType ?? "—"}\n`;
+    logBlock += ` ├─ ${loc("pf2e-threat-tracker.logs.baseThreat")} ${base}\n`;
+    logBlock += ` ├─ ${loc("pf2e-threat-tracker.logs.rollOutcome")} ${outcome}\n`;
+    logBlock += ` ├─ ${loc("pf2e-threat-tracker.logs.distanceMutiplier")} ${distMult}\n`;
+    logBlock += ` ├─ ${loc("pf2e-threat-tracker.logs.mode")} ${itemMode}\n`;
+    if (game.settings.get(MODULE, 'enableIWR') === true){
+    logBlock += ` ├─ ${loc("pf2e-threat-tracker.logs.IWRMultiplier")} ${IWRMult}\n`;
+    }
+    logBlock += ` └─ ${loc("pf2e-threat-tracker.logs.finalThreat")} ${finalThreat}\n`;
+    log.min(logBlock);
+
+    await _applyThreat(enemy, responsibleToken.id, responsibleToken.name, finalThreat);
+  }
+
+  _updateFloatingPanel();
+}
+
+
+if (isHeal) {
+  const originItem = origin instanceof Item ? origin : responsibleToken?.actor?.items?.get(origin?.id);
+
+  let baseHealThreat = 0;
+  let baseHeal = 0;
+
+  const lastHealAction = await responsibleToken?.document?.getFlag(MODULE, "lastHealAction");
+
+  const isTreatWounds =
+    (context.type?.toLowerCase() === "skill-check" &&
+     context.options?.some(opt => opt.toLowerCase().includes("action:treat-wounds"))) ||
+    lastHealAction === "treat-wounds";
+
+  if (isTreatWounds) {
+    baseHealThreat = Number(await responsibleToken.actor?.getFlag(MODULE, "skillActionValue.treat-wounds"));
+    if (!baseHealThreat || baseHealThreat <= 0) {
+      baseHealThreat = game.settings.get(MODULE, "baseHealThreat") || 0;
+      log.warn(`[${MODULE}] ${loc("pf2e-threat-tracker.logs.usingGlobalThreat")} ${baseHealThreat}`);
+    }
+    baseHeal = baseHealThreat;
+    await responsibleToken?.document?.unsetFlag(MODULE, "lastHealAction");
+  } else {
+    // Buscar ítem origen si hace falta
+    let foundItem = originItem;
+    if (!foundItem || !(foundItem instanceof Item)) {
+      const actor = origin?.actor ?? responsibleToken?.actor;
+      if (actor && origin?.id) {
+        const found = actor.items.get(origin.id);
+        if (found) foundItem = found;
+      }
+    }
+
+    if (foundItem?.getFlag) {
+      baseHealThreat = Number(await foundItem.getFlag(MODULE, "threatHealValue"));
+      if (!baseHealThreat || baseHealThreat <= 0) {
+        baseHealThreat = game.settings.get(MODULE, "baseHealThreat") || 0;
+        log.warn(`[${MODULE}] ${loc("pf2e-threat-tracker.logs.usingGlobalThreat")} ${baseHealThreat}`);
+      } else {
+        log.min(`[${MODULE}] ${loc("pf2e-threat-tracker.logs.usingCustomThreat")} ${baseHealThreat}`);
+      }
+    } else {
+      baseHealThreat = game.settings.get(MODULE, "baseHealThreat") || 0;
+      log.warn(`[${MODULE}] ${loc("pf2e-threat-tracker.logs.usingGlobalThreat")} ${baseHealThreat}`);
+    }
+    baseHeal = baseHealThreat;
+  }
+
+  // Garantiza fallback coherente
+  baseHeal = baseHealThreat > 0 ? baseHealThreat : (game.settings.get(MODULE, "baseHealThreat") || 0);
+
+  const targets = getUserTargets(context, msg, responsibleToken);
+
+  // Toma el primer aliado válido a curar
+  let token = null;
+  for (const tgtId of targets) {
+    const tempToken = canvas.tokens.get(tgtId);
+    if (!tempToken || tempToken.document.disposition !== responsibleToken.document.disposition) {
+      if (tempToken) log.min(`[${MODULE}] ${loc("pf2e-threat-tracker.logs.enemyHealingIgnored")}: ${tempToken.name}`);
+      continue;
+    }
+    token = tempToken;
+    break;
+  }
+
+  if (!token) {
+    log.warn(`[${MODULE}] `, loc("pf2e-threat-tracker.logs.noValidHealingToken"));
+    return;
+  }
+
+  const preData = await token.document.getFlag(MODULE, "preHP");
+  const preHP   = preData?.hp;
+  const { hp }  = token.actor.system.attributes;
+  const maxHP   = hp.max;
+
+  const healAmt      = Math.max(0, hp.value - preHP);
+  const healPossible = Math.max(0, maxHP - preHP);
+  const threatLocal  = Math.ceil(baseHeal + healAmt);
+
+  if (threatLocal > 0) {
+    for (const enemy of canvas.tokens.placeables.filter(t =>
+      t.inCombat &&
+      t.document.disposition !== responsibleToken.document.disposition &&
+      t.document.disposition !== 0 &&
+      responsibleToken.document.disposition !== 0 &&
+      !t.actor.hasPlayerOwner
+    )) {
+      const amount = threatLocal;
+
+      // Bloque detallado al estilo “sin contexto”
+      let logBlock  = `[${MODULE}] ${loc("pf2e-threat-tracker.logs.threatCalculation")}\n`;
+      logBlock     += ` ├─ ${loc("pf2e-threat-tracker.logs.previousHP")} ${preHP}\n`;
+      logBlock     += ` ├─ ${loc("pf2e-threat-tracker.logs.maxHP")} ${maxHP}\n`;
+      logBlock     += ` ├─ ${loc("pf2e-threat-tracker.logs.possibleHealing")} ${healPossible}\n`;
+      logBlock     += ` ├─ ${loc("pf2e-threat-tracker.logs.baseThreat")} ${baseHeal}\n`;
+      logBlock     += ` ├─ ${loc("pf2e-threat-tracker.logs.healingAmount")} ${healAmt} curado)\n`;
+      logBlock     += ` └─ ${loc("pf2e-threat-tracker.logs.finalThreat")} ${amount}\n`;
+      log.min(logBlock);
+
+      await _applyThreat(enemy, responsibleToken.id, responsibleToken.name, amount);
+    }
+    _updateFloatingPanel();
+  }
+  return;
+}
+
+
+if (isDamageTaken) {
+
+  // Filtrado correcto (con returns explícitos).
+  const damagedTokens = canvas.tokens.placeables.filter(t => {
+    if (!t.inCombat) return false;
+    if (t.document.disposition === responsibleToken.document.disposition) return false;
+    if (t.actor?.hasPlayerOwner) return false;
+    const preHP = t.document.getFlag(MODULE, "preHP")?.hp;
+    return typeof preHP === "number";
+  });
+
+  log.all(`[${MODULE}] Tokens con preHP registrado: ${damagedTokens.map(t => t.name).join(", ") || "—"}`);
+
+  for (const token of damagedTokens) {
+    log.all(`[${MODULE}] ${loc("pf2e-threat-tracker.logs.tokenDataSavedFor")}: ${token.name}`);
+
+    const preData = token.document.getFlag(MODULE, "preHP");
+
+    const { hp: preHP, attackerId } = preData ?? {};
+    if (!attackerId) {
+      continue;
+    }
+
+    const atkToken = canvas.tokens.get(attackerId);
+    if (!atkToken) continue;
+
+    const currHP = token.actor?.system?.attributes?.hp?.value ?? 0;
+    const damage = Math.max(0, preHP - currHP);
+    if (damage === 0) continue;
+
+    // Base: daño como amenaza
+    let threat = damage;
+    let logBlock =
+      `[${MODULE}] ${loc("pf2e-threat-tracker.logs.threatCalculation")} ${token.name}:\n`;
+      logBlock += ` ├─ ${loc("pf2e-threat-tracker.logs.damage")} ${damage}\n`;
+      logBlock += ` ├─ ${loc("pf2e-threat-tracker.logs.previousHP")} ${preHP}\n`;
+      logBlock += ` ├─ ${loc("pf2e-threat-tracker.logs.currentHP")} ${currHP})\n`;
+
+    // Bonus por exceso de daño > 50% de vida previa
+    if (damage > preHP * 0.5) {
+      const bonusExcess = Math.floor(damage - preHP * 0.5);
+      threat += bonusExcess;
+      logBlock += ` ├─ ${loc("pf2e-threat-tracker.logs.massiveDamage")} ${bonusExcess}\n`;
+    } else {
+    }
+
+    // Bonus configurable por acción (desde flags del item)
+    const actionSlug = context?.options?.find(opt => opt.startsWith("item:slug:"))?.split(":")[2];
+    if (actionSlug) {
+      let ab = 0;
+      if (item?.getFlag) {
+        const mode = item.getFlag(MODULE, "threatItemMode") || "apply";
+        ab =
+          Number(item.getFlag(MODULE, "threatDamageValue")) ||
+          Number(item.getFlag(MODULE, "threatAttackValue")) ||
+          Number(item.getFlag(MODULE, "threatItemValue")) ||
+          0;
+        if (mode === "reduce") ab = -Math.abs(ab);
+      }
+      if (ab) threat += ab;
+      logBlock += ` ├─ ${loc("pf2e-threat-tracker.logs.massiveDamage")} (${actionSlug}) ${ab >= 0 ? "+" : ""}${ab}\n`;
+    }
+
+    // Multiplicadores
+    const distMult   = getDistanceThreatMultiplier(token, atkToken);
+    const traits     = context?.traits ?? item?.system?.traits?.value ?? [];
+    const options    = context?.options ?? [];
+    const damageType = (() => {
+    const d = item?.system?.damage;
+    if (!d) return "";
+    const first = typeof d === "object" ? Object.values(d).find(Boolean) : null;
+    return first?.damageType ?? d?.damageType ?? "";
+    })();
+
+    const IWRMult = getThreatModifierIWR(token, { traits, slug: actionSlug, damageType, options });
+
+    if (IWRMult <= 0) {
+    const list = [...traits, damageType].filter(Boolean).join(", ");
+    log.min(`[${MODULE}] ${token.name} ${loc("pf2e-threat-tracker.logs.isImmuneTo")} ${list || "—"}`);
+    continue;
+    }
+
+    logBlock += ` ├─ ${loc("pf2e-threat-tracker.logs.distanceMutiplier")} ${distMult}\n`
+    if (game.settings.get(MODULE, 'enableIWR') === true){
+    logBlock += ` ├─ ${loc("pf2e-threat-tracker.logs.IWRMultiplier")} ${IWRMult}\n`;
+    }
+    threat = Math.round(threat * distMult * IWRMult);
+
+    logBlock += ` └─ ${loc("pf2e-threat-tracker.logs.finalThreat")} ${threat >= 0 ? "+" : ""}${threat}\n`;
+
+    log.min(logBlock);
+
+    await _applyThreat(token, atkToken.id, atkToken.name, threat);
+
+    await token.document.unsetFlag(MODULE, "preHP");
+    await token.document.unsetFlag(MODULE, "attackThreat");
+  }
+
+  _updateFloatingPanel();
+}
+
 
 });
