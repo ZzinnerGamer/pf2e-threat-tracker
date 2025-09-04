@@ -1,6 +1,6 @@
 const MODULE = 'pf2e-threat-tracker';
 
-import { getLoggingMode } from "./logic/threat-utils.js";
+import { getLoggingMode } from "../logic/threat-utils.js";
 
 const log = {
   all:  (...a) => { if (getLoggingMode() === 'all') console.log(...a); },
@@ -30,8 +30,12 @@ Hooks.on('canvasPan', _updateFloatingPanel);
 Hooks.on('updateToken', _updateFloatingPanel);
 Hooks.on('deleteCombat', async() => {
     if (!game.user.isGM) return;
-    for (const tok of canvas.tokens.placeables)
-        await tok.document.unsetFlag(MODULE, 'threatTable');
+    for (const token of canvas.tokens.placeables) {
+        await token.document.unsetFlag(MODULE, 'threatTable');
+        await token.document.unsetFlag(MODULE, 'attackThreat');
+        await token.document.unsetFlag(MODULE, 'preHP');
+        await token.document.unsetFlag(MODULE, "lastHealAction")
+    }
     _updateFloatingPanel();
 });
 // NO FUNCIONA XD
