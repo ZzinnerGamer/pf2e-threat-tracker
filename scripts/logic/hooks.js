@@ -1,6 +1,6 @@
 const MODULE = 'pf2e-threat-tracker';
 
-import { getLoggingMode } from "../logic/threat-utils.js";
+import { getLoggingMode, isActorDead } from "../logic/threat-utils.js";
 
 const log = {
   all:  (...a) => { if (getLoggingMode() === 'all') console.log(...a); },
@@ -25,7 +25,13 @@ Hooks.on("preUpdateActor", async (actor, update, options, userId) => {
 });
 
 
-Hooks.on('canvasReady', _updateFloatingPanel);
+Hooks.on('canvasReady', () => { if (game.user.isGM) _updateFloatingPanel(); });
+Hooks.on('createCombat', () => { if (game.user.isGM) _updateFloatingPanel(); });
+Hooks.on('deleteCombat', () => { if (game.user.isGM) _updateFloatingPanel(); });
+Hooks.on('updateCombat', (_c, changed) => {
+  if (!game.user.isGM) return;
+  if ('active' in changed || 'round' in changed || 'turn' in changed) _updateFloatingPanel();
+});
 Hooks.on('canvasPan', _updateFloatingPanel);
 Hooks.on('updateToken', _updateFloatingPanel);
 Hooks.on('deleteCombat', async() => {
@@ -38,6 +44,7 @@ Hooks.on('deleteCombat', async() => {
     }
     _updateFloatingPanel();
 });
+
 // NO FUNCIONA XD
 Hooks.on('getTokenHUDButtons', (hud, buttons) => {
     if (!game.user.isGM)
@@ -54,6 +61,44 @@ Hooks.on('getTokenHUDButtons', (hud, buttons) => {
             _updateFloatingPanel();
         }
     });
+});
+
+// HANDLER DEL ACTOR MUERTO
+
+Hooks.on('updateCombatant', async (combatant, changes) => {
+  if (!game.user.isGM) return;
+  if (!('defeated' in changes)) return;
+
+  const scene = game.scenes.get(combatant.sceneId);
+  const tokenDoc =
+    scene?.tokens?.get(combatant.tokenId) ??
+    canvas.tokens.get(combatant.tokenId)?.document;
+  const actor = tokenDoc?.actor;
+  if (!actor) return;
+  
+    if (changes.defeated) {
+      await actor.setFlag(MODULE, 'ignoreThreat', true);
+      console.log(`[${MODULE}] Actor ${actor.name} marcado como muerto/derrotado.`);
+    } else {
+      await actor.unsetFlag(MODULE, 'ignoreThreat');
+      console.log(`[${MODULE}] Actor ${actor.name} desmarcado como muerto/derrotado.`);
+    }
+
+  _updateFloatingPanel?.();
+});
+
+
+Hooks.on('createItem', async item => {
+  if (item.type === 'condition') {
+    await item.actor.setFlag(MODULE, 'ignoreThreat', isActorDead(item.actor));
+    _updateFloatingPanel();
+  }
+});
+Hooks.on('deleteItem', async item => {
+  if (item.type === 'condition') {
+    await item.actor.unsetFlag(MODULE, 'ignoreThreat', isActorDead(item.actor));
+    _updateFloatingPanel();
+  }
 });
 
 // LIMPIAR FLAGS POR TURNO
