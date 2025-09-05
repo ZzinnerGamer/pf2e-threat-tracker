@@ -1,8 +1,6 @@
 const MODULE = 'pf2e-threat-tracker';
 
-
 import { ThreatConfigApp } from "../ui/option-menu.js";
-
 
 export const getLoggingMode = () => globalThis.game?.settings?.get?.(MODULE, 'loggingMode') ?? 'none';
 
@@ -48,6 +46,9 @@ export async function _applyThreat(enemy, srcId, srcName, amount) {
     console.warn(`[${MODULE}] _applyThreat: enemy inválido`, enemy);
     return;
 }
+    if (enemy.actor?.getFlag(MODULE, 'ignoreThreat')) return;
+    if (isActorDead(enemy.actor)) return;
+    
     const raw = enemy.document.getFlag(MODULE, 'threatTable') ?? {};
     const current = Object.entries(raw).reduce((acc, [id, v]) => {
         acc[id] = typeof v === 'object' ? {
@@ -299,10 +300,44 @@ export function getDistanceThreatMultiplier(tokenTarget, tokenSource) {
     return 0.5;
 }
 
+function getCanvasTokenById(id) {
+  // Intenta varias rutas por si id es del objeto o del documento
+  return canvas.tokens.get(id)
+      ?? canvas.tokens.placeables.find(t => t.id === id || t.document?.id === id)
+      ?? null;
+}
+
+function hoverToken(id, hoverIn = true) {
+  const t = getCanvasTokenById(id);
+  if (!t) return;
+  const obj = t.object ?? t;  // por si te pasan el Document
+  try {
+    if (hoverIn) obj._onHoverIn?.({});
+    else         obj._onHoverOut?.({});
+  } catch (_) {}
+}
+
+function selectTokenById(id, { additive = false, pan = true } = {}) {
+  const t = getCanvasTokenById(id);
+  if (!t) return;
+  const obj = t.object ?? t;
+  // si no es selección aditiva, soltamos lo demás
+  if (!additive) canvas.tokens.releaseAll();
+  obj.control?.({ releaseOthers: !additive, pan });
+}
+
+
+let __tt_isRendering = false;
+let __tt_needsRerender = false;
+
 export async function _updateFloatingPanel() {
   if (!game.settings.get(MODULE, 'enableThreatPanel')) return;
   if (!game.user.isGM) return;
 
+  if (__tt_isRendering) { __tt_needsRerender = true; return; }
+  __tt_isRendering = true;
+
+  try {
   const combat = game.combats.active;
   const id = 'threat-tracker-panel';
   let panel = document.getElementById(id);
@@ -416,41 +451,148 @@ if (!panel) {
   if (!body) return;
   body.innerHTML = '';
 
+   const ignoredIds = new Set(
+    canvas.tokens.placeables
+      .filter(t => t.actor?.getFlag(MODULE, 'ignoreThreat') || isActorDead?.(t))
+      .map(t => t.id)
+  );
+
+    const toClear = [];
+
   // Por cada token con threatTable, mostrar card
-  for (const tok of canvas.tokens.placeables) {
+for (const tok of canvas.tokens.placeables) {
+      if (ignoredIds.has(tok.id)) {
+        const table = tok.document.getFlag(MODULE, 'threatTable');
+        if (table && Object.keys(table).length > 0) toClear.push(tok.document);
+        continue;
+      }
+
     const table = tok.document.getFlag(MODULE, 'threatTable');
     if (!table || Object.keys(table).length === 0) continue;
 
     // ordenar desc y top3
-    const sorted = Object.entries(table)
-      .map(([id, v]) => (typeof v === 'object' ? v : { name: tok.name ?? '???', value: Number(v) || 0 }))
-      .sort((a,b) => b.value - a.value)
+     const sorted = Object.entries(table)
+      .filter(([attackerId]) => !ignoredIds.has(attackerId))
+      .map(([id, v]) => {
+        const { name, value } = typeof v === 'object'
+          ? v
+          : { name: canvas.tokens.get(id)?.name ?? '???', value: Number(v) || 0 };
+        return { id, name, value };
+      })
+      .sort((a, b) => b.value - a.value)
       .slice(0, 3);
+
+    if (sorted.length === 0) continue;
+
 
     const maxVal = Math.max(...sorted.map(s => s.value), 1);
 
     const card = document.createElement('div');
     card.className = 'tt-card';
+    card.dataset.tokenId = tok.id;
     card.innerHTML = `
       <div class="tt-title">
         <span>${tok.name}</span>
         <span class="tt-chip">${game.i18n.localize('Top')} 3</span>
       </div>
     `;
+    
+    const cardTitleEl = card.querySelector(':scope > .tt-title'); // importante :scope para no pillar el header global
+    cardTitleEl.classList.add('tt-clickable'); // para cursor:pointer en CSS
+    cardTitleEl.addEventListener('mouseenter', () => {
+      hoverToken(card.dataset.tokenId, true);
+    });
+    cardTitleEl.addEventListener('mouseleave', () => {
+      hoverToken(card.dataset.tokenId, false);
+    });
+    cardTitleEl.addEventListener('click', (e) => {
+      const additive = e.shiftKey || e.ctrlKey || e.metaKey; // multi-selección
+      selectTokenById(card.dataset.tokenId, { additive, pan: true });
+    });
+
+    card.addEventListener('mouseenter', () => {
+      const token = canvas.tokens.get(card.dataset.tokenId);
+      token?.object?._onHoverIn({});
+    });
+    card.addEventListener('mouseleave', () => {
+      const token = canvas.tokens.get(card.dataset.tokenId);
+      token?.object?._onHoverOut({});
+    });
 
     for (const row of sorted) {
       const wrapper = document.createElement('div');
       wrapper.className = 'tt-entry';
+      wrapper.dataset.tokenId = row.id;
       wrapper.innerHTML = `
         <div>${row.name}</div>
         <div>${row.value}</div>
         <div class="tt-bar-wrap"><div class="tt-bar" style="width:${Math.round((row.value / maxVal) * 100)}%;"></div></div>
       `;
+
+      wrapper.addEventListener('mouseenter', () => {
+        hoverToken(wrapper.dataset.tokenId, true);
+        const token = canvas.tokens.get(wrapper.dataset.tokenId);
+        token?.object?._onHoverIn({});
+      });
+      wrapper.addEventListener('mouseleave', () => {
+        hoverToken(wrapper.dataset.tokenId, false);
+        const token = canvas.tokens.get(wrapper.dataset.tokenId);
+        token?.object?._onHoverOut({});
+      });
+
+      wrapper.addEventListener('click', (e) => {
+        const additive = e.shiftKey || e.ctrlKey || e.metaKey; // multi-selección
+        selectTokenById(wrapper.dataset.tokenId, { additive, pan: true });
+      });
+
+      const nameEl = wrapper.querySelector(':scope > div:first-child');
+      nameEl?.classList?.add('tt-clickable'); // para cursor: pointer en CSS
+      nameEl?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const additive = e.shiftKey || e.ctrlKey || e.metaKey;
+        selectTokenById(wrapper.dataset.tokenId, { additive, pan: true });
+      });
+
       card.appendChild(wrapper);
     }
 
     body.appendChild(card);
   }
+  if (toClear.length > 0) {
+      await Promise.all(toClear.map(doc => doc.setFlag(MODULE, 'threatTable', {})));
+      // Esto disparará hooks y pedirá re-render; el guard de arriba lo controla.
+    }
+
+  } finally {
+    __tt_isRendering = false;
+    if (__tt_needsRerender) {
+      __tt_needsRerender = false;
+      // llama una vez más para estabilizar el DOM tras las limpiezas
+      _updateFloatingPanel();
+    }
+  }
+  
+}
+
+export function isActorDead(actorOrToken) {
+  const actor = actorOrToken?.actor ?? actorOrToken;
+
+  const tokenDoc = actorOrToken?.document ?? null;
+
+  // PF2e: condiciones
+  const hasPF2eCond = actor?.itemTypes?.condition?.some(c =>
+    c.slug === "unconscious" || c.slug === "dead"
+  );
+
+  // Core: overlay "derrotado"
+  const defeatedOverlay =
+    tokenDoc?.activeEffect === CONFIG.specialStatusEffects.DEFEATED ||
+    (Array.isArray(tokenDoc?.activeEffect) && tokenDoc.activeEffect.includes(CONFIG.specialStatusEffects.DEFEATED));
+
+  // Core: combatiente marcado como derrotado desde el Combat Tracker
+  const defeatedCombatant = !!tokenDoc?.combatant?.defeated;
+
+  return !!(hasPF2eCond || defeatedOverlay || defeatedCombatant);
 }
 
 export async function handleThreatFromEffect({ item, action, userId }) {
