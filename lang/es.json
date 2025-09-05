@@ -145,5 +145,6 @@
   "pf2e-threat-tracker.logs.possibleHealing": "Curación posible:",
   "pf2e-threat-tracker.logs.healingAmount": "Cantidad de curación:",
   "pf2e-threat-tracker.logs.damage": "Daño:",
-  "pf2e-threat-tracker.logs.massiveDamage": "Bonificación de daño masivo:"
+  "pf2e-threat-tracker.logs.massiveDamage": "Bonificación de daño masivo:",
+  "pf2e-threat-tracker.logs.isDeadSkipping": "está muerto, saltándose el cálculo de amenaza."
 }
