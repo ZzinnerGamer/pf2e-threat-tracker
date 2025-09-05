@@ -145,6 +145,6 @@
   "pf2e-threat-tracker.logs.possibleHealing": "Possible Healing:",
   "pf2e-threat-tracker.logs.healingAmount": "Healing Amount:",
   "pf2e-threat-tracker.logs.damage": "Damage:",
-  "pf2e-threat-tracker.logs.massiveDamage": "Massive Damage Bonus:"
+  "pf2e-threat-tracker.logs.massiveDamage": "Massive Damage Bonus:",
+  "pf2e-threat-tracker.logs.isDeadSkipping": "is dead, skipping threat calculation."
 }
-
