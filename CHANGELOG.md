@@ -1,5 +1,38 @@
 # CHANGELOG
 
+# [1.2.0] - 2025-9-5
+
+# Changelog — 2025-09-05
+
+## Added
+* Robust detection of “dead/defeated” by combining PF2e conditions (`dead`, `unconscious`) and `defeated` from the Combat Tracker.
+* Panel interaction UX:
+  * **Hover** over **title** of each card → highlights the token on the canvas.
+  * **Click** on and title → selects the token (multi-select with Shift/Ctrl/⌘).
+
+## Changed
+* Floating Panel:
+  * Filters **ignored/defeated tokens** at the card level.
+  * Listeners on card title for hover/click (in addition to rows).
+
+## Fixed
+* Displaying/dragging **ignored/defeated** tokens is avoided; automatic cleanup of their Threat Table.
+* Ensure Threat Panel clears all tokens flags after every combat encounter.
+
+# [1.1.1] - 2025-8-30
+
+Fixed logging
+
+# [1.1.0] - 2025-8-30
+
+* Remade IWR (Immunity/Weakness/Resistance) calculation
+* Added IWR Toggle on the settings menu
+* Added French Localization (@rectulo)
+* Added logging toggle (None/Minimum/All)
+* Fixed themes assets downloading
+* Reduced logging
+* Expanded localization
+
 # [1.0.0] - 2025-8-29
 
 ## 🚀 Main changes
