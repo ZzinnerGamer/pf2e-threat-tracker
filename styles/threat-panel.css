@@ -76,6 +76,9 @@
     font-weight: 700;
     letter-spacing: .3px;
   }
+  .tt-card .tt-title:hover {
+    background: rgba(255,255,255,0.12);
+  }
   .tt-chip {
     font-size: 10px;
     padding: 2px 6px;
@@ -85,12 +88,18 @@
   }
 
   /* LISTA DE AMENAZA */
+  .tt-title.tt-clickable { cursor: pointer; }
+
   .tt-entry {
     display: grid;
     grid-template-columns: 1fr auto;
     gap: 6px;
     align-items: center;
   }
+  .tt-entry:hover {
+    background: rgba(255,255,255,0.12);
+  }
+  .tt-entry .tt-clickable { cursor: pointer; }
   .tt-bar-wrap {
     grid-column: 1 / -1;
     height: 8px;
