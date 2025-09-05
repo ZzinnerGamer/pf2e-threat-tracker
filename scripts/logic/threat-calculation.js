@@ -140,6 +140,10 @@ if (Object.keys(context).length === 0) {
 
   // Aplicación por enemigo con IWR
   for (const enemy of getEnemyTokens(responsibleToken)) {
+    if (enemy.actor?.getFlag(MODULE, 'ignoreThreat')) {
+      log.min(`[${MODULE}] ${enemy.name} ${loc("pf2e-threat-tracker.logs.isDeadSkipping")}`);
+      continue;
+    }
     const IWRMult = getThreatModifierIWR(enemy, { traits, slug, damageType, options });
 
     if (IWRMult <= 0) {
@@ -209,6 +213,10 @@ if (isSpellCast) {
   })();
 
   for (const enemy of getEnemyTokens(responsibleToken)) {
+    if (enemy.actor?.getFlag(MODULE, 'ignoreThreat')) {
+      log.min(`[${MODULE}] ${enemy.name} ${loc("pf2e-threat-tracker.logs.isDeadSkipping")}`);
+      continue;
+    }
     const IWRMult = getThreatModifierIWR(enemy, { traits, slug, damageType, options });
     const finalThreat = Math.round(threatGlobal * IWRMult);
 
@@ -283,6 +291,10 @@ if (isSkillAttack) {
   const tokenTargets = targets.map(tid => canvas.tokens.get(tid)).filter(Boolean);
 
   for (const enemy of getEnemyTokens(responsibleToken, tokenTargets)) {
+    if (enemy.actor?.getFlag(MODULE, 'ignoreThreat')) {
+      log.min(`[${MODULE}] ${enemy.name} ${loc("pf2e-threat-tracker.logs.isDeadSkipping")}`);
+      continue;
+    }
        const traits   = context.traits ?? item?.system?.traits?.value ?? [];
        const options  = context?.options ?? [];
        const IWRMult  = getThreatModifierIWR(enemy, { traits, slug, options });
@@ -375,6 +387,10 @@ if (isSkillAction && !ATTACK_SKILLS.has(actionSlug)) {
   }
 
   for (const enemy of getEnemyTokens(responsibleToken)) {
+    if (enemy.actor?.getFlag(MODULE, 'ignoreThreat')) {
+      log.min(`[${MODULE}] ${enemy.name} ${loc("pf2e-threat-tracker.logs.isDeadSkipping")}`);
+      continue;
+    }
        const options = context?.options ?? [];
        const IWRMult = getThreatModifierIWR(enemy, { traits, slug, options });
     if (IWRMult <= 0) {
@@ -453,6 +469,10 @@ if (isAttack) {
   }
 
   for (const enemy of getEnemyTokens(responsibleToken, targets)) {
+    if (enemy.actor?.getFlag(MODULE, 'ignoreThreat')) {
+      log.min(`[${MODULE}] ${enemy.name} ${loc("pf2e-threat-tracker.logs.isDeadSkipping")}`);
+      continue;
+    }
        const damageType = (() => {
          const d = item?.system?.damage;
          if (!d) return "";
@@ -588,6 +608,11 @@ if (isHeal) {
     )) {
       const amount = threatLocal;
 
+    if (enemy.actor?.getFlag(MODULE, 'ignoreThreat')) {
+      log.min(`[${MODULE}] ${loc("pf2e-threat-tracker.logs.targetIsDeadSkipping")}: ${canvas.tokens.get(target.id)?.name}`);
+      return;
+    }
+
       // Bloque detallado al estilo “sin contexto”
       let logBlock  = `[${MODULE}] ${loc("pf2e-threat-tracker.logs.threatCalculation")}\n`;
       logBlock     += ` ├─ ${loc("pf2e-threat-tracker.logs.previousHP")} ${preHP}\n`;
@@ -709,4 +734,3 @@ if (isDamageTaken) {
 
 
 });
-
