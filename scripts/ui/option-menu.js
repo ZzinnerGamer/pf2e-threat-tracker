@@ -3,7 +3,7 @@ import { skillActionsData } from "../data/skill-actions.js";
 
 const SETTINGS_GROUPS = {
   General: [
-    'xFactor', 'yFactor', 'decayEnabled', 'decayFactor'
+    'enableThreatPanel', 'xFactor', 'yFactor', 'decayEnabled', 'decayFactor'
   ],
   Threat: [
     'baseAttackThreat', 'attackThreatMode', 'baseSpellThreat',
@@ -11,7 +11,7 @@ const SETTINGS_GROUPS = {
   ],
   Sequencer: [ 'topThreatEffect', 'enableTopThreatEffect'
   ],
-  Appearance: [ 'enableThreatPanel', 'panelTheme', 'panelOpacity' ]
+  Appearance: [ 'panelTheme', 'panelOpacity' ]
 };
 
 let currentThreatConfigApp = null;
@@ -50,11 +50,11 @@ export class ThreatConfigApp extends foundry.applications.api.ApplicationV2 {
   /** Prepara datos para renderizar */
   async _prepareContext() {
     const categories = [
-      { key: 'General',   title: game.i18n.localize("pf2e-threat-tracker.threatConfig.general"),        active: this.activeGroupKey === 'General' },
-      { key: 'Threat',    title: game.i18n.localize("pf2e-threat-tracker.threatConfig.threat"),         active: this.activeGroupKey === 'Threat' },
-      { key: 'Sequencer',     title: 'Sequencer',          active: this.activeGroupKey === 'Sequencer' },
-      { key: 'Custom',    title: game.i18n.localize("pf2e-threat-tracker.threatConfig.customThreat"),   active: this.activeGroupKey === 'Custom' },
-      { key: 'Templates', title: game.i18n.localize("pf2e-threat-tracker.threatConfig.threatPresets"),  active: this.activeGroupKey === 'Templates' },
+      { key: 'General',    title: game.i18n.localize("pf2e-threat-tracker.threatConfig.general"),        active: this.activeGroupKey === 'General' },
+      { key: 'Threat',     title: game.i18n.localize("pf2e-threat-tracker.threatConfig.threat"),         active: this.activeGroupKey === 'Threat' },
+      { key: 'Sequencer',  title: 'Sequencer',                                                           active: this.activeGroupKey === 'Sequencer' },
+      { key: 'Custom',     title: game.i18n.localize("pf2e-threat-tracker.threatConfig.customThreat"),   active: this.activeGroupKey === 'Custom' },
+      { key: 'Templates',  title: game.i18n.localize("pf2e-threat-tracker.threatConfig.threatPresets"),  active: this.activeGroupKey === 'Templates' },
       { key: 'Appearance', title: game.i18n.localize("pf2e-threat-tracker.threatConfig.appearance"),    active: this.activeGroupKey === 'Appearance' }
     ];
 
