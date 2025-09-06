@@ -90,6 +90,9 @@
   /* LISTA DE AMENAZA */
   .tt-title.tt-clickable { cursor: pointer; }
 
+  .tt-card.is-dim   { opacity: 0.35; filter: grayscale(0.2); transition: opacity 120ms ease; }
+  .tt-card.is-focus { opacity: 1; }
+
   .tt-entry {
     display: grid;
     grid-template-columns: 1fr auto;
