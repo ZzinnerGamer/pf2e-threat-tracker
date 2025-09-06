@@ -4,6 +4,7 @@
 
 ## Added
 * Max visible threat cards on the threat panel
+* Highlight selected token own threat card and reduce visibility of others
 
 # [1.2.0] - 2025-9-5
 
