@@ -326,9 +326,11 @@ function selectTokenById(id, { additive = false, pan = true } = {}) {
   obj.control?.({ releaseOthers: !additive, pan });
 }
 
+// TABLA DE AMENAZA
 
 let __tt_isRendering = false;
 let __tt_needsRerender = false;
+let __tt_index = 0;
 
 export async function _updateFloatingPanel() {
   if (!game.settings.get(MODULE, 'enableThreatPanel')) return;
@@ -407,6 +409,11 @@ if (!panel) {
       y = Math.min(Math.max(0, y), window.innerHeight - panel.offsetHeight);
       panel.style.left = `${x}px`;
       panel.style.top = `${y}px`;
+    });
+    window.addEventListener('resize', () => {
+    const p = document.getElementById('threat-tracker-panel');
+    const b = p?.querySelector('.tt-body');
+    if (p && b) applyMaxVisibleCards(p, b);
     });
 
     // --- Acciones ---
@@ -489,6 +496,7 @@ for (const tok of canvas.tokens.placeables) {
 
     const card = document.createElement('div');
     card.className = 'tt-card';
+    card.dataset.index = String(__tt_index++);
     card.dataset.tokenId = tok.id;
     card.innerHTML = `
       <div class="tt-title">
@@ -498,7 +506,7 @@ for (const tok of canvas.tokens.placeables) {
     `;
     
     const cardTitleEl = card.querySelector(':scope > .tt-title'); // importante :scope para no pillar el header global
-    cardTitleEl.classList.add('tt-clickable'); // para cursor:pointer en CSS
+    cardTitleEl.classList.add('tt-clickable'); // opcional para cursor:pointer en CSS
     cardTitleEl.addEventListener('mouseenter', () => {
       hoverToken(card.dataset.tokenId, true);
     });
@@ -546,7 +554,7 @@ for (const tok of canvas.tokens.placeables) {
       });
 
       const nameEl = wrapper.querySelector(':scope > div:first-child');
-      nameEl?.classList?.add('tt-clickable'); // para cursor: pointer en CSS
+      nameEl?.classList?.add('tt-clickable'); // para cursor: pointer en CSS si quieres
       nameEl?.addEventListener('click', (e) => {
         e.stopPropagation();
         const additive = e.shiftKey || e.ctrlKey || e.metaKey;
@@ -563,6 +571,16 @@ for (const tok of canvas.tokens.placeables) {
       // Esto disparará hooks y pedirá re-render; el guard de arriba lo controla.
     }
 
+  const controlled = canvas.tokens.controlled;
+  if (controlled.length > 0) {
+    const lastId = controlled[controlled.length - 1].id;
+    focusThreatCardByTokenId(lastId);
+  } else {
+    clearThreatPanelFocus();
+  }
+
+  if (!minimized) applyMaxVisibleCards(panel, body);
+
   } finally {
     __tt_isRendering = false;
     if (__tt_needsRerender) {
@@ -574,6 +592,77 @@ for (const tok of canvas.tokens.placeables) {
   
 }
 
+export function focusThreatCardByTokenId(tokenId) {
+  const body = document.querySelector('#threat-tracker-panel .tt-body');
+  if (!body) return;
+
+  const cards = Array.from(body.querySelectorAll('.tt-card'));
+  const target = cards.find(c => c.dataset.tokenId === tokenId);
+  if (!target) { clearThreatPanelFocus(); return; }
+
+  // Oscurecer todas menos la objetivo
+  for (const c of cards) {
+    if (c === target) {
+      c.classList.remove('is-dim');
+      c.classList.add('is-focus');
+    } else {
+      c.classList.add('is-dim');
+      c.classList.remove('is-focus');
+    }
+  }
+
+  // Subir la tarjeta al inicio si no está ya
+  if (target !== body.firstElementChild) {
+    body.insertBefore(target, body.firstElementChild);
+  }
+}
+
+export function clearThreatPanelFocus() {
+  const body = document.querySelector('#threat-tracker-panel .tt-body');
+  if (!body) return;
+
+  const cards = Array.from(body.querySelectorAll('.tt-card'));
+  // Quitar oscurecido
+  for (const c of cards) c.classList.remove('is-dim', 'is-focus');
+
+  // Restaurar orden original usando el índice guardado
+  const ordered = cards.sort((a, b) => (Number(a.dataset.index) || 0) - (Number(b.dataset.index) || 0));
+  for (const c of ordered) body.appendChild(c);
+}
+
+function applyMaxVisibleCards(panel, body) {
+  // N configurable o por defecto
+  const maxCards = Number(game.settings?.get?.(MODULE, 'maxVisibleCards') ?? 4);
+  if (!Number.isFinite(maxCards) || maxCards <= 0) { body.style.maxHeight = ''; return; }
+
+  const cards = body.querySelectorAll('.tt-card');
+  if (cards.length === 0) { body.style.maxHeight = ''; return; }
+
+  // Gap/padding de la lista
+  const bs = getComputedStyle(body);
+  const gap = parseFloat(bs.gap) || 0;
+  const pad = (parseFloat(bs.paddingTop) || 0) + (parseFloat(bs.paddingBottom) || 0);
+
+  // Sumamos la altura de las primeras N cards + gaps internos
+  const count = Math.min(maxCards, cards.length);
+  let target = pad;
+  for (let i = 0; i < count; i++) {
+    target += cards[i].offsetHeight;
+    if (i < count - 1) target += gap;
+  }
+
+  // Limitar también por el 80vh del panel (restando header + gap del panel)
+  const header = panel.querySelector('.tt-header');
+  const headerH = header?.offsetHeight ?? 0;
+  const ps = getComputedStyle(panel);
+  const panelGap = parseFloat(ps.gap) || 0;
+  const maxByViewport = Math.floor(window.innerHeight * 0.8) - headerH - panelGap;
+
+  body.style.maxHeight = `${Math.max(0, Math.min(target, maxByViewport))}px`;
+  body.style.overflow = 'auto'; // por si algún tema lo cambia
+}
+
+
 export function isActorDead(actorOrToken) {
   const actor = actorOrToken?.actor ?? actorOrToken;
 
@@ -584,7 +673,7 @@ export function isActorDead(actorOrToken) {
     c.slug === "unconscious" || c.slug === "dead"
   );
 
-  // Core: overlay "derrotado"
+  // Core: overlay "derrotado" (calavera)
   const defeatedOverlay =
     tokenDoc?.activeEffect === CONFIG.specialStatusEffects.DEFEATED ||
     (Array.isArray(tokenDoc?.activeEffect) && tokenDoc.activeEffect.includes(CONFIG.specialStatusEffects.DEFEATED));
