@@ -146,5 +146,8 @@
   "pf2e-threat-tracker.logs.healingAmount": "Healing Amount:",
   "pf2e-threat-tracker.logs.damage": "Damage:",
   "pf2e-threat-tracker.logs.massiveDamage": "Massive Damage Bonus:",
-  "pf2e-threat-tracker.logs.isDeadSkipping": "is dead, skipping threat calculation."
+  "pf2e-threat-tracker.logs.isDeadSkipping": "is dead, skipping threat calculation.",
+  "pf2e-threat-tracker.Settings.maxVisibleCards.name": "Max Visible Cards",
+  "pf2e-threat-tracker.Settings.maxVisibleCards.hint": "Maximum number of threat cards visible in the panel without scrolling. (No reload is required but if changed is recommended to quickly switch scene and come back to apply the new value, only if you are already in combat)."
 }
+
