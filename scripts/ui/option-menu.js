@@ -1,5 +1,6 @@
 const MODULE = 'pf2e-threat-tracker';
 import { skillActionsData } from "../data/skill-actions.js";
+import { _updateFloatingPanel } from "../logic/threat-utils.js";
 
 const SETTINGS_GROUPS = {
   General: [
@@ -11,7 +12,7 @@ const SETTINGS_GROUPS = {
   ],
   Sequencer: [ 'topThreatEffect', 'enableTopThreatEffect'
   ],
-  Appearance: [ 'panelTheme', 'panelOpacity' ]
+  Appearance: [ 'panelTheme', 'panelOpacity', 'maxVisibleCards'  ]
 };
 
 let currentThreatConfigApp = null;
@@ -69,8 +70,9 @@ export class ThreatConfigApp extends foundry.applications.api.ApplicationV2 {
 
     const panelTheme   = game.settings.get(MODULE, 'panelTheme')   ?? 'dark';
     const panelOpacity = game.settings.get(MODULE, 'panelOpacity') ?? 1;
+    const maxVisibleCards = game.settings.get(MODULE, 'maxVisibleCards') ?? 4;
 
-    return { categories, groups, activeGroupKey: this.activeGroupKey, effectExcludedPacks, panelTheme, panelOpacity };
+    return { categories, groups, activeGroupKey: this.activeGroupKey, effectExcludedPacks, panelTheme, panelOpacity, maxVisibleCards };
   }
 
   _buildSettingsItems(keys) {
