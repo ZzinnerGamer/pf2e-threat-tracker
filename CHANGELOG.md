@@ -1,5 +1,10 @@
 # CHANGELOG
 
+# [1.2.1] - 2025-9-6
+
+## Added
+* Max visible threat cards on the threat panel
+
 # [1.2.0] - 2025-9-5
 
 # Changelog — 2025-09-05
