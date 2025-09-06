@@ -88,6 +88,8 @@
   "pf2e-threat-tracker.Settings.loggingMode.none": "Ninguno",
   "pf2e-threat-tracker.Settings.loggingMode.minimal": "Mínimo",
   "pf2e-threat-tracker.Settings.loggingMode.all": "Todo",
+  "pf2e-threat-tracker.Settings.maxVisibleCards.name": "Máximo de tarjetas visibles",
+  "pf2e-threat-tracker.Settings.maxVisibleCards.hint": "Número máximo de tarjetas de amenaza visibles en el panel sin desplazarse. (No es necesario recargar, pero si cambia, se recomienda cambiar rápidamente de escena y volver para que se aplique el nuevo valor, solo si ya se está en combate).",
   "pf2e-threat-tracker.Settings.panelTheme.name": "Tema del Panel de Amenaza",
   "pf2e-threat-tracker.Settings.panelTheme.hint": "Clase de tema para el panel. El tema no se aplica automáticamente, especialmente para temas con imágenes de fondo. Tienes que cerrar y abrir combate o cambiar de escena para que se recarge el canvas, o recargar la aplicación de foundry via F5.",
   "pf2e-threat-tracker.Settings.panelOpacity.name": "Opacidad del Panel de Amenaza",
