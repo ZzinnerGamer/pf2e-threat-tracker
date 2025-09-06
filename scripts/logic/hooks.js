@@ -1,6 +1,6 @@
 const MODULE = 'pf2e-threat-tracker';
 
-import { getLoggingMode, isActorDead } from "../logic/threat-utils.js";
+import { getLoggingMode, isActorDead, focusThreatCardByTokenId, clearThreatPanelFocus } from "../logic/threat-utils.js";
 
 const log = {
   all:  (...a) => { if (getLoggingMode() === 'all') console.log(...a); },
@@ -63,8 +63,26 @@ Hooks.on('getTokenHUDButtons', (hud, buttons) => {
     });
 });
 
-// HANDLER DEL ACTOR MUERTO
+// HANDLER DE EFECTO VISUAL AL SELECCIOANAR UN TOKEN EN LA THREAT TABLE
+Hooks.on('controlToken', (token, controlled) => {
+  if (!game.user.isGM) return;
+  const body = document.querySelector('#threat-tracker-panel .tt-body');
+  if (!body) return; // si el panel aún no existe, nada que hacer
 
+  if (controlled) {
+    focusThreatCardByTokenId(token.id);
+  } else {
+    const still = canvas.tokens.controlled; // otros que sigan controlados
+    if (still.length > 0) {
+      focusThreatCardByTokenId(still[still.length - 0].id);
+    } else {
+      clearThreatPanelFocus();
+    }
+  }
+});
+
+
+// HANDLER DEL ACTOR MUERTO
 Hooks.on('updateCombatant', async (combatant, changes) => {
   if (!game.user.isGM) return;
   if (!('defeated' in changes)) return;
