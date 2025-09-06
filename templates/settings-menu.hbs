@@ -152,6 +152,18 @@
         <span style="flex:0 0 auto; font-size:12px; opacity:.7;">1</span>
     </div>
     </div>
+    <div class="pv-form-row" style="margin-bottom:10px; padding:6px 0; border-bottom:1px solid #6868684d;">
+  <label>{{localize "pf2e-threat-tracker.Settings.maxVisibleCards.name"}}</label>
+  <div class="notes" style="opacity:.8;">
+    {{localize "pf2e-threat-tracker.Settings.maxVisibleCards.hint"}}
+  </div>
+  <input type="number"
+         name="settings.maxVisibleCards"
+         value="{{maxVisibleCards}}"
+         min="1" max="20" step="1"
+         style="width:80px;">
+</div>
+
   </fieldset>
 {{/if}}
 
