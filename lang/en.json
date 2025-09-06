@@ -88,6 +88,8 @@
   "pf2e-threat-tracker.Settings.loggingMode.none": "None",
   "pf2e-threat-tracker.Settings.loggingMode.minimal": "Minimal",
   "pf2e-threat-tracker.Settings.loggingMode.all": "All",
+  "pf2e-threat-tracker.Settings.maxVisibleCards.name": "Max Visible Cards",
+  "pf2e-threat-tracker.Settings.maxVisibleCards.hint": "Maximum number of threat cards visible in the panel without scrolling. (No reload is required but if changed is recommended to quickly switch scene and come back to apply the new value, only if you are already in combat).",
   "pf2e-threat-tracker.Settings.panelTheme.name": "Threat Panel Theme",
   "pf2e-threat-tracker.Settings.panelTheme.hint": "Panel theme class. The theme does not apply automatically, specially for those themes that has any kind of background image. You have to close combat and enter again or change scene to reload the game canvas, or reload the foundry application with F5.",
   "pf2e-threat-tracker.Settings.panelOpacity.name": "Threat Panel Opacity",
@@ -146,8 +148,7 @@
   "pf2e-threat-tracker.logs.healingAmount": "Healing Amount:",
   "pf2e-threat-tracker.logs.damage": "Damage:",
   "pf2e-threat-tracker.logs.massiveDamage": "Massive Damage Bonus:",
-  "pf2e-threat-tracker.logs.isDeadSkipping": "is dead, skipping threat calculation.",
-  "pf2e-threat-tracker.Settings.maxVisibleCards.name": "Max Visible Cards",
-  "pf2e-threat-tracker.Settings.maxVisibleCards.hint": "Maximum number of threat cards visible in the panel without scrolling. (No reload is required but if changed is recommended to quickly switch scene and come back to apply the new value, only if you are already in combat)."
+  "pf2e-threat-tracker.logs.isDeadSkipping": "is dead, skipping threat calculation."
 }
+
 
