@@ -223,69 +223,79 @@ Hooks.once('init', async() => {
     });
 
 
-game.settings.register(MODULE, 'effectExcludedPacks', {
-  name: game.i18n.localize("pf2e-threat-tracker.settings.effectExcludedPacks.name"),  
-  hint: game.i18n.localize("pf2e-threat-tracker.settings.effectExcludedPacks.hint"),  
-  scope: 'world',
-  config: false,
-  type: String,
-  default: 'Divine Intercessions, Pathfinder Society Boons, Bestiary Effects, Campaign Effects, Kingmaker Features'
-});
+    game.settings.register(MODULE, 'effectExcludedPacks', {
+    name: game.i18n.localize("pf2e-threat-tracker.settings.effectExcludedPacks.name"),  
+    hint: game.i18n.localize("pf2e-threat-tracker.settings.effectExcludedPacks.hint"),  
+    scope: 'world',
+    config: false,
+    type: String,
+    default: 'Divine Intercessions, Pathfinder Society Boons, Bestiary Effects, Campaign Effects, Kingmaker Features'
+    });
 
     // ----- [ Bloque de Apariencia ] -----
 
-game.settings.register(MODULE, 'panelTheme', {
-  name: game.i18n.localize("pf2e-threat-tracker.Settings.panelTheme.name"),
-  hint: game.i18n.localize("pf2e-threat-tracker.Settings.panelTheme.name"),
-  scope: 'client',
-  config: false,
-  type: String,
-  choices: {
-    blueNeon: "pf2e-threat-tracker.Settings.panelTheme.blueNeon",
-    redNeon: "pf2e-threat-tracker.Settings.panelTheme.redNeon",
-    dark: "pf2e-threat-tracker.Settings.panelTheme.dark",
-    darkGeoBlack: "pf2e-threat-tracker.Settings.panelTheme.darkGeoBlack",
-    darkGeoWhite: "pf2e-threat-tracker.Settings.panelTheme.darkGeoWhite",
-    fargo: "pf2e-threat-tracker.Settings.panelTheme.fargo",
-    sciFiBlue: "pf2e-threat-tracker.Settings.panelTheme.sciFiBlue",
-    sciFiRed: "pf2e-threat-tracker.Settings.panelTheme.sciFiRed",
-    white: "pf2e-threat-tracker.Settings.panelTheme.white"
-  },
-  default: 'dark',
-        onChange: () => {
-            ui.notifications.info(game.i18n.localize("pf2e-threat-tracker.notifications.threatPanelStyle.noCombat"));
-        }
-});
+    game.settings.register(MODULE, 'panelTheme', {
+    name: game.i18n.localize("pf2e-threat-tracker.Settings.panelTheme.name"),
+    hint: game.i18n.localize("pf2e-threat-tracker.Settings.panelTheme.name"),
+    scope: 'client',
+    config: false,
+    type: String,
+    choices: {
+        blueNeon: "pf2e-threat-tracker.Settings.panelTheme.blueNeon",
+        redNeon: "pf2e-threat-tracker.Settings.panelTheme.redNeon",
+        dark: "pf2e-threat-tracker.Settings.panelTheme.dark",
+        darkGeoBlack: "pf2e-threat-tracker.Settings.panelTheme.darkGeoBlack",
+        darkGeoWhite: "pf2e-threat-tracker.Settings.panelTheme.darkGeoWhite",
+        fargo: "pf2e-threat-tracker.Settings.panelTheme.fargo",
+        sciFiBlue: "pf2e-threat-tracker.Settings.panelTheme.sciFiBlue",
+        sciFiRed: "pf2e-threat-tracker.Settings.panelTheme.sciFiRed",
+        white: "pf2e-threat-tracker.Settings.panelTheme.white"
+    },
+    default: 'dark',
+            onChange: () => {
+                ui.notifications.info(game.i18n.localize("pf2e-threat-tracker.notifications.threatPanelStyle.noCombat"));
+            }
+    });
 
-game.settings.register(MODULE, 'panelOpacity', {
-  name: game.i18n.localize("pf2e-threat-tracker.Settings.panelOpacity.name"),
-  hint: game.i18n.localize("pf2e-threat-tracker.Settings.panelOpacity.name"),
-  scope: 'client',
-  config: false,
-  type: Number,
-  range: { min: 0.3, max: 1.0, step: 0.1 },
-  default: 1,
-        onChange: () => {
-            ui.notifications.info(game.i18n.localize("pf2e-threat-tracker.notifications.threatPanelStyle.noCombat"));
-        }
-});
+    game.settings.register(MODULE, 'panelOpacity', {
+    name: game.i18n.localize("pf2e-threat-tracker.Settings.panelOpacity.name"),
+    hint: game.i18n.localize("pf2e-threat-tracker.Settings.panelOpacity.name"),
+    scope: 'client',
+    config: false,
+    type: Number,
+    range: { min: 0.3, max: 1.0, step: 0.1 },
+    default: 1,
+            onChange: () => {
+                ui.notifications.info(game.i18n.localize("pf2e-threat-tracker.notifications.threatPanelStyle.noCombat"));
+            }
+    });
 
-game.settings.register(MODULE, 'panelMinimized', {
-  name: game.i18n.localize("pf2e-threat-tracker.Settings.panelMinimized.name"),
-  scope: 'client',
-  config: false,
-  type: Boolean,
-  default: false
-});
+    game.settings.register(MODULE, 'panelMinimized', {
+    name: game.i18n.localize("pf2e-threat-tracker.Settings.panelMinimized.name"),
+    scope: 'client',
+    config: false,
+    type: Boolean,
+    default: false
+    });
 
 
-game.settings.register(MODULE, 'panelShowBorders', {
-  scope: 'client', config: false, type: Boolean, default: true
-});
+    game.settings.register(MODULE, 'panelShowBorders', {
+    scope: 'client', config: false, type: Boolean, default: true
+    });
 
-game.settings.register(MODULE, 'panelBgImage', {
-  scope: 'client', config: false, type: String, default: ''
-});
+    game.settings.register(MODULE, 'panelBgImage', {
+    scope: 'client', config: false, type: String, default: ''
+    });
+
+    game.settings.register(MODULE, 'maxVisibleCards', {
+    name: 'Máx. tarjetas visibles',
+    scope: 'client',
+    config: false,
+    type: Number,
+    default: 4,
+    range: { min: 1, max: 20, step: 1 },
+    onChange: () => _updateFloatingPanel()
+    });
 
 
     // ----- [ Bloque de Logging ] -----
@@ -311,4 +321,3 @@ game.settings.register(MODULE, 'loggingMode', {
     });
 
 });
-
