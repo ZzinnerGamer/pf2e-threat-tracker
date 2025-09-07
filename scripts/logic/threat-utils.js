@@ -352,7 +352,7 @@ function getCanvasTokenById(id) {
 function hoverToken(id, hoverIn = true) {
   const t = getCanvasTokenById(id);
   if (!t) return;
-  const obj = t.object ?? t;  // por si te pasan el Document
+  const obj = t.object ?? t;
   try {
     if (hoverIn) obj._onHoverIn?.({});
     else         obj._onHoverOut?.({});
@@ -469,7 +469,6 @@ if (!panel) {
     header.querySelector('.tt-config')?.addEventListener('click', (e) => {
       e.preventDefault(); e.stopPropagation();
       try {
-        // Abre tu menú con pestañas
         new ThreatConfigApp().render(true);
       } catch (err) {
         console.warn('[pf2e-threat-tracker] No se pudo abrir ThreatConfigApp:', err);
@@ -478,7 +477,7 @@ if (!panel) {
   }
 
   // Aplicar tema/opacidad (por si cambian en runtime)
-  panel.classList.remove('dark','parchment','blueNeon', 'fargo', 'darkGeoBlack', 'darkGeoWhite');
+  panel.classList.remove('dark','white','blueNeon', 'redNeon','proFantasy','rpgGame','invisible','sciFiBlue','sciFiRed','fargo', 'darkGeoBlack', 'darkGeoWhite');
   panel.classList.add(themeClass);
   panel.style.opacity = String(panelOpacity);
   panel.style.setProperty('--p', `${progress}%`);
@@ -548,7 +547,7 @@ for (const tok of canvas.tokens.placeables) {
     `;
     
     const cardTitleEl = card.querySelector(':scope > .tt-title'); // importante :scope para no pillar el header global
-    cardTitleEl.classList.add('tt-clickable'); // opcional para cursor:pointer en CSS
+    cardTitleEl.classList.add('tt-clickable');
     cardTitleEl.addEventListener('mouseenter', () => {
       hoverToken(card.dataset.tokenId, true);
     });
@@ -596,7 +595,7 @@ for (const tok of canvas.tokens.placeables) {
       });
 
       const nameEl = wrapper.querySelector(':scope > div:first-child');
-      nameEl?.classList?.add('tt-clickable'); // para cursor: pointer en CSS si quieres
+      nameEl?.classList?.add('tt-clickable'); // para cursor: pointer
       nameEl?.addEventListener('click', (e) => {
         e.stopPropagation();
         const additive = e.shiftKey || e.ctrlKey || e.metaKey;
@@ -685,7 +684,7 @@ function applyMaxVisibleCards(panel, body) {
   const gap = parseFloat(bs.gap) || 0;
   const pad = (parseFloat(bs.paddingTop) || 0) + (parseFloat(bs.paddingBottom) || 0);
 
-  // Sumamos la altura de las primeras N cards + gaps internos
+  // Suma la altura de las primeras N cards + gaps internos
   const count = Math.min(maxCards, cards.length);
   let target = pad;
   for (let i = 0; i < count; i++) {
@@ -810,3 +809,4 @@ export async function handleThreatFromEffect({ item, action, userId }) {
   
   log.all(logBlock)
 }
+
