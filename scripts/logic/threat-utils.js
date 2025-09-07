@@ -276,6 +276,48 @@ function getTopThreatTarget(enemyToken) {
     };
 }
 
+// REDUCCIÓN DE AMENAZA PORCENTUAL AL CAER
+export async function reduceThreatForUnconscious(tokenOrDoc, percent = null) {
+  const token = tokenOrDoc?.document ? tokenOrDoc : canvas.tokens.get(tokenOrDoc?.id ?? tokenOrDoc);
+  if (!token) return;
+
+  const pct = Number(
+    percent ?? game.settings.get(MODULE, 'unconsciousThreatPercent') ?? 50
+  );
+  const factor = Math.max(0, Math.min(100, pct)) / 100;
+
+  const updates = [];
+
+  for (const enemy of canvas.tokens.placeables) {
+    const table = enemy.document.getFlag(MODULE, 'threatTable');
+    if (!table) continue;
+
+    // ¿Existe entrada para este aliado?
+    const raw = table[token.id];
+    if (raw == null) continue;
+
+    // Normaliza a objeto {name, value}
+    const entry = typeof raw === 'object'
+      ? { name: raw.name ?? (canvas.tokens.get(token.id)?.name ?? '???'), value: Number(raw.value) || 0 }
+      : { name: canvas.tokens.get(token.id)?.name ?? '???', value: Number(raw) || 0 };
+
+    const newVal = Math.max(0, Math.round(entry.value * factor));
+    if (newVal === entry.value) continue; // nada que hacer
+
+    const newTable = {
+      ...table,
+      [token.id]: { ...entry, value: newVal }
+    };
+
+    updates.push(enemy.document.setFlag(MODULE, 'threatTable', newTable));
+  }
+
+  if (updates.length) {
+    await Promise.all(updates);
+    _updateFloatingPanel?.();
+  }
+}
+
 // VELOCIDAD MÁXIMA DEL ENEMIGO
 function getHighestSpeed(actor) {
     const speeds = actor.system.attributes.speed.otherSpeeds || [];
