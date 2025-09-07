@@ -38,7 +38,24 @@
                   <input type="checkbox" name="settings.{{item.key}}" {{#if item.value}}checked{{/if}}>
                 </div>
               </div>
-            {{else}}
+              {{else if (eq item.ui "range")}}
+                <div class="pv-form-row"
+                    style="margin-bottom: 10px; border-bottom:1px solid #6868684d; padding:6px 0;">
+                  <label>{{item.name}}</label>
+                  {{#if item.hint}}<div class="notes" style="opacity:.8;">{{item.hint}}</div>{{/if}}
+
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="flex:0 0 auto; font-size:12px; opacity:.7;">0%</span>
+                    <input type="range"
+                          name="settings.{{item.key}}"
+                          min="{{item.min}}" max="{{item.max}}" step="{{item.step}}"
+                          value="{{item.value}}"
+                          style="flex:1 1 auto;">
+                    <span class="tt-slider-value" data-key="{{item.key}}"
+                          style="flex:0 0 auto; width:44px; text-align:right;">{{item.value}}%</span>
+                  </div>
+                </div>
+              {{else}}
               <div class="pv-form-row"
                    style="margin-bottom: 10px; border-bottom:1px solid #6868684d; padding:6px 0;">
                 <label>{{item.name}}</label>
@@ -128,15 +145,18 @@
       <label>{{localize "pf2e-threat-tracker.Settings.panelTheme.name"}}</label>
       <div class="notes" style="opacity:.8;">{{localize "pf2e-threat-tracker.Settings.panelTheme.hint"}}</div>
       <select name="settings.panelTheme">
-        <option value="dark"  {{#if (eq panelTheme "dark")}}selected{{/if}}>{{localize "pf2e-threat-tracker.Settings.panelTheme.dark"}}</option>
-        <option value="white" {{#if (eq panelTheme "white")}}selected{{/if}}>{{localize "pf2e-threat-tracker.Settings.panelTheme.white"}}</option>
-        <option value="blueNeon" {{#if (eq panelTheme "blueNeon")}}selected{{/if}}>{{localize "pf2e-threat-tracker.Settings.panelTheme.blueNeon"}}</option>
-        <option value="redNeon" {{#if (eq panelTheme "redNeon")}}selected{{/if}}>{{localize "pf2e-threat-tracker.Settings.panelTheme.redNeon"}}</option>
-        <option value="darkGeoBlack"  {{#if (eq panelTheme "darkGeoBlack")}}selected{{/if}}>{{localize "pf2e-threat-tracker.Settings.panelTheme.darkGeoBlack"}}</option>
-        <option value="darkGeoWhite"  {{#if (eq panelTheme "darkGeoWhite")}}selected{{/if}}>{{localize "pf2e-threat-tracker.Settings.panelTheme.darkGeoWhite"}}</option>
-        <option value="fargo" {{#if (eq panelTheme "fargo")}}selected{{/if}}>{{localize "pf2e-threat-tracker.Settings.panelTheme.fargo"}}</option>
-        <option value="sciFiBlue" {{#if (eq panelTheme "sciFiBlue")}}selected{{/if}}>{{localize "pf2e-threat-tracker.Settings.panelTheme.sciFiBlue"}}</option>
-        <option value="sciFiRed" {{#if (eq panelTheme "sciFiRed")}}selected{{/if}}>{{localize "pf2e-threat-tracker.Settings.panelTheme.sciFiRed"}}</option>
+        <option value="dark"  {{#if (eq panelTheme "dark")}}selected{{/if}}>{{localize "Dark"}}</option>
+        <option value="white" {{#if (eq panelTheme "white")}}selected{{/if}}>{{localize "White"}}</option>
+        <option value="blueNeon" {{#if (eq panelTheme "blueNeon")}}selected{{/if}}>{{localize "Blue Neon"}}</option>
+        <option value="redNeon" {{#if (eq panelTheme "redNeon")}}selected{{/if}}>{{localize "Red Neon"}}</option>
+        <option value="darkGeoBlack"  {{#if (eq panelTheme "darkGeoBlack")}}selected{{/if}}>{{localize "Dark Geo Black"}}</option>
+        <option value="darkGeoWhite"  {{#if (eq panelTheme "darkGeoWhite")}}selected{{/if}}>{{localize "Dark Geo White"}}</option>
+        <option value="proFantasy" {{#if (eq panelTheme "proFantasy")}}selected{{/if}}>{{localize "Pro Fantasy"}}</option>
+        <option value="fargo" {{#if (eq panelTheme "fargo")}}selected{{/if}}>{{localize "Fargo"}}</option>
+        <option value="invisible" {{#if (eq panelTheme "invisible")}}selected{{/if}}>{{localize "Invisible"}}</option>
+        <option value="rpgGame" {{#if (eq panelTheme "rpgGame")}}selected{{/if}}>{{localize "RPG Game"}}</option>
+        <option value="sciFiBlue" {{#if (eq panelTheme "sciFiBlue")}}selected{{/if}}>{{localize "Sci-Fi Blue"}}</option>
+        <option value="sciFiRed" {{#if (eq panelTheme "sciFiRed")}}selected{{/if}}>{{localize "Sci-Fi Red"}}</option>
       </select>
     </div>
 
