@@ -7,6 +7,20 @@
     --tt-font: 12px/1.3 var(--font-primary);
   }
 
+  @font-face {
+    font-family: "Noir Regular";
+    src: url("../assets/fonts/Noir_regular.otf") format("otf");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }  @font-face {
+    font-family: "Alata Regular";
+    src: url("../assets/fonts/Alata-Regular.ttf") format("ttf");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+
   /* Contenedor general */
   #threat-tracker-panel {
     position: absolute;
@@ -50,6 +64,16 @@
   }
   #threat-tracker-panel .tt-btn:hover { background: rgba(255,255,255,0.14); }
 
+  /* CONFIGURACIÓN */
+  
+#threat-tracker-panel .tt-btn {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
   /* CONTENIDO */
   #threat-tracker-panel .tt-body {
     overflow: auto;
@@ -104,6 +128,8 @@
   }
   .tt-entry .tt-clickable { cursor: pointer; }
   .tt-bar-wrap {
+    position: relative !important; 
+    isolation: isolate; 
     grid-column: 1 / -1;
     height: 8px;
     border-radius: 999px;
@@ -112,6 +138,8 @@
     background: rgba(255,255,255,0.08);
   }
   .tt-bar {
+    position: relative;
+    z-index: 1;
     height: 100%;
     width: 0%;
     transition: width .25s ease-out;
@@ -119,11 +147,14 @@
   }
 
   /* TEMAS */
+
+  /* --------- OSCURO ---------- */
   #threat-tracker-panel.dark {
     color: #fff;
     background: rgba(20,22,30,.88);
   }
 
+  /* --------- CLARO ---------- */
     #threat-tracker-panel.white {
     color: #000000;
     background: rgba(182, 182, 182, 0.88);
@@ -132,6 +163,7 @@
     background: linear-gradient(90deg, rgba(107, 0, 0, 0.9), rgba(255, 0, 0, 0.9));
   }
 
+  /* --------- FARGO ---------- */
   #threat-tracker-panel.fargo {
     border-radius: 0;
     border: none;
@@ -140,15 +172,219 @@
     background: url('../assets/panel/fargo.png') center/100% 100% no-repeat;
     background-color: rgba(0, 0, 0, 0);
     border-color: rgb(186, 138, 104);
+    font-family: 'Noir Regular';
   }    
 #threat-tracker-panel.fargo .tt-bar-wrap {
   background: url('../assets/bars/fargoBG.png') center/cover no-repeat;
+  height: 10px;
+  border-radius: 0px;
+  border: 0px solid rgba(255,255,255,0.15);
+}
+#threat-tracker-panel.fargo .tt-bar-wrap::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: url('../assets/bars/fargoTOP.png') left;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
 }
 #threat-tracker-panel.fargo .tt-bar {
   background: url('../assets/bars/fargoFG.png') left center no-repeat;
-  background-size: auto 51%;
+  z-index: 1;
+  background-size: auto 190%;
+}
+#threat-tracker-panel.fargo .tt-card { 
+  background: url('../assets/panel/fargoCard.png') center/cover no-repeat;
+  background-size: 105% 103%;
+  background-color: rgba(0, 0, 0, 0);
+  border-color: rgba(186, 138, 104, 0);
+  border-radius: 0px;
+}
+#threat-tracker-panel.fargo .tt-btn { 
+  background: url('../assets/buttons/fargoButton.png') center/cover no-repeat;
+  background-color: rgba(0, 0, 0, 0);
+  border-color: rgba(186, 138, 104, 0);
+}
+#threat-tracker-panel.fargo .tt-config i { 
+  display: none;
+}
+#threat-tracker-panel.fargo .tt-config::before {
+  content: "";
+  position: relative;
+  inset: 0;
+  background: url('../assets/icons/fargoSettings.png') center/contain no-repeat;
+  pointer-events: none;
+  width: 15px;
+  height: 15px;
+}
+  /* --------- PRO FANTASY ---------- */
+
+  #threat-tracker-panel.proFantasy {
+    position: absolute;
+    overflow: visible;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+    background: url('../assets/panel/proFantasy.png') center/100% 100% no-repeat;
+    background-color: transparent;
+    border-color: rgb(186, 138, 104);
+    font-family: 'Alata Regular';
+    
+  --pf-frame-outset-top:    10px;  /* marco sale por arriba */
+  --pf-frame-outset-right:  10px;  /* marco sale a la derecha */
+  --pf-frame-outset-bottom: 10px;  /* marco sale por abajo */
+  --pf-frame-outset-left:   10px;  /* marco sale a la izquierda */
+
+  --pf-side-left-width:   95px;  /* ancho PNG adorno izquierdo */
+  --pf-side-right-width:  95px;  /* ancho PNG adorno derecho  */
+  --pf-side-height:      130%;   /* alto relativo de adornos laterales */
+  --pf-side-left-outset:  95px;  /* cuánto “sale” por fuera a la izq. */
+  --pf-side-right-outset: 95px;  /* cuánto “sale” por fuera a la dcha. */
+
+  }    
+
+  #threat-tracker-panel.proFantasy::before {
+    content: "";
+    position: absolute;
+    /* ⬇️ expandimos el pseudo-elemento más allá del panel */
+    top:    calc(-1 * var(--pf-frame-outset-top));
+    right:  calc(-1 * var(--pf-frame-outset-right));
+    bottom: calc(-1 * var(--pf-frame-outset-bottom));
+    left:   calc(-1 * var(--pf-frame-outset-left));
+    z-index: 3;               /* pon 2 si lo quieres por debajo del contenido */
+    pointer-events: none;     /* no bloquea clicks/drag del header */
+    background: url('../assets/panel/proFantasydecoFrame2.png') center / 100% 100% no-repeat; 
+  }
+
+  #threat-tracker-panel.proFantasy::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    /* ⬇️ el contenedor de los dos adornos se estira hacia fuera */
+    left:  calc(-1 * var(--pf-side-left-outset));
+    right: calc(-1 * var(--pf-side-right-outset));
+    height: var(--pf-side-height);
+    transform: translateY(-50%);
+    z-index: 2;               /* debajo del marco, encima del fondo del panel */
+    pointer-events: none;
+
+    background-image:
+      url('../assets/panel/proFantasyDecoLeft.png'),
+      url('../assets/panel/proFantasyDecoRight.png');
+    background-repeat:
+      no-repeat,
+      no-repeat;
+    background-position:
+      left center,
+      right center;
+    background-size:
+      var(--pf-side-left-width)  auto,
+      var(--pf-side-right-width) auto;
+  }
+
+  #threat-tracker-panel.proFantasy .tt-header .tt-title {
+    position: relative;
+    left: 25%;
+  }
+
+#threat-tracker-panel.proFantasy .tt-btn { 
+  background: url('../assets/buttons/proFantasyButton.png') center/cover no-repeat;
+  background-color: transparent;
+  border-color: transparent;
+}
+#threat-tracker-panel.proFantasy .tt-config i { 
+  display: none;
+}
+#threat-tracker-panel.proFantasy .tt-config::before {
+  content: "";
+  position: relative;
+  inset: 0;
+  background: url('../assets/icons/proFantasySettings.png') center/contain no-repeat;
+  pointer-events: none;
+  width: 15px;
+  height: 15px;
+}
+#threat-tracker-panel.proFantasy .tt-minimize i { 
+  display: none;
+}
+#threat-tracker-panel.proFantasy .tt-minimize::before {
+  content: "";
+  position: relative;
+  inset: 0;
+  background: url('../assets/icons/proFantasyMinimize.png') center/contain no-repeat;
+  pointer-events: none;
+  width: 15px;
+  height: 15px;
 }
 
+#threat-tracker-panel.proFantasy .tt-bar-wrap {
+  position: relative;
+  overflow: visible;
+  height: 6px;
+  background-color: transparent;
+  border: 0px;
+  border-color: transparent;
+}
+#threat-tracker-panel.proFantasy .tt-bar-wrap::after {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+
+  --pf-height: 10px;   /* alto natural del overlay */
+  --pf-cap-l: -5px;    /* ancho del extremo izquierdo */
+  --pf-cap-r: -5px;    /* ancho del extremo derecho */
+  
+  top: -60%;
+  height: var(--pf-height);
+  left: calc(-1 * var(--pf-cap-l));
+  right: calc(-1 * var(--pf-cap-r));
+  transform: translateY(-50%);
+
+  background-image:
+    url('../assets/bars/proFantasyBarStart.png'),
+    url('../assets/bars/proFantasyBarEnd.png'),
+    url('../assets/bars/proFantasyBar.png');
+
+  background-repeat:
+    no-repeat,
+    no-repeat,
+    repeat-x;
+
+  background-position:
+    left center,
+    right center,
+    left calc(var(--pf-cap-l)) center;
+
+  background-size:
+    auto 100%,
+    auto 100%,
+    auto 100%;
+  --pf-scaleY: 1;
+  --pf-offsetY: 0px;
+
+  transform-origin: center;
+  transform: translateY(var(--pf-offsetY)) scaleY(var(--pf-scaleY));
+}
+#threat-tracker-panel.proFantasy .tt-bar {
+  height: 100%;
+  background: url('../assets/bars/proFantasyFG.png') center / 90% 100% no-repeat;
+  transition: width .25s ease-out;
+  z-index: 1;
+}
+
+#threat-tracker-panel.proFantasy .tt-card { 
+  background:
+    url('../assets/panel/proFantasyDecoLine.png') center / 100% 100% no-repeat,
+    url('../assets/panel/proFantasyInsideBG.png') center / 100% 100% no-repeat,
+    url('../assets/panel/proFantasydecoFrame.png') center / 100% 100% no-repeat;
+  background-size: 100% 100%;
+  background-color: transparent;
+  border-color: transparent;
+  border-radius: 0px;
+}
+  /* --------- DARK GEO BLACK ---------- */
   #threat-tracker-panel.darkGeoBlack {
     color: rgb(255, 255, 255);
     background:  #161312 url('../assets/panel/darkGeoBlack.png') center/cover no-repeat;
@@ -158,6 +394,7 @@
     background: linear-gradient(90deg, #614c1e, #b16a00);
   } 
 
+  /* --------- DARK GEO WHITE ---------- */
   #threat-tracker-panel.darkGeoWhite {
     color: rgb(255, 255, 255);
     background:  url('../assets/panel/darkGeoWhite.png') center/cover no-repeat;
@@ -166,6 +403,30 @@
   #threat-tracker-panel.darkGeoWhite .tt-bar {
     background: linear-gradient(90deg, #222222, #b6b6b6);
   } 
+
+  /* --------- RPG GAME ---------- */
+  #threat-tracker-panel.rpgGame {
+    color: #b1b8bc;
+    border: none;
+    box-shadow: none;
+    background: url('../assets/panel/rpgGame.png') center/100% 100% no-repeat;
+    font-family: 'Vollkorn';
+  }
+#threat-tracker-panel.rpgGame .tt-header {
+  background: url('../assets/panel/rpgGameTop.png') center/100% 100% no-repeat;
+}
+#threat-tracker-panel.rpgGame .tt-bar-wrap {
+  background: url('../assets/bars/rpgGameBG.png') center/100% 150% no-repeat;
+}
+#threat-tracker-panel.rpgGame .tt-bar {
+  background: url('../assets/bars/rpgGameFG.png') center/95% 30% no-repeat;
+  z-index: 1;
+}
+#threat-tracker-panel.rpgGame .tt-btn { 
+  background: url('../assets/buttons/rpgGameButton.png') center/120% 95% no-repeat;
+  background-color: rgba(0, 0, 0, 0);
+  border-color: rgba(186, 138, 104, 0);
+}
 
   #threat-tracker-panel.blueNeon {
     color: #e8f7ff;
@@ -196,10 +457,10 @@
 }
 
 #threat-tracker-panel.sciFiBlue .tt-bar-wrap {
-  background: url('../assets/bars/sciFiblueBG.png') center/cover no-repeat;
+  background: url('../assets/bars/sciFiblueBG.png') center/100% 150 no-repeat;
 }
 #threat-tracker-panel.sciFiBlue .tt-bar {
-  background: url('../assets/bars/sciFiblueFG.png') center/cover no-repeat;
+  background: url('../assets/bars/sciFiblueFG.png') center/97% 30% no-repeat;
 }
 
 #threat-tracker-panel.sciFiRed {
@@ -215,4 +476,14 @@
 }
 #threat-tracker-panel.sciFiRed .tt-bar {
   background: url('../assets/bars/sciFiRedFG.png') center/cover no-repeat;
+}
+
+#threat-tracker-panel.invisible {
+  background-color: transparent;
+  border: transparent;
+  border-color: transparent;
+  border-radius: 0;
+  --tt-shadow: transparent;
+  --tt-border: transparent;
+  background: none;
 }
