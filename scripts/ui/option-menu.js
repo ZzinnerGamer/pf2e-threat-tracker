@@ -8,7 +8,7 @@ const SETTINGS_GROUPS = {
   ],
   Threat: [
     'baseAttackThreat', 'attackThreatMode', 'baseSpellThreat',
-    'threatPerSpellRank', 'baseHealThreat', 'skillBase', 'skillCritBonus', 'enableThreatFromEffects', 'enableIWR'
+    'threatPerSpellRank', 'baseHealThreat', 'skillBase', 'skillCritBonus', 'enableThreatFromEffects', 'enableIWR', 'unconsciousThreatPercent'
   ],
   Sequencer: [ 'topThreatEffect', 'enableTopThreatEffect'
   ],
@@ -92,7 +92,9 @@ export class ThreatConfigApp extends foundry.applications.api.ApplicationV2 {
       const name = typeof cfg.name === 'string' ? (game.i18n.localize(cfg.name) || cfg.name) : (cfg.name || key);
       const hint = typeof cfg.hint === 'string' ? (game.i18n.localize(cfg.hint) || cfg.hint) : (cfg.hint || '');
 
-      return { key, name, hint, value, inputType, min, max, step };
+      const ui = (key === 'unconsciousThreatPercent' && inputType === 'number') ? 'range' : null;
+
+      return { key, name, hint, value, inputType, min, max, step, ui };
     }).filter(Boolean);
   }
 
