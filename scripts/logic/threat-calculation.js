@@ -633,14 +633,33 @@ if (isHeal) {
 
 if (isDamageTaken) {
 
-  // Filtrado correcto (con returns explícitos).
-  const damagedTokens = canvas.tokens.placeables.filter(t => {
-    if (!t.inCombat) return false;
-    if (t.document.disposition === responsibleToken.document.disposition) return false;
-    if (t.actor?.hasPlayerOwner) return false;
-    const preHP = t.document.getFlag(MODULE, "preHP")?.hp;
-    return typeof preHP === "number";
-  });
+const targetIdsFromEvent = [];
+const getId = (ref) => (typeof ref === "string" ? ref.split(".").pop() : null);
+if (context?.target?.token) targetIdsFromEvent.push(getId(context.target.token));
+if (msg?.target?.token)     targetIdsFromEvent.push(getId(msg.target.token));
+
+const candidates = (targetIdsFromEvent.filter(Boolean).length
+  ? targetIdsFromEvent
+      .filter(Boolean)
+      .map(id => canvas.tokens.get(id))
+      .filter(Boolean)
+  : canvas.tokens.placeables);
+  
+const damagedTokens = candidates.filter(t => {
+  if (!t?.inCombat) return false;
+  if (t.actor?.hasPlayerOwner) return false;
+  if (t.document.disposition === responsibleToken.document.disposition) return false;
+
+  const pre = t.document.getFlag(MODULE, "preHP");
+  if (!pre || typeof pre.hp !== "number") return false;
+
+  const atkTok = pre.attackerId ? canvas.tokens.get(pre.attackerId) : null;
+  if (!atkTok) return false;
+  
+  if (t.document.disposition === atkTok.document.disposition) return false;
+
+  return true;
+});
 
   log.all(`[${MODULE}] Tokens con preHP registrado: ${damagedTokens.map(t => t.name).join(", ") || "—"}`);
 
@@ -698,12 +717,18 @@ if (isDamageTaken) {
     const distMult   = getDistanceThreatMultiplier(token, atkToken);
     const traits     = context?.traits ?? item?.system?.traits?.value ?? [];
     const options    = context?.options ?? [];
-    const damageType = (() => {
-    const d = item?.system?.damage;
-    if (!d) return "";
-    const first = typeof d === "object" ? Object.values(d).find(Boolean) : null;
-    return first?.damageType ?? d?.damageType ?? "";
-    })();
+    let damageType = (() => {
+      const d = item?.system?.damage;
+      if (!d) return "";
+        const first = typeof d === "object" ? Object.values(d).find(Boolean) : null;
+        return first?.damageType ?? d?.damageType ?? "";
+      })();
+
+    if (!damageType && Array.isArray(options)) {
+      const opt = options.find(o => o.startsWith("item:damage:type:"));
+      if (opt) damageType = opt.split(":")[3] || "";
+    }
+
 
     const IWRMult = getThreatModifierIWR(token, { traits, slug: actionSlug, damageType, options });
 
