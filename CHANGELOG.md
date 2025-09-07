@@ -14,6 +14,7 @@
 * Added Unconscious Threat Reduction
   * This value option is percentual reduction of thre own threat value if a ally PC/NPC get the Unconscious condition
 <img width="645" height="118" alt="image" src="https://github.com/user-attachments/assets/e6e77691-98bb-4c65-bce0-e4296f10a1ce" />
+
 # [1.2.1] - 2025-9-6
 
 ## Added
