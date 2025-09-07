@@ -174,6 +174,17 @@ Hooks.once('init', async() => {
         type: Boolean
     });
 
+    
+    game.settings.register(MODULE, 'unconsciousThreatPercent', {
+        name: 'Porcentaje de amenaza al quedar inconsciente',
+        hint: 'Reduce la amenaza del aliado a este porcentaje cuando gana la condición "Unconscious".',
+        scope: 'client',
+        config: false,          // tienes tu propio menú
+        type: Number,
+        range: { min: 0, max: 100, step: 10 },
+    default: 50,
+        });
+
     // ----- [ Bloque de Sequencer ] -----
 
     game.settings.register(MODULE, 'enableTopThreatEffect', {
@@ -241,15 +252,18 @@ Hooks.once('init', async() => {
     config: false,
     type: String,
     choices: {
-        blueNeon: "pf2e-threat-tracker.Settings.panelTheme.blueNeon",
-        redNeon: "pf2e-threat-tracker.Settings.panelTheme.redNeon",
-        dark: "pf2e-threat-tracker.Settings.panelTheme.dark",
-        darkGeoBlack: "pf2e-threat-tracker.Settings.panelTheme.darkGeoBlack",
-        darkGeoWhite: "pf2e-threat-tracker.Settings.panelTheme.darkGeoWhite",
-        fargo: "pf2e-threat-tracker.Settings.panelTheme.fargo",
-        sciFiBlue: "pf2e-threat-tracker.Settings.panelTheme.sciFiBlue",
-        sciFiRed: "pf2e-threat-tracker.Settings.panelTheme.sciFiRed",
-        white: "pf2e-threat-tracker.Settings.panelTheme.white"
+        blueNeon: "Blue Neon",
+        redNeon: "Red Neon",
+        dark: "Dark",
+        darkGeoBlack: "Dark Geo Black",
+        darkGeoWhite: "Dark Geo White",
+        fargo: "Fargo",
+        proFantasy: "Pro Fantasy",
+        rpgGame: "RPG Game",
+        invisible: "Invisible",
+        sciFiBlue: "Sci-Fi Blue",
+        sciFiRed: "Sci-Fi Red",
+        white: "White"
     },
     default: 'dark',
             onChange: () => {
