@@ -176,10 +176,10 @@ Hooks.once('init', async() => {
 
     
     game.settings.register(MODULE, 'unconsciousThreatPercent', {
-        name: 'Porcentaje de amenaza al quedar inconsciente',
-        hint: 'Reduce la amenaza del aliado a este porcentaje cuando gana la condición "Unconscious".',
+        name: game.i18n.localize("pf2e-threat-tracker.Settings.unconsciousThreatReduction.name"),
+        hint: game.i18n.localize("pf2e-threat-tracker.Settings.unconsciousThreatReduction.hint"),
         scope: 'client',
-        config: false,          // tienes tu propio menú
+        config: false,
         type: Number,
         range: { min: 0, max: 100, step: 10 },
     default: 50,
@@ -335,3 +335,4 @@ game.settings.register(MODULE, 'loggingMode', {
     });
 
 });
+
