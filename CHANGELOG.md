@@ -1,5 +1,18 @@
 # CHANGELOG
 
+# [1.3.0] - 2025-9-7
+
+## Added
+* New Themes
+  * Invisible
+  * Pro Fantasy
+  * RPG Game  
+<img width="369" height="590" alt="image" src="https://github.com/user-attachments/assets/82e88f7f-2f69-453f-b983-ec355d818609" />
+<img width="501" height="614" alt="image" src="https://github.com/user-attachments/assets/cf6cd269-66f9-41f5-b02e-3eac8be22c6e" />
+<img width="391" height="607" alt="image" src="https://github.com/user-attachments/assets/1856754e-acd3-48e9-95db-3832a531b68c" />
+* Added Unconscious Threat Reduction
+  * This value option is percentual reduction of thre own threat value if a ally PC/NPC get the Unconscious condition
+<img width="645" height="118" alt="image" src="https://github.com/user-attachments/assets/e6e77691-98bb-4c65-bce0-e4296f10a1ce" />
 # [1.2.1] - 2025-9-6
 
 ## Added
@@ -7,8 +20,6 @@
 * Highlight selected token own threat card and reduce visibility of others
 
 # [1.2.0] - 2025-9-5
-
-# Changelog — 2025-09-05
 
 ## Added
 * Robust detection of “dead/defeated” by combining PF2e conditions (`dead`, `unconscious`) and `defeated` from the Combat Tracker.
