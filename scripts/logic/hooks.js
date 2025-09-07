@@ -1,6 +1,6 @@
 const MODULE = 'pf2e-threat-tracker';
 
-import { getLoggingMode, isActorDead, focusThreatCardByTokenId, clearThreatPanelFocus } from "../logic/threat-utils.js";
+import { getLoggingMode, isActorDead, focusThreatCardByTokenId, clearThreatPanelFocus, reduceThreatForUnconscious } from "../logic/threat-utils.js";
 
 const log = {
   all:  (...a) => { if (getLoggingMode() === 'all') console.log(...a); },
@@ -78,6 +78,25 @@ Hooks.on('controlToken', (token, controlled) => {
     } else {
       clearThreatPanelFocus();
     }
+  }
+});
+
+// HANDLER DE ALIADOS INCONSCIENTES
+Hooks.on('createItem', async (item) => {
+  try {
+    if (item?.type !== 'condition') return;
+
+    const slug = item.slug ?? item.system?.slug ?? item.system?.slug?.value;
+    if (slug !== 'unconscious') return;
+
+    const tok = canvas.tokens.placeables.find(t => t.actor?.id === item.actor?.id);
+    if (!tok) return;
+
+    if (tok.document.disposition !== 1) return;
+
+    await reduceThreatForUnconscious(tok);
+  } catch (err) {
+    console.warn(`[${MODULE}] Error aplicando reducción por unconscious:`, err);
   }
 });
 
