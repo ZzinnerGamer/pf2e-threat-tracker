@@ -52,8 +52,22 @@
                           value="{{item.value}}"
                           style="flex:1 1 auto;">
                     <span class="tt-slider-value" data-key="{{item.key}}"
-                          style="flex:0 0 auto; width:44px; text-align:right;">{{item.value}}%</span>
+                          style="flex:0 0 auto; width:44px; text-align:right;">100%</span>
                   </div>
+                </div>
+              {{else if (eq item.inputType "select")}}
+                <div class="pv-form-row"
+                    style="margin-bottom: 10px; border-bottom:1px solid #6868684d; padding:6px 0;">
+                  <label>{{item.name}}</label>
+                  {{#if item.hint}}<div class="notes" style="opacity:.8;">{{item.hint}}</div>{{/if}}
+                  <select name="settings.{{item.key}}">
+                    {{#each item.choices as |ch|}}
+                      <option value="{{ch.value}}"
+                        {{#if (eq ../item.value ch.value)}}selected{{/if}}>
+                        {{ch.label}}
+                      </option>
+                    {{/each}}
+                  </select>
                 </div>
               {{else}}
               <div class="pv-form-row"
