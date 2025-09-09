@@ -46,11 +46,6 @@
         "id": "sequencer",
         "type": "module",
         "compatibility": {}
-      },
-      {
-        "id": "jb2a_patreon",
-        "type": "module",
-        "compatibility": {}
       }
     ]
   },
