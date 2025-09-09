@@ -10,7 +10,7 @@ const SETTINGS_GROUPS = {
     'baseAttackThreat', 'attackThreatMode', 'baseSpellThreat',
     'threatPerSpellRank', 'baseHealThreat', 'skillBase', 'skillCritBonus', 'enableThreatFromEffects', 'enableIWR', 'unconsciousThreatPercent'
   ],
-  Sequencer: [ 'topThreatEffect', 'enableTopThreatEffect'
+  Sequencer: [ 'topThreatEffect', 'topThreatEffectType', 'enableTopThreatEffect'
   ],
   Appearance: [ 'panelTheme', 'panelOpacity', 'maxVisibleCards'  ]
 };
@@ -84,6 +84,15 @@ export class ThreatConfigApp extends foundry.applications.api.ApplicationV2 {
       let inputType = 'text';
       if (cfg.type === Boolean) inputType = 'checkbox';
       else if (cfg.type === Number) inputType = 'number';
+      
+      let choices = null;
+      if (cfg.choices && typeof cfg.choices === 'object') {
+        inputType = 'select';
+        choices = Object.entries(cfg.choices).map(([val, labelKey]) => ({
+          value: val,
+          label: typeof labelKey === 'string' ? (game.i18n.localize(labelKey) || labelKey) : String(labelKey)
+        }));
+      }
 
       const min  = cfg.range?.min ?? null;
       const max  = cfg.range?.max ?? null;
@@ -92,9 +101,11 @@ export class ThreatConfigApp extends foundry.applications.api.ApplicationV2 {
       const name = typeof cfg.name === 'string' ? (game.i18n.localize(cfg.name) || cfg.name) : (cfg.name || key);
       const hint = typeof cfg.hint === 'string' ? (game.i18n.localize(cfg.hint) || cfg.hint) : (cfg.hint || '');
 
-      const ui = (key === 'unconsciousThreatPercent' && inputType === 'number') ? 'range' : null;
+      const sliderKeys = new Set(['unconsciousThreatPercent', 'decayFactor']);
+      let ui = null;
+      if (sliderKeys.has(key) && inputType === 'number') ui = 'range';
 
-      return { key, name, hint, value, inputType, min, max, step, ui };
+      return { key, name, hint, value, inputType, min, max, step, ui, choices };
     }).filter(Boolean);
   }
 
@@ -713,4 +724,3 @@ Hooks.on("renderDialogV2", (dlg, html, data) => {
     if(searchButton) searchButton.addEventListener("click", applyFilter);
   }
 });
-
