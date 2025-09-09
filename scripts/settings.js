@@ -197,6 +197,19 @@ Hooks.once('init', async() => {
         type: Boolean
     });
 
+    game.settings.register(MODULE, 'topThreatEffectType', {
+        name: 'pf2e-threat-tracker.Settings.topThreatEffectType.name',
+        hint: 'pf2e-threat-tracker.Settings.topThreatEffectType.hint',
+        scope: 'world',
+        config: false,
+    default: 'marker',
+        type: String,
+    choices: {
+        marker: 'pf2e-threat-tracker.Settings.topThreatEffectType.marker',
+        ray: 'pf2e-threat-tracker.Settings.topThreatEffectType.ray'
+    }
+        });
+
     game.settings.register(MODULE, 'topThreatEffect', {
         name: game.i18n.localize("pf2e-threat-tracker.settings.topThreatEffect.name"),
         hint: game.i18n.localize("pf2e-threat-tracker.settings.topThreatEffect.hint"),
