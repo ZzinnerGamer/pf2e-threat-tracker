@@ -99,7 +99,7 @@ export class ThreatConfigApp extends foundry.applications.api.ApplicationV2 {
   }
 
   async _renderHTML(context) {
-    return await foundry.applications.handlebars.renderTemplate(
+    return await renderTemplate(
       'modules/pf2e-threat-tracker/templates/settings-menu.hbs',
       context
     );
@@ -713,3 +713,4 @@ Hooks.on("renderDialogV2", (dlg, html, data) => {
     if(searchButton) searchButton.addEventListener("click", applyFilter);
   }
 });
+
