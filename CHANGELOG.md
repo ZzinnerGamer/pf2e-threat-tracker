@@ -1,5 +1,14 @@
 # CHANGELOG
 
+# [1.3.1] - 2025-9-9
+
+## Added
+* Moar FR localization [@rectulo]
+* New sequencer effect type "ray"
+
+## Fixed
+* Menu opening on v12
+
 # [1.3.0] - 2025-9-7
 
 ## Added
