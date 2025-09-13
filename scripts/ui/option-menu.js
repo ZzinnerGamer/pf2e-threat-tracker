@@ -7,8 +7,9 @@ const SETTINGS_GROUPS = {
     'enableThreatPanel', 'xFactor', 'yFactor', 'decayEnabled', 'decayFactor'
   ],
   Threat: [
-    'baseAttackThreat', 'attackThreatMode', 'baseSpellThreat',
-    'threatPerSpellRank', 'baseHealThreat', 'skillBase', 'skillCritBonus', 'enableThreatFromEffects', 'enableIWR', 'unconsciousThreatPercent'
+    'attackThreatMode', 'applyThreatTargetOnly', 'baseAttackThreat', 'baseSpellThreat',
+    'threatPerSpellRank', 'baseHealThreat', 'skillBase', 'skillCritBonus',
+    'enableThreatFromEffects', 'enableIWR', 'unconsciousThreatPercent'
   ],
   Sequencer: [ 'topThreatEffect', 'topThreatEffectType', 'enableTopThreatEffect'
   ],
@@ -56,7 +57,7 @@ export class ThreatConfigApp extends foundry.applications.api.ApplicationV2 {
       { key: 'Sequencer',  title: 'Sequencer',                                                           active: this.activeGroupKey === 'Sequencer' },
       { key: 'Custom',     title: game.i18n.localize("pf2e-threat-tracker.threatConfig.customThreat"),   active: this.activeGroupKey === 'Custom' },
       { key: 'Templates',  title: game.i18n.localize("pf2e-threat-tracker.threatConfig.threatPresets"),  active: this.activeGroupKey === 'Templates' },
-      { key: 'Appearance', title: game.i18n.localize("pf2e-threat-tracker.threatConfig.appearance"),    active: this.activeGroupKey === 'Appearance' }
+      { key: 'Appearance', title: game.i18n.localize("pf2e-threat-tracker.threatConfig.appearance"),     active: this.activeGroupKey === 'Appearance' }
     ];
 
     const groups = [];
