@@ -100,14 +100,34 @@ if (Object.keys(context).length === 0) {
     return;
   }
 
-  for (const enemy of canvas.tokens.placeables.filter(t =>
-    t.inCombat &&
-    t.document.disposition !== responsibleToken.document.disposition &&
-    !t.actor.hasPlayerOwner
-  )) {
-    await storePreHP(enemy, null, responsibleToken, actionSlug);
-  }
+  const targetsRaw = getUserTargets(context, msg, responsibleToken) ?? [];
+  const targetIds = targetsRaw.map(t => (typeof t === "string" ? t : t?.id)).filter(Boolean);
+  const applyOnlyToPrimary = !!game.settings.get(MODULE, "applyThreatTargetOnly");
+  const primaryTargetId = targetIds[0] ?? null;
+  const primaryTarget   = primaryTargetId ? canvas.tokens.get(primaryTargetId) : null;
 
+  if (applyOnlyToPrimary) {
+    if (primaryTarget) {
+      await storePreHP(primaryTarget, null, responsibleToken, actionSlug);
+      log.all(`[${MODULE}] ${loc("pf2e-threat-tracker.logs.tokenDataSavedFor")}: ${primaryTarget.name} (primary-only)`);
+    } else {
+      for (const enemy of canvas.tokens.placeables.filter(t =>
+        t.inCombat &&
+        t.document.disposition !== responsibleToken.document.disposition &&
+        !t.actor.hasPlayerOwner
+      )) {
+        await storePreHP(enemy, null, responsibleToken, actionSlug);
+      }
+    }
+  } else {
+    for (const enemy of canvas.tokens.placeables.filter(t =>
+      t.inCombat &&
+      t.document.disposition !== responsibleToken.document.disposition &&
+      !t.actor.hasPlayerOwner
+    )) {
+      await storePreHP(enemy, null, responsibleToken, actionSlug);
+    }
+  }
 
   const itemBase     = Number(await item.getFlag(MODULE, "threatItemValue")) || 0;
   const itemMode     = (await item.getFlag(MODULE, "threatItemMode")) || "apply";
@@ -138,8 +158,17 @@ if (Object.keys(context).length === 0) {
     return first?.damageType ?? d?.damageType ?? "";
   })();
 
-  // Aplicación por enemigo con IWR
-  for (const enemy of getEnemyTokens(responsibleToken)) {
+  const enemies = (() => {
+    if (applyOnlyToPrimary && primaryTarget) {
+      const isEnemy = primaryTarget.inCombat
+        && primaryTarget.document.disposition !== responsibleToken.document.disposition
+        && !primaryTarget.actor?.hasPlayerOwner;
+      return isEnemy ? [primaryTarget] : [];
+    }
+    return getEnemyTokens(responsibleToken);
+  })();
+
+  for (const enemy of enemies) {
     if (enemy.actor?.getFlag(MODULE, 'ignoreThreat')) {
       log.min(`[${MODULE}] ${enemy.name} ${loc("pf2e-threat-tracker.logs.isDeadSkipping")}`);
       continue;
@@ -171,6 +200,19 @@ if (Object.keys(context).length === 0) {
 }
 
 if (isSpellCast) {
+  function hasAttackTrait(context) {
+  const traits  = Array.isArray(context?.traits)  ? context.traits  : [];
+  const options = Array.isArray(context?.options) ? context.options : [];
+
+  return (
+    traits.includes('attack') ||
+    options.includes('trait:attack') ||
+    options.includes('attack') ||
+    options.some(o => typeof o === 'string' && /(^|:)trait:attack$/.test(o))
+  );
+}
+  if (hasAttackTrait(context)) return;
+
   for (const token of canvas.tokens.placeables) {
     if (!token.inCombat) continue;
     const hp = token.actor.system.attributes.hp?.value;
@@ -257,7 +299,6 @@ if (isSkillAttack) {
   const level   = actor.system.details.level.value ?? 0;
   const base    = Number(game.settings.get(MODULE, "baseAttackThreat")) || 0;
 
-  // 1) Intentar valor personalizado (actor flags o global settings)
   let threatGlobal;
   let value = await actor.getFlag(MODULE, `skillActionValue.${slug}`);
   let mode  = await actor.getFlag(MODULE, `skillActionMode.${slug}`);
@@ -270,7 +311,6 @@ if (isSkillAttack) {
     log.min(`[${MODULE}] ${loc("pf2e-threat-tracker.logs.reduceModeDetected")} '${slug}': ${value} (${mode ?? "apply"})`);
   }
 
-  // 2) Si no hay valor custom, calcular por outcome
   if (threatGlobal == null) {
     const levelAdj = 1 + level * 0.1;
     switch (outcome) {
@@ -282,15 +322,46 @@ if (isSkillAttack) {
     }
   }
 
-  const targets = getUserTargets(context, msg, responsibleToken);
-  if (!targets.length) {
+  const targetsRaw = getUserTargets(context, msg, responsibleToken) ?? [];
+  const targetIds = targetsRaw.map(t => (typeof t === "string" ? t : t?.id)).filter(Boolean);
+
+  const applyOnlyToPrimary = !!game.settings.get(MODULE, "applyThreatTargetOnly");
+  const primaryTargetId = targetIds[0] ?? null;
+  const primaryTarget   = primaryTargetId ? canvas.tokens.get(primaryTargetId) : null;
+
+  if (!targetIds.length) {
     log.warn(`[${MODULE}] `, loc("pf2e-threat-tracker.logs.reduceModeDetected"));
     return;
   }
 
-  const tokenTargets = targets.map(tid => canvas.tokens.get(tid)).filter(Boolean);
+  if (applyOnlyToPrimary) {
+    if (primaryTarget) {
+      await storePreHP(primaryTarget, null, responsibleToken, actionSlug);
+      log.all(`[${MODULE}] ${loc("pf2e-threat-tracker.logs.tokenDataSavedFor")}: ${primaryTarget.name} (primary-only)`);
+    } else {
+      log.min(`[${MODULE}] No hay objetivo principal resuelto para preHP (applyThreatTargetOnly activo).`);
+    }
+  } else {
+    for (const id of targetIds) {
+      const targetToken = canvas.tokens.get(id);
+      if (targetToken) {
+        await storePreHP(targetToken, null, responsibleToken, actionSlug);
+        log.all(`[${MODULE}] ${loc("pf2e-threat-tracker.logs.tokenDataSavedFor")}: ${targetToken.name}`);
+      }
+    }
+  }
 
-  for (const enemy of getEnemyTokens(responsibleToken, tokenTargets)) {
+  const enemies = (() => {
+    if (applyOnlyToPrimary && primaryTarget) {
+      const isEnemy = primaryTarget.inCombat
+        && primaryTarget.document.disposition !== responsibleToken.document.disposition
+        && !primaryTarget.actor?.hasPlayerOwner;
+      return isEnemy ? [primaryTarget] : [];
+    }
+    return getEnemyTokens(responsibleToken, targetIds);
+  })();
+
+  for (const enemy of enemies) {
     if (enemy.actor?.getFlag(MODULE, 'ignoreThreat')) {
       log.min(`[${MODULE}] ${enemy.name} ${loc("pf2e-threat-tracker.logs.isDeadSkipping")}`);
       continue;
@@ -306,7 +377,6 @@ if (isSkillAttack) {
 
     const finalThreat = Math.round(threatGlobal * IWRMult);
 
-    // Log detallado al estilo del bloque "sin contexto"
     let logBlock  = `[${MODULE}] ${loc("pf2e-threat-tracker.logs.threatCalculation")}\n`;
         logBlock += ` ├─ ${loc("pf2e-threat-tracker.logs.skillSlug")} ${slug}.\n`;
         logBlock += ` ├─ ${loc("pf2e-threat-tracker.logs.baseThreat")} ${base}.\n`;
@@ -386,7 +456,46 @@ if (isSkillAction && !ATTACK_SKILLS.has(actionSlug)) {
     log.all(`[${MODULE}] ${loc("pf2e-threat-tracker.logs.usingGlobalThreat")} "${slug}": ${threatGlobal} (outcome=${outcome}, level=${actorLevel})`);
   }
 
-  for (const enemy of getEnemyTokens(responsibleToken)) {
+  const targetsRaw = getUserTargets(context, msg, responsibleToken) ?? [];
+  const targetIds = targetsRaw.map(t => (typeof t === "string" ? t : t?.id)).filter(Boolean);
+
+  const applyOnlyToPrimary = !!game.settings.get(MODULE, "applyThreatTargetOnly");
+  const primaryTargetId = targetIds[0] ?? null;
+  const primaryTarget   = primaryTargetId ? canvas.tokens.get(primaryTargetId) : null;
+
+  if (!targetIds.length) {
+    log.warn(`[${MODULE}] `, loc("pf2e-threat-tracker.logs.reduceModeDetected"));
+    return;
+  }
+
+  if (applyOnlyToPrimary) {
+    if (primaryTarget) {
+      await storePreHP(primaryTarget, null, responsibleToken, actionSlug);
+      log.all(`[${MODULE}] ${loc("pf2e-threat-tracker.logs.tokenDataSavedFor")}: ${primaryTarget.name} (primary-only)`);
+    } else {
+      log.min(`[${MODULE}] No hay objetivo principal resuelto para preHP (applyThreatTargetOnly activo).`);
+    }
+  } else {
+    for (const id of targetIds) {
+      const targetToken = canvas.tokens.get(id);
+      if (targetToken) {
+        await storePreHP(targetToken, null, responsibleToken, actionSlug);
+        log.all(`[${MODULE}] ${loc("pf2e-threat-tracker.logs.tokenDataSavedFor")}: ${targetToken.name}`);
+      }
+    }
+  }
+
+  const enemies = (() => {
+    if (applyOnlyToPrimary && primaryTarget) {
+      const isEnemy = primaryTarget.inCombat
+        && primaryTarget.document.disposition !== responsibleToken.document.disposition
+        && !primaryTarget.actor?.hasPlayerOwner;
+      return isEnemy ? [primaryTarget] : [];
+    }
+    return getEnemyTokens(responsibleToken);
+  })();
+
+  for (const enemy of enemies) {
     if (enemy.actor?.getFlag(MODULE, 'ignoreThreat')) {
       log.min(`[${MODULE}] ${enemy.name} ${loc("pf2e-threat-tracker.logs.isDeadSkipping")}`);
       continue;
@@ -423,7 +532,6 @@ if (isSkillAction && !ATTACK_SKILLS.has(actionSlug)) {
   _updateFloatingPanel();
 }
 
-
 if (isAttack) {
 
   const outcome = context.outcome ?? "failure";
@@ -458,17 +566,48 @@ if (isAttack) {
   }
 
   const targets = getUserTargets(context, msg, responsibleToken);
-  log.all(`[${MODULE}] ${loc("pf2e-threat-tracker.logs.targets")}:`, targets);
 
-  for (const target of targets) {
-    const targetToken = canvas.tokens.get(target.id);
+  const targetIds = targets
+    .map(t => (typeof t === "string" ? t : t?.id))
+    .filter(Boolean);
+
+  const applyOnlyToPrimary = !!game.settings.get(MODULE, "applyThreatTargetOnly");
+
+  const primaryTargetId = targetIds[0] ?? null;
+  const primaryTarget   = primaryTargetId ? canvas.tokens.get(primaryTargetId) : null;
+
+  log.all(`[${MODULE}] ${loc("pf2e-threat-tracker.logs.targets")}:`, targetIds);
+
+  
+  if (applyOnlyToPrimary) {
+    if (primaryTarget) {
+      await storePreHP(primaryTarget, null, responsibleToken, actionSlug);
+      log.all(`[${MODULE}] ${loc("pf2e-threat-tracker.logs.tokenDataSavedFor")}: ${primaryTarget.name} (primary-only)`);
+    } else {
+      log.min(`[${MODULE}] No hay objetivo principal resuelto para preHP (applyThreatTargetOnly activo).`);
+    }
+  } else {
+  for (const id of targetIds) {
+    const targetToken = canvas.tokens.get(id);
     if (targetToken) {
       await storePreHP(targetToken, null, responsibleToken, actionSlug);
       log.all(`[${MODULE}] ${loc("pf2e-threat-tracker.logs.tokenDataSavedFor")}: ${targetToken.name}`);
     }
   }
+}
 
-  for (const enemy of getEnemyTokens(responsibleToken, targets)) {
+let enemies = [];
+  if (applyOnlyToPrimary && primaryTarget) {
+    const isEnemy =
+      primaryTarget.inCombat &&
+      primaryTarget.document.disposition !== responsibleToken.document.disposition &&
+      !primaryTarget.actor?.hasPlayerOwner;
+    enemies = isEnemy ? [primaryTarget] : [];
+  } else {
+    enemies = getEnemyTokens(responsibleToken);
+  }
+
+  for (const enemy of enemies) {
     if (enemy.actor?.getFlag(MODULE, 'ignoreThreat')) {
       log.min(`[${MODULE}] ${enemy.name} ${loc("pf2e-threat-tracker.logs.isDeadSkipping")}`);
       continue;
@@ -476,7 +615,6 @@ if (isAttack) {
        const damageType = (() => {
          const d = item?.system?.damage;
          if (!d) return "";
-         // coge el primer “part” con damageType si existe
          const first = typeof d === "object" ? Object.values(d).find(Boolean) : null;
          return first?.damageType ?? d?.damageType ?? "";
        })();
@@ -677,10 +815,8 @@ const damagedTokens = candidates.filter(t => {
     if (!atkToken) continue;
 
     const currHP = token.actor?.system?.attributes?.hp?.value ?? 0;
-    const damage = Math.max(0, preHP - currHP);
-    if (damage === 0) continue;
+    let damage = Math.max(0, preHP - currHP);
 
-    // Base: daño como amenaza
     let threat = damage;
     let logBlock =
       `[${MODULE}] ${loc("pf2e-threat-tracker.logs.threatCalculation")} ${token.name}:\n`;
