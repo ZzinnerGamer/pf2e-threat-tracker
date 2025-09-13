@@ -49,9 +49,14 @@ export class ThreatConfigApp extends foundry.applications.api.ApplicationV2 {
     currentThreatConfigApp = this;
   }
 
-  /** Prepara datos para renderizar */
   async _prepareContext() {
-    const categories = [
+  const hasSequencer = !!game.modules.get('sequencer')?.active;
+
+  if (this.activeGroupKey === 'Sequencer' && !hasSequencer) {
+    this.activeGroupKey = 'General';
+  }
+
+    const categoriesBase = [
       { key: 'General',    title: game.i18n.localize("pf2e-threat-tracker.threatConfig.general"),        active: this.activeGroupKey === 'General' },
       { key: 'Threat',     title: game.i18n.localize("pf2e-threat-tracker.threatConfig.threat"),         active: this.activeGroupKey === 'Threat' },
       { key: 'Sequencer',  title: 'Sequencer',                                                           active: this.activeGroupKey === 'Sequencer' },
@@ -60,8 +65,11 @@ export class ThreatConfigApp extends foundry.applications.api.ApplicationV2 {
       { key: 'Appearance', title: game.i18n.localize("pf2e-threat-tracker.threatConfig.appearance"),     active: this.activeGroupKey === 'Appearance' }
     ];
 
+    const categories = categoriesBase.filter(cat => cat.key !== 'Sequencer' || hasSequencer);
+
     const groups = [];
-    if (['General', 'Threat', 'Sequencer', 'Appareance'].includes(this.activeGroupKey)) {
+    const groupableKeys = ['General', 'Threat', 'Appearance', ...(hasSequencer ? ['Sequencer'] : [])];
+    if (groupableKeys.includes(this.activeGroupKey)) {
       const activeKeys = SETTINGS_GROUPS[this.activeGroupKey] || [];
       const items = this._buildSettingsItems(activeKeys);
       groups.push({ title: this.activeGroupKey, items });
@@ -69,9 +77,9 @@ export class ThreatConfigApp extends foundry.applications.api.ApplicationV2 {
 
     const effectExcludedPacks = game.settings.get(MODULE, 'effectExcludedPacks') || '';
 
-    const panelTheme   = game.settings.get(MODULE, 'panelTheme')   ?? 'dark';
-    const panelOpacity = game.settings.get(MODULE, 'panelOpacity') ?? 1;
-    const maxVisibleCards = game.settings.get(MODULE, 'maxVisibleCards') ?? 4;
+    const panelTheme       = game.settings.get(MODULE, 'panelTheme')   ?? 'dark';
+    const panelOpacity     = game.settings.get(MODULE, 'panelOpacity') ?? 1;
+    const maxVisibleCards  = game.settings.get(MODULE, 'maxVisibleCards') ?? 4;
 
     return { categories, groups, activeGroupKey: this.activeGroupKey, effectExcludedPacks, panelTheme, panelOpacity, maxVisibleCards };
   }
@@ -87,13 +95,17 @@ export class ThreatConfigApp extends foundry.applications.api.ApplicationV2 {
       else if (cfg.type === Number) inputType = 'number';
       
       let choices = null;
-      if (cfg.choices && typeof cfg.choices === 'object') {
+      if (cfg.choices && typeof cfg.choices === 'object' && Object.keys(cfg.choices).length) {
         inputType = 'select';
         choices = Object.entries(cfg.choices).map(([val, labelKey]) => ({
           value: val,
           label: typeof labelKey === 'string' ? (game.i18n.localize(labelKey) || labelKey) : String(labelKey)
         }));
-      }
+    } else if (cfg.type === Boolean) {
+      inputType = 'checkbox';
+    } else if (cfg.type === Number) {
+      inputType = 'number';
+    }
 
       const min  = cfg.range?.min ?? null;
       const max  = cfg.range?.max ?? null;
