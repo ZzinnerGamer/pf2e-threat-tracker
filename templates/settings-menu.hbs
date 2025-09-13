@@ -61,10 +61,10 @@
                   <label>{{item.name}}</label>
                   {{#if item.hint}}<div class="notes" style="opacity:.8;">{{item.hint}}</div>{{/if}}
                   <select name="settings.{{item.key}}">
-                    {{#each item.choices as |ch|}}
-                      <option value="{{ch.value}}"
-                        {{#if (eq ../item.value ch.value)}}selected{{/if}}>
-                        {{ch.label}}
+                    {{#each item.choices as |opt|}}
+                      <option value="{{opt.value}}"
+                        {{#if (eq ../value opt.value)}}selected{{/if}}>
+                        {{opt.label}}
                       </option>
                     {{/each}}
                   </select>
@@ -156,8 +156,8 @@
     </legend>
 
     <div class="pv-form-row" style="margin-bottom:10px; padding:6px 0; border-bottom:1px solid #6868684d;">
-      <label>{{localize "pf2e-threat-tracker.Settings.panelTheme.name"}}</label>
-      <div class="notes" style="opacity:.8;">{{localize "pf2e-threat-tracker.Settings.panelTheme.hint"}}</div>
+      <label>{{localize "pf2e-threat-tracker.settings.panelTheme.name"}}</label>
+      <div class="notes" style="opacity:.8;">{{localize "pf2e-threat-tracker.settings.panelTheme.hint"}}</div>
       <select name="settings.panelTheme">
         <option value="dark"  {{#if (eq panelTheme "dark")}}selected{{/if}}>{{localize "Dark"}}</option>
         <option value="white" {{#if (eq panelTheme "white")}}selected{{/if}}>{{localize "White"}}</option>
@@ -175,8 +175,8 @@
     </div>
 
     <div class="pv-form-row" style="margin-bottom:10px; padding:6px 0; border-bottom:1px solid #6868684d;">
-    <label>{{localize "pf2e-threat-tracker.Settings.panelOpacity.name"}}</label>
-    <div class="notes" style="opacity:.8;">{{localize "pf2e-threat-tracker.Settings.panelOpacity.hint"}}</div>
+    <label>{{localize "pf2e-threat-tracker.settings.panelOpacity.name"}}</label>
+    <div class="notes" style="opacity:.8;">{{localize "pf2e-threat-tracker.settings.panelOpacity.hint"}}</div>
 
     <div style="display:flex; align-items:center; gap:8px;">
         <span style="flex:0 0 auto; font-size:12px; opacity:.7;">0.5</span>
@@ -187,9 +187,9 @@
     </div>
     </div>
     <div class="pv-form-row" style="margin-bottom:10px; padding:6px 0; border-bottom:1px solid #6868684d;">
-  <label>{{localize "pf2e-threat-tracker.Settings.maxVisibleCards.name"}}</label>
+  <label>{{localize "pf2e-threat-tracker.settings.maxVisibleCards.name"}}</label>
   <div class="notes" style="opacity:.8;">
-    {{localize "pf2e-threat-tracker.Settings.maxVisibleCards.hint"}}
+    {{localize "pf2e-threat-tracker.settings.maxVisibleCards.hint"}}
   </div>
   <input type="number"
          name="settings.maxVisibleCards"
