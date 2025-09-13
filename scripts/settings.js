@@ -50,8 +50,8 @@ Hooks.once('init', async() => {
     });
 
     game.settings.register(MODULE, 'decayFactor', {
-        name: game.i18n.localize("pf2e-threat-tracker.Settings.decayFactor.name"),
-        hint: game.i18n.localize("pf2e-threat-tracker.Settings.decayFactor.hint"),
+        name: game.i18n.localize("pf2e-threat-tracker.settings.decayFactor.name"),
+        hint: game.i18n.localize("pf2e-threat-tracker.settings.decayFactor.hint"),
         scope: 'world',
         config: false,
         type: Number,
@@ -174,10 +174,19 @@ Hooks.once('init', async() => {
         type: Boolean
     });
 
-    
+    game.settings.register(MODULE, 'applyThreatTargetOnly', {
+        name: game.i18n.localize("pf2e-threat-tracker.settings.applyThreatTargetOlny.name"),
+        hint: game.i18n.localize("pf2e-threat-tracker.settings.applyThreatTargetOlny.hint"),
+        scope: "client",
+        config: false,
+    default:
+        true,
+        type: Boolean
+    });
+
     game.settings.register(MODULE, 'unconsciousThreatPercent', {
-        name: game.i18n.localize("pf2e-threat-tracker.Settings.unconsciousThreatReduction.name"),
-        hint: game.i18n.localize("pf2e-threat-tracker.Settings.unconsciousThreatReduction.hint"),
+        name: game.i18n.localize("pf2e-threat-tracker.settings.unconsciousThreatReduction.name"),
+        hint: game.i18n.localize("pf2e-threat-tracker.settings.unconsciousThreatReduction.hint"),
         scope: 'client',
         config: false,
         type: Number,
@@ -198,15 +207,15 @@ Hooks.once('init', async() => {
     });
 
     game.settings.register(MODULE, 'topThreatEffectType', {
-        name: 'pf2e-threat-tracker.Settings.topThreatEffectType.name',
-        hint: 'pf2e-threat-tracker.Settings.topThreatEffectType.hint',
+        name: 'pf2e-threat-tracker.settings.topThreatEffectType.name',
+        hint: 'pf2e-threat-tracker.settings.topThreatEffectType.hint',
         scope: 'world',
         config: false,
     default: 'marker',
         type: String,
     choices: {
-        marker: 'pf2e-threat-tracker.Settings.topThreatEffectType.marker',
-        ray: 'pf2e-threat-tracker.Settings.topThreatEffectType.ray'
+        marker: 'pf2e-threat-tracker.settings.topThreatEffectType.marker',
+        ray: 'pf2e-threat-tracker.settings.topThreatEffectType.ray'
     }
         });
 
@@ -259,8 +268,8 @@ Hooks.once('init', async() => {
     // ----- [ Bloque de Apariencia ] -----
 
     game.settings.register(MODULE, 'panelTheme', {
-    name: game.i18n.localize("pf2e-threat-tracker.Settings.panelTheme.name"),
-    hint: game.i18n.localize("pf2e-threat-tracker.Settings.panelTheme.name"),
+    name: game.i18n.localize("pf2e-threat-tracker.settings.panelTheme.name"),
+    hint: game.i18n.localize("pf2e-threat-tracker.settings.panelTheme.name"),
     scope: 'client',
     config: false,
     type: String,
@@ -285,8 +294,8 @@ Hooks.once('init', async() => {
     });
 
     game.settings.register(MODULE, 'panelOpacity', {
-    name: game.i18n.localize("pf2e-threat-tracker.Settings.panelOpacity.name"),
-    hint: game.i18n.localize("pf2e-threat-tracker.Settings.panelOpacity.name"),
+    name: game.i18n.localize("pf2e-threat-tracker.settings.panelOpacity.name"),
+    hint: game.i18n.localize("pf2e-threat-tracker.settings.panelOpacity.name"),
     scope: 'client',
     config: false,
     type: Number,
@@ -298,7 +307,7 @@ Hooks.once('init', async() => {
     });
 
     game.settings.register(MODULE, 'panelMinimized', {
-    name: game.i18n.localize("pf2e-threat-tracker.Settings.panelMinimized.name"),
+    name: game.i18n.localize("pf2e-threat-tracker.settings.panelMinimized.name"),
     scope: 'client',
     config: false,
     type: Boolean,
@@ -328,19 +337,19 @@ Hooks.once('init', async() => {
     // ----- [ Bloque de Logging ] -----
 
 game.settings.register(MODULE, 'loggingMode', {
-    name: game.i18n.localize("pf2e-threat-tracker.Settings.loggingMode.name"),
+    name: game.i18n.localize("pf2e-threat-tracker.settings.loggingMode.name"),
     scope: 'client',
     config: true,
     type: String,
     choices: {
-        none: "pf2e-threat-tracker.Settings.loggingMode.none",
-        minimal: "pf2e-threat-tracker.Settings.loggingMode.minimal",
-        all: "pf2e-threat-tracker.Settings.loggingMode.all"
+        none: "pf2e-threat-tracker.settings.loggingMode.none",
+        minimal: "pf2e-threat-tracker.settings.loggingMode.minimal",
+        all: "pf2e-threat-tracker.settings.loggingMode.all"
     },
     default: 'none'
 });
 
-    console.log(`[${MODULE}] Settings registrados:`);
+    console.log(`[${MODULE}] settings registrados:`);
     [...game.settings.settings.entries()]
     .filter(([key]) => key.startsWith(`${MODULE}.`))
     .forEach(([key, setting]) => {
