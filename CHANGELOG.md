@@ -1,5 +1,19 @@
 # CHANGELOG
 
+# [1.4.0] - 2025-9-13
+
+## Added
+
+* Threat to target only option
+  * If this option is enabled, the threat of attacks, skills and actions will target only the user targeted tokens
+* Hide Sequencer settings if Sequencer is not enabled
+
+## Fixed
+
+* Attack spells threat will only apply on actual attacks, not spell cards.
+* Sequencer effect type will not save its visual configuration, the configuration itself was saved but visually, reopening the menu, the setting was set on `Marker`.
+* Some typos in code
+
 # [1.3.1] - 2025-9-9
 
 ## Added
