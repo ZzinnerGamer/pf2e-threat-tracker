@@ -10,7 +10,7 @@
 
 ## Fixed
 
-* Attack spells threat will only apply on actual attacks, not spell cards.
+* Attack spells threat will only apply on actual attacks, not spell cards too, avoiding double threat on attack spells.
 * Sequencer effect type will not save its visual configuration, the configuration itself was saved but visually, reopening the menu, the setting was set on `Marker`.
 * Some typos in code
 
