@@ -52,7 +52,7 @@
   "pf2e-threat-tracker.settings.attackThreatMode.hint": "Attacks reduce threat instead of applying it",
   "pf2e-threat-tracker.settings.attackThreatMode.name": "Reverse Attack Threat Mode",
   "pf2e-threat-tracker.settings.applyThreatTargetOlny.name": "Apply Threat to Target Only",
-  "pf2e-threat-tracker.settings.applyThreatTargetOlny.hint": "With this option enabled, the threat of skill actions, feats and will affect only to the target of the action. Note that only spells with target will be affected by this setting, non-attack spells will apply threat to everyone even if it is a targeted saving throw.",
+  "pf2e-threat-tracker.settings.applyThreatTargetOlny.hint": "With this option enabled, the threat of skill actions, feats and will affect only to the target of the action.",
   "pf2e-threat-tracker.settings.baseAttackThreat.hint": "Amount of threat generated when an attack hits",
   "pf2e-threat-tracker.settings.baseAttackThreat.name": "Base Threat from Attacks",
   "pf2e-threat-tracker.settings.baseHealThreat.hint": "Base threat generated when healing an ally, to which the amount healed is added",
@@ -157,3 +157,4 @@
   "pf2e-threat-tracker.logs.damage": "Damage:",
   "pf2e-threat-tracker.logs.massiveDamage": "Massive Damage Bonus:",
   "pf2e-threat-tracker.logs.isDeadSkipping": "is dead, skipping threat calculation."}
+
