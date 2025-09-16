@@ -51,6 +51,8 @@
   "pf2e-threat-tracker.notifications.threatPanelStyle.noCombat": "Afin de voir si le thème du panneau de menaces a eu un effet, lancez le combat, si vous êtes déjà en combat, fermez-le et relancez-le.",
   "pf2e-threat-tracker.settings.attackThreatMode.hint": "Les attaques réduisent la menace au lieu de l'appliquer",
   "pf2e-threat-tracker.settings.attackThreatMode.name": "Mode de menace d'attaque inversée",
+  "pf2e-threat-tracker.settings.applyThreatTargetOlny.name": "Appliquer la menace à la cible uniquement",
+  "pf2e-threat-tracker.settings.applyThreatTargetOlny.hint": "En activant cette option, la menace des actions de compétence, des dons et des attaques n'affectera que la cible de l'action.",
   "pf2e-threat-tracker.settings.baseAttackThreat.hint": "Quantité de menace générée lorsqu'une attaque touche",
   "pf2e-threat-tracker.settings.baseAttackThreat.name": "Menace de base provenant d'attaques",
   "pf2e-threat-tracker.settings.baseHealThreat.hint": "Menace de base générée lors de la guérison d'un allié, à laquelle le montant soigné est ajouté",
@@ -69,6 +71,8 @@
   "pf2e-threat-tracker.settings.enableIWR.name": "Activer IFR (Immunité/Faiblesse/Résistance)",
   "pf2e-threat-tracker.settings.effectExcludedPacks.name": "Compendium exclu",
   "pf2e-threat-tracker.settings.effectExcludedPacks.hint": "Compendiums exclus de la liste des menaces pour les effets des objets",
+  "pf2e-threat-tracker.settings.maxVisibleCards.name": "Cartes visibles maximales",
+  "pf2e-threat-tracker.settings.maxVisibleCards.hint": "Nombre maximal de cartes de menace visibles dans le panneau sans défilement. (Aucun rechargement n'est nécessaire, mais en cas de modification, il est recommandé de changer rapidement de scène et de revenir pour appliquer la nouvelle valeur, uniquement si vous êtes déjà en combat).",
   "pf2e-threat-tracker.settings.skillBase.hint": "Menace de base générée par une manœuvre de compétences et de dons",
   "pf2e-threat-tracker.settings.skillBase.name": "Menace de base provenant des compétences et des dons",
   "pf2e-threat-tracker.settings.skillCritBonus.hint": "Menace supplémentaire générée en cas de succès critique sur une manœuvre de compétence/don",
@@ -93,6 +97,10 @@
   "pf2e-threat-tracker.settings.panelOpacity.name": "Opacité du panneau de menace",
   "pf2e-threat-tracker.settings.panelOpacity.hint": "Opacité du panneau",
   "pf2e-threat-tracker.settings.panelMinimized.name": "Panneau de menace minimisé",
+  "pf2e-threat-tracker.settings.topThreatEffectType.name": "Type d'effet de menace au dessus",
+  "pf2e-threat-tracker.settings.topThreatEffectType.hint": "Fait apparaître un marqueur au dessus du jeton sélectionné de la cible la plus menaçante, un rayon émet un effet du jeton sélectionné jusqu'au dessus de la cible la plus menaçante.",
+  "pf2e-threat-tracker.settings.topThreatEffectType.marker": "Marqueur",
+  "pf2e-threat-tracker.settings.topThreatEffectType.ray": "Rayon",
   "pf2e-threat-tracker.settings.unconsciousThreatReduction.hint": "Le montant de menace réduit en obtenant l'état 'Inconscient', cette valeur est un pourcentage de la valeur de menace propre à chaque ennemi.",
   "pf2e-threat-tracker.settings.unconsciousThreatReduction.name": "Réduction de la menace inconsciente",
   "pf2e-threat-tracker.threatConfig.appearance": "Apparence du suivi de la menace",
@@ -148,7 +156,5 @@
   "pf2e-threat-tracker.logs.healingAmount": "Quantité de guérison :",
   "pf2e-threat-tracker.logs.damage": "Dégâts :",
   "pf2e-threat-tracker.logs.massiveDamage": "Bonus de dégâts massifs :",
-  "pf2e-threat-tracker.logs.isDeadSkipping": "est mort, l'excluant du calcul de la menace.",
-  "pf2e-threat-tracker.settings.maxVisibleCards.name": "Cartes visibles maximales",
-  "pf2e-threat-tracker.settings.maxVisibleCards.hint": "Nombre maximal de cartes de menace visibles dans le panneau sans défilement. (Aucun rechargement n'est nécessaire, mais en cas de modification, il est recommandé de changer rapidement de scène et de revenir pour appliquer la nouvelle valeur, uniquement si vous êtes déjà en combat)."
+  "pf2e-threat-tracker.logs.isDeadSkipping": "est mort, l'excluant du calcul de la menace."
 }
