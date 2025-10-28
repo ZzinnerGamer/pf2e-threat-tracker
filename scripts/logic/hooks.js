@@ -126,12 +126,14 @@ Hooks.on('updateCombatant', async (combatant, changes) => {
 
 
 Hooks.on('createItem', async item => {
+  if (!game.user.isGM) return;
   if (item.type === 'condition') {
     await item.actor.setFlag(MODULE, 'ignoreThreat', isActorDead(item.actor));
     _updateFloatingPanel();
   }
 });
 Hooks.on('deleteItem', async item => {
+  if (!game.user.isGM) return;
   if (item.type === 'condition') {
     await item.actor.unsetFlag(MODULE, 'ignoreThreat', isActorDead(item.actor));
     _updateFloatingPanel();
@@ -195,3 +197,4 @@ Hooks.on("createItem", (item, options, userId) => {
 
   setTimeout(() => handleThreatFromEffect({ item, action: "create", userId, chatMessage }), 50);
 });
+
