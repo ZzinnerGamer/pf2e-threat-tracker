@@ -1,5 +1,9 @@
 # CHANGELOG
 
+# [1.4.1] - 2025-10-28
+
+* Fix nonGM message errors on apply death/unconscious
+
 # [1.4.0] - 2025-9-13
 
 ## Added
