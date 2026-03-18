@@ -1,83 +1,80 @@
+/**
+ * @module addons/sequencer
+ * Optional Sequencer integration — shows a visual effect on the
+ * token with the highest threat when an enemy is selected.
+ */
 
-const MODULE = 'pf2e-threat-tracker';
+import { MODULE_ID } from '../core/constants.js';
+import { Logger } from '../core/logger.js';
+import { getSetting } from '../core/threat-utils.js';
 
-const getLoggingMode = () => globalThis.game?.settings?.get?.(MODULE, 'loggingMode') ?? 'none';
+export function registerSequencerHooks() {
+  // Only register if Sequencer is active
+  if (!game.modules.get('sequencer')?.active) {
+    Logger.debug('Sequencer not active — skipping addon');
+    return;
+  }
 
-const log = {
-  all:  (...a) => { if (getLoggingMode() === 'all') console.log(...a); },
-  min:  (...a) => { const m = getLoggingMode(); if (m === 'minimal' || m === 'all') console.log(...a); },
-  warn: (...a) => { if (getLoggingMode() !== 'none') console.warn(...a); }
-};
+  Hooks.on('controlToken', async (token, controlled) => {
+    if (!game.combats.active || !game.user.isGM) return;
+    if (!getSetting('enableTopThreatEffect')) return;
 
-Hooks.on('controlToken', async(token, controlled) => {
-    const combat = game.combats.active
-        if (!combat) return;
-    if (!game.user.isGM) return;
-    if (!game.settings.get(MODULE, 'enableTopThreatEffect')) return;
     if (!controlled) {
-        Sequencer.EffectManager.endEffects({ name: `top-threat-${token.id}` });
-        return;
+      Sequencer.EffectManager.endEffects({ name: `top-threat-${token.id}` });
+      return;
     }
 
-    if (token.actor.hasPlayerOwner) return;
+    if (token.actor?.hasPlayerOwner) return;
 
-    const threatTable = token.document.flags[MODULE]?.threatTable ?? {};
-    log.all(`[${MODULE}] threatTable for ${token.name}:`, threatTable);
-    const threatsInOrder = Object.entries(threatTable).toSorted((a, b) => b[1].value - a[1].value);
-    log.all(`[${MODULE}] Threats in order:`, threatsInOrder);
-    const topEntry = threatsInOrder?.[0];
-    if (!topEntry) {
-        log.all(`[${MODULE}] No threat entries found for applying a Sequencer effect.`);
-        return;
-    }
+    const threatTable = token.document.flags[MODULE_ID]?.threatTable ?? {};
+    const sorted = Object.entries(threatTable).sort((a, b) => {
+      const va = typeof a[1] === 'object' ? a[1].value : Number(a[1]) || 0;
+      const vb = typeof b[1] === 'object' ? b[1].value : Number(b[1]) || 0;
+      return vb - va;
+    });
+
+    const topEntry = sorted[0];
+    if (!topEntry) return;
 
     const [topTokenId, threatData] = topEntry;
-    const topThreatValue = threatData?.value;
-
-    if (!topTokenId || !topThreatValue) {
-        log.all(`[${MODULE}] The token or threat level could not be determined.`);
-        return;
-    }
-
-    if (!topTokenId)  return;
+    const topThreatValue = typeof threatData === 'object' ? threatData.value : Number(threatData) || 0;
+    if (!topTokenId || !topThreatValue) return;
 
     const topToken = canvas.tokens.get(topTokenId);
-    if (!topToken) {
-        log.all(`[${MODULE}] The token with ID ${topTokenId} was not found on the canvas.`);
-        return;
-    }
+    if (!topToken) return;
 
-    // Gracias Chasarooni te quiero mucho
+    // Clear previous effect
     Sequencer.EffectManager.endEffects({ name: `top-threat-${token.id}` });
 
-    const effectPath = game.settings.get(MODULE, 'topThreatEffect');
-
+    const effectPath = getSetting('topThreatEffect');
+    const effectType = getSetting('topThreatEffectType');
     const seq = new Sequence();
 
-    const effectType = game.settings.get(MODULE, 'topThreatEffectType');
-
     if (effectType === 'ray') {
-    seq.effect()
-      .file(effectPath)
-      .attachTo(token)
-      .stretchTo(topToken)
-      .persist()
-      .fadeIn(200)
-      .fadeOut(200)
-      .name(`top-threat-${token.id}`)
-      .forUsers([game.user.id])
-      .belowTokens(false);
+      seq.effect()
+        .file(effectPath)
+        .attachTo(token)
+        .stretchTo(topToken)
+        .persist()
+        .fadeIn(200)
+        .fadeOut(200)
+        .name(`top-threat-${token.id}`)
+        .forUsers([game.user.id])
+        .belowTokens(false);
     } else {
-    seq.effect()
-      .file(effectPath)
-      .attachTo(topToken)
-      .scaleToObject(0.4)
-      .fadeIn(500)
-      .fadeOut(250)
-      .persist()
-      .anchor({ x: 0.5, y: 1.5 })
-      .name(`top-threat-${token.id}`)
-      .forUsers([game.user.id]);
-  }
-  seq.play();
-});
+      seq.effect()
+        .file(effectPath)
+        .attachTo(topToken)
+        .scaleToObject(0.4)
+        .fadeIn(500)
+        .fadeOut(250)
+        .persist()
+        .anchor({ x: 0.5, y: 1.5 })
+        .name(`top-threat-${token.id}`)
+        .forUsers([game.user.id]);
+    }
+
+    seq.play();
+    Logger.debug(`Sequencer effect played: ${effectType} from ${token.name} → ${topToken.name}`);
+  });
+}

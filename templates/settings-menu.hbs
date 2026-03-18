@@ -1,9 +1,9 @@
 <form class="pf2e-threat-tracker-settings"
       style="display:flex; flex-direction:column; height:100%;">
 
-  {{!-- HEADER: tabs fijas --}}
+  {{!-- HEADER: tab navigation --}}
   <nav class="pf2e-threat-tabs"
-       style="flex:0 0 auto; display:flex; gap:8px; padding:8px 10px; z-index:2;">
+       style="flex:0 0 auto; display:flex; gap:8px; padding:8px 10px; z-index:2; flex-wrap:wrap;">
     {{#each categories as |cat|}}
       <button type="button"
               class="tab {{#if cat.active}}active{{/if}}"
@@ -16,11 +16,11 @@
     {{/each}}
   </nav>
 
-  {{!-- BODY: solo aquí hay scroll --}}
+  {{!-- BODY --}}
   <div class="pf2e-threat-body"
        style="flex:1 1 auto; overflow:auto; padding:10px 6px 12px 10px; position:relative;">
 
-    {{!-- Sección dinámica para las 3 primeras pestañas --}}
+    {{!-- Dynamic settings groups (General, Threat, Sequencer, Appearance) --}}
     {{#if (or (eq activeGroupKey "General") (eq activeGroupKey "Threat") (eq activeGroupKey "Sequencer"))}}
       {{#each groups as |group|}}
         <fieldset style="margin-top:10px; border-radius:8px; padding:8px;">
@@ -28,7 +28,7 @@
           {{#each group.items as |item|}}
             {{#if (eq item.inputType "checkbox")}}
               <div class="pv-form-row"
-                   style="margin-bottom: 10px; display:flex; align-items:center; justify-content:space-between; gap:12px;
+                   style="margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; gap:12px;
                           border-bottom:1px solid #6868684d; padding:6px 0;">
                 <div style="flex:1 1 auto;">
                   <label>{{item.name}}</label>
@@ -38,44 +38,43 @@
                   <input type="checkbox" name="settings.{{item.key}}" {{#if item.value}}checked{{/if}}>
                 </div>
               </div>
-              {{else if (eq item.ui "range")}}
-                <div class="pv-form-row"
-                    style="margin-bottom: 10px; border-bottom:1px solid #6868684d; padding:6px 0;">
-                  <label>{{item.name}}</label>
-                  {{#if item.hint}}<div class="notes" style="opacity:.8;">{{item.hint}}</div>{{/if}}
-
-                  <div style="display:flex; align-items:center; gap:8px;">
-                    <span style="flex:0 0 auto; font-size:12px; opacity:.7;">0%</span>
-                    <input type="range"
-                          name="settings.{{item.key}}"
-                          min="{{item.min}}" max="{{item.max}}" step="{{item.step}}"
-                          value="{{item.value}}"
-                          style="flex:1 1 auto;">
-                    <span class="tt-slider-value" data-key="{{item.key}}"
-                          style="flex:0 0 auto; width:44px; text-align:right;">100%</span>
-                  </div>
-                </div>
-              {{else if (eq item.inputType "select")}}
-                <div class="pv-form-row"
-                    style="margin-bottom: 10px; border-bottom:1px solid #6868684d; padding:6px 0;">
-                  <label>{{item.name}}</label>
-                  {{#if item.hint}}<div class="notes" style="opacity:.8;">{{item.hint}}</div>{{/if}}
-                  <select name="settings.{{item.key}}">
-                    {{#each item.choices as |opt|}}
-                      <option value="{{opt.value}}"
-                        {{#if (eq ../value opt.value)}}selected{{/if}}>
-                        {{opt.label}}
-                      </option>
-                    {{/each}}
-                  </select>
-                </div>
-              {{else}}
+            {{else if (eq item.ui "range")}}
               <div class="pv-form-row"
-                   style="margin-bottom: 10px; border-bottom:1px solid #6868684d; padding:6px 0;">
+                   style="margin-bottom:10px; border-bottom:1px solid #6868684d; padding:6px 0;">
+                <label>{{item.name}}</label>
+                {{#if item.hint}}<div class="notes" style="opacity:.8;">{{item.hint}}</div>{{/if}}
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="flex:0 0 auto; font-size:12px; opacity:.7;">{{item.min}}</span>
+                  <input type="range"
+                         name="settings.{{item.key}}"
+                         min="{{item.min}}" max="{{item.max}}" step="{{item.step}}"
+                         value="{{item.value}}"
+                         style="flex:1 1 auto;">
+                  <span style="flex:0 0 auto; font-size:12px; opacity:.7;">{{item.max}}</span>
+                </div>
+              </div>
+            {{else if (eq item.inputType "select")}}
+              <div class="pv-form-row"
+                   style="margin-bottom:10px; border-bottom:1px solid #6868684d; padding:6px 0;">
+                <label>{{item.name}}</label>
+                {{#if item.hint}}<div class="notes" style="opacity:.8;">{{item.hint}}</div>{{/if}}
+                <select name="settings.{{item.key}}">
+                  {{#each item.choices as |opt|}}
+                    <option value="{{opt.value}}"
+                      {{#if (eq ../value opt.value)}}selected{{/if}}>
+                      {{opt.label}}
+                    </option>
+                  {{/each}}
+                </select>
+              </div>
+            {{else}}
+              <div class="pv-form-row"
+                   style="margin-bottom:10px; border-bottom:1px solid #6868684d; padding:6px 0;">
                 <label>{{item.name}}</label>
                 {{#if item.hint}}<div class="notes" style="opacity:.8;">{{item.hint}}</div>{{/if}}
                 {{#if (eq item.inputType "number")}}
-                  <input type="number" name="settings.{{item.key}}" value="{{item.value}}" min="{{item.min}}" max="{{item.max}}" step="{{item.step}}">
+                  <input type="number" name="settings.{{item.key}}" value="{{item.value}}"
+                         min="{{item.min}}" max="{{item.max}}" step="{{item.step}}">
                 {{else}}
                   <input type="text" name="settings.{{item.key}}" value="{{item.value}}">
                 {{/if}}
@@ -86,122 +85,148 @@
       {{/each}}
     {{/if}}
 
-{{!-- Pestañas Personalizadas --}}
-{{#if (eq activeGroupKey "Custom")}}
-  <fieldset style="margin-top:10px; border-radius:8px; padding:8px;">
-    <legend style="font-weight:700; letter-spacing:.2px; padding:0 4px;">
-      {{localize "pf2e-threat-tracker.threatConfig.customThreat"}}
-    </legend>
-    <div style="display:flex; flex-direction:column; gap:10px; margin-top:8px;">
-      <button type="button" data-action="skill-actions" 
-              style="padding:6px 10px; border-radius:6px; border:1px solid var(--color-border-light-primary); text-align:left;">
-        <i class="fas fa-running" style="margin-right:6px;"></i>
-        {{localize "pf2e-threat-tracker.threatConfig.globalThreatPerSkillAction"}}
-      </button>
-      <button type="button" data-action="actor-actions" 
-              style="padding:6px 10px; border-radius:6px; border:1px solid var(--color-border-light-primary); text-align:left;">
-        <i class="fas fa-user" style="margin-right:6px;"></i>
-        {{localize "pf2e-threat-tracker.threatConfig.threatPerActorActions"}}
-      </button>
-      <button type="button" data-action="effects" 
-              style="padding:6px 10px; border-radius:6px; border:1px solid var(--color-border-light-primary); text-align:left;">
-        <i class="fas fa-magic" style="margin-right:6px;"></i>
-        {{localize "pf2e-threat-tracker.threatConfig.threatPerEffects"}}
-      </button>
-      <div class="pv-form-row" style="margin-bottom:10px;">
-        <label>{{localize "pf2e-threat-tracker.settings.effectExcludedPacks.name"}}</label>
-        <br>
-      <label class="notes" style="opacity:.75;">
-        {{localize "pf2e-threat-tracker.settings.effectExcludedPacks.hint"}}
-      </label>
-        <input type="text"
-               name="settings.effectExcludedPacks"
-               value="{{effectExcludedPacks}}"
-               placeholder="Divine Intercessions, Pathfinder Society Boons, Bestiary Effects, Campaign Effects, Kingmaker Features, otherCompendium">
-    </div>
-  </fieldset>
-{{/if}}
+    {{!-- Custom Threat tab --}}
+    {{#if (eq activeGroupKey "Custom")}}
+      <fieldset style="margin-top:10px; border-radius:8px; padding:8px;">
+        <legend style="font-weight:700; letter-spacing:.2px; padding:0 4px;">
+          {{localize "pf2e-threat-tracker.threatConfig.customThreat"}}
+        </legend>
+        <div style="display:flex; flex-direction:column; gap:10px; margin-top:8px;">
+          <button type="button" data-action="skill-actions"
+                  style="padding:6px 10px; border-radius:6px; border:1px solid var(--color-border-light-primary); text-align:left;">
+            <i class="fas fa-running" style="margin-right:6px;"></i>
+            {{localize "pf2e-threat-tracker.threatConfig.globalThreatPerSkillAction"}}
+          </button>
+          <button type="button" data-action="actor-actions"
+                  style="padding:6px 10px; border-radius:6px; border:1px solid var(--color-border-light-primary); text-align:left;">
+            <i class="fas fa-user" style="margin-right:6px;"></i>
+            {{localize "pf2e-threat-tracker.threatConfig.threatPerActorActions"}}
+          </button>
+          <button type="button" data-action="effects"
+                  style="padding:6px 10px; border-radius:6px; border:1px solid var(--color-border-light-primary); text-align:left;">
+            <i class="fas fa-magic" style="margin-right:6px;"></i>
+            {{localize "pf2e-threat-tracker.threatConfig.threatPerEffects"}}
+          </button>
+          <button type="button" data-action="auto-generate"
+                  style="padding:8px 10px; border-radius:6px; border:1px solid rgba(100,200,100,0.4); background:rgba(100,200,100,0.08); text-align:left;">
+            <i class="fas fa-wand-magic-sparkles" style="margin-right:6px; color:#6c6;"></i>
+            Auto-Generate Defaults (Recommended)
+          </button>
+          <div class="notes" style="opacity:.65; font-size:11px; padding:0 4px;">
+            Automatically analyses all effects in your compendiums and assigns threat values based on traits, spell rank, action cost, damage type, and more. This is the recommended starting point — you can fine-tune individual values afterwards.
+          </div>
+          <div class="pv-form-row" style="margin-bottom:10px;">
+            <label>{{localize "pf2e-threat-tracker.settings.effectExcludedPacks.name"}}</label>
+            <br>
+            <label class="notes" style="opacity:.75;">
+              {{localize "pf2e-threat-tracker.settings.effectExcludedPacks.hint"}}
+            </label>
+            <input type="text"
+                   name="settings.effectExcludedPacks"
+                   value="{{effectExcludedPacks}}"
+                   placeholder="Divine Intercessions, Pathfinder Society Boons, Bestiary Effects, Campaign Effects, Kingmaker Features">
+          </div>
+        </div>
+      </fieldset>
+    {{/if}}
 
-{{!-- Pestaña Templates / Presets --}}
-{{#if (eq activeGroupKey "Templates")}}
-  <fieldset style="margin-top:10px; border-radius:8px; padding:8px;">
-    <legend style="font-weight:700; letter-spacing:.2px; padding:0 4px;">
-      {{localize "pf2e-threat-tracker.threatConfig.threatPresets"}}
-    </legend>
-    <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:8px;">
-      <button type="button" data-action="preset-MMO" 
-              style="flex:1 1 auto; padding:6px 10px; border-radius:6px; border:1px solid var(--color-border-light-primary);">
-        <i class="fas fa-dragon" style="margin-right:6px;"></i>
-        {{localize "pf2e-threat-tracker.threatConfig.presetMMO"}}
-      </button>
-      <button type="button" data-action="preset-template1" 
-              style="flex:1 1 auto; padding:6px 10px; border-radius:6px; border:1px solid var(--color-border-light-primary);">
-        <i class="fas fa-scroll" style="margin-right:6px;"></i>
-        {{localize "pf2e-threat-tracker.threatConfig.presetTemplate"}}
-      </button>
-      <button type="button" data-action="preset-template2" 
-              style="flex:1 1 auto; padding:6px 10px; border-radius:6px; border:1px solid var(--color-border-light-primary);">
-        <i class="fas fa-scroll" style="margin-right:6px;"></i>
-        {{localize "pf2e-threat-tracker.threatConfig.presetTemplate"}}
-      </button>
-    </div>
-  </fieldset>
-{{/if}}
+    {{!-- Templates / Presets tab --}}
+    {{#if (eq activeGroupKey "Templates")}}
+      <fieldset style="margin-top:10px; border-radius:8px; padding:8px;">
+        <legend style="font-weight:700; letter-spacing:.2px; padding:0 4px;">
+          {{localize "pf2e-threat-tracker.threatConfig.threatPresets"}}
+        </legend>
+        <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:8px;">
+          <button type="button" data-action="preset-MMO"
+                  style="flex:1 1 auto; padding:6px 10px; border-radius:6px; border:1px solid var(--color-border-light-primary);">
+            <i class="fas fa-dragon" style="margin-right:6px;"></i>
+            {{localize "pf2e-threat-tracker.threatConfig.presetMMO"}}
+          </button>
+          <button type="button" data-action="preset-template1"
+                  style="flex:1 1 auto; padding:6px 10px; border-radius:6px; border:1px solid var(--color-border-light-primary);">
+            <i class="fas fa-scroll" style="margin-right:6px;"></i>
+            {{localize "pf2e-threat-tracker.threatConfig.presetTemplate"}}
+          </button>
+          <button type="button" data-action="preset-template2"
+                  style="flex:1 1 auto; padding:6px 10px; border-radius:6px; border:1px solid var(--color-border-light-primary);">
+            <i class="fas fa-scroll" style="margin-right:6px;"></i>
+            {{localize "pf2e-threat-tracker.threatConfig.presetTemplate"}}
+          </button>
+        </div>
 
-{{!-- Pestaña Apariencia --}}
-{{#if (eq activeGroupKey "Appearance")}}
-  <fieldset style="margin-top:10px; border-radius:8px; padding:8px;">
-    <legend style="font-weight:700; letter-spacing:.2px; padding:0 4px;">
-      {{localize "pf2e-threat-tracker.threatConfig.appearance"}}
-    </legend>
+        {{!-- Export / Import section --}}
+        <div style="margin-top:16px; padding-top:10px; border-top:1px solid #6868684d;">
+          <h4 style="margin:0 0 8px 0; font-weight:600;">Export / Import Configuration</h4>
+          <div style="display:flex; gap:10px;">
+            <button type="button" data-action="export-config"
+                    style="flex:1; padding:6px 10px; border-radius:6px; border:1px solid var(--color-border-light-primary);">
+              <i class="fas fa-download" style="margin-right:6px;"></i>
+              Export Config
+            </button>
+            <button type="button" data-action="import-config"
+                    style="flex:1; padding:6px 10px; border-radius:6px; border:1px solid var(--color-border-light-primary);">
+              <i class="fas fa-upload" style="margin-right:6px;"></i>
+              Import Config
+            </button>
+          </div>
+        </div>
+      </fieldset>
+    {{/if}}
 
-    <div class="pv-form-row" style="margin-bottom:10px; padding:6px 0; border-bottom:1px solid #6868684d;">
-      <label>{{localize "pf2e-threat-tracker.settings.panelTheme.name"}}</label>
-      <div class="notes" style="opacity:.8;">{{localize "pf2e-threat-tracker.settings.panelTheme.hint"}}</div>
-      <select name="settings.panelTheme">
-        <option value="dark"  {{#if (eq panelTheme "dark")}}selected{{/if}}>{{localize "Dark"}}</option>
-        <option value="white" {{#if (eq panelTheme "white")}}selected{{/if}}>{{localize "White"}}</option>
-        <option value="blueNeon" {{#if (eq panelTheme "blueNeon")}}selected{{/if}}>{{localize "Blue Neon"}}</option>
-        <option value="redNeon" {{#if (eq panelTheme "redNeon")}}selected{{/if}}>{{localize "Red Neon"}}</option>
-        <option value="darkGeoBlack"  {{#if (eq panelTheme "darkGeoBlack")}}selected{{/if}}>{{localize "Dark Geo Black"}}</option>
-        <option value="darkGeoWhite"  {{#if (eq panelTheme "darkGeoWhite")}}selected{{/if}}>{{localize "Dark Geo White"}}</option>
-        <option value="proFantasy" {{#if (eq panelTheme "proFantasy")}}selected{{/if}}>{{localize "Pro Fantasy"}}</option>
-        <option value="fargo" {{#if (eq panelTheme "fargo")}}selected{{/if}}>{{localize "Fargo"}}</option>
-        <option value="invisible" {{#if (eq panelTheme "invisible")}}selected{{/if}}>{{localize "Invisible"}}</option>
-        <option value="rpgGame" {{#if (eq panelTheme "rpgGame")}}selected{{/if}}>{{localize "RPG Game"}}</option>
-        <option value="sciFiBlue" {{#if (eq panelTheme "sciFiBlue")}}selected{{/if}}>{{localize "Sci-Fi Blue"}}</option>
-        <option value="sciFiRed" {{#if (eq panelTheme "sciFiRed")}}selected{{/if}}>{{localize "Sci-Fi Red"}}</option>
-      </select>
-    </div>
+    {{!-- Appearance tab --}}
+    {{#if (eq activeGroupKey "Appearance")}}
+      <fieldset style="margin-top:10px; border-radius:8px; padding:8px;">
+        <legend style="font-weight:700; letter-spacing:.2px; padding:0 4px;">
+          {{localize "pf2e-threat-tracker.threatConfig.appearance"}}
+        </legend>
 
-    <div class="pv-form-row" style="margin-bottom:10px; padding:6px 0; border-bottom:1px solid #6868684d;">
-    <label>{{localize "pf2e-threat-tracker.settings.panelOpacity.name"}}</label>
-    <div class="notes" style="opacity:.8;">{{localize "pf2e-threat-tracker.settings.panelOpacity.hint"}}</div>
+        <div class="pv-form-row" style="margin-bottom:10px; padding:6px 0; border-bottom:1px solid #6868684d;">
+          <label>{{localize "pf2e-threat-tracker.settings.panelTheme.name"}}</label>
+          <div class="notes" style="opacity:.8;">{{localize "pf2e-threat-tracker.settings.panelTheme.hint"}}</div>
+          <select name="settings.panelTheme">
+            <option value="dark"         {{#if (eq panelTheme "dark")}}selected{{/if}}>Dark</option>
+            <option value="white"        {{#if (eq panelTheme "white")}}selected{{/if}}>White</option>
+            <option value="blueNeon"     {{#if (eq panelTheme "blueNeon")}}selected{{/if}}>Blue Neon</option>
+            <option value="redNeon"      {{#if (eq panelTheme "redNeon")}}selected{{/if}}>Red Neon</option>
+            <option value="darkGeoBlack" {{#if (eq panelTheme "darkGeoBlack")}}selected{{/if}}>Dark Geo Black</option>
+            <option value="darkGeoWhite" {{#if (eq panelTheme "darkGeoWhite")}}selected{{/if}}>Dark Geo White</option>
+            <option value="proFantasy"   {{#if (eq panelTheme "proFantasy")}}selected{{/if}}>Pro Fantasy</option>
+            <option value="fargo"        {{#if (eq panelTheme "fargo")}}selected{{/if}}>Fargo</option>
+            <option value="invisible"    {{#if (eq panelTheme "invisible")}}selected{{/if}}>Invisible</option>
+            <option value="rpgGame"      {{#if (eq panelTheme "rpgGame")}}selected{{/if}}>RPG Game</option>
+            <option value="sciFiBlue"    {{#if (eq panelTheme "sciFiBlue")}}selected{{/if}}>Sci-Fi Blue</option>
+            <option value="sciFiRed"     {{#if (eq panelTheme "sciFiRed")}}selected{{/if}}>Sci-Fi Red</option>
+          </select>
+        </div>
 
-    <div style="display:flex; align-items:center; gap:8px;">
-        <span style="flex:0 0 auto; font-size:12px; opacity:.7;">0.5</span>
-        <input type="range" name="settings.panelOpacity"
-            min="0.5" max="1" step="0.1" value="{{panelOpacity}}"
-            style="flex:1 1 auto;">
-        <span style="flex:0 0 auto; font-size:12px; opacity:.7;">1</span>
-    </div>
-    </div>
-    <div class="pv-form-row" style="margin-bottom:10px; padding:6px 0; border-bottom:1px solid #6868684d;">
-  <label>{{localize "pf2e-threat-tracker.settings.maxVisibleCards.name"}}</label>
-  <div class="notes" style="opacity:.8;">
-    {{localize "pf2e-threat-tracker.settings.maxVisibleCards.hint"}}
+        <div class="pv-form-row" style="margin-bottom:10px; padding:6px 0; border-bottom:1px solid #6868684d;">
+          <label>{{localize "pf2e-threat-tracker.settings.panelOpacity.name"}}</label>
+          <div class="notes" style="opacity:.8;">{{localize "pf2e-threat-tracker.settings.panelOpacity.hint"}}</div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="flex:0 0 auto; font-size:12px; opacity:.7;">0.3</span>
+            <input type="range" name="settings.panelOpacity"
+                   min="0.3" max="1" step="0.1" value="{{panelOpacity}}"
+                   style="flex:1 1 auto;">
+            <span style="flex:0 0 auto; font-size:12px; opacity:.7;">1</span>
+          </div>
+        </div>
+
+        <div class="pv-form-row" style="margin-bottom:10px; padding:6px 0; border-bottom:1px solid #6868684d;">
+          <label>{{localize "pf2e-threat-tracker.settings.maxVisibleCards.name"}}</label>
+          <div class="notes" style="opacity:.8;">
+            {{localize "pf2e-threat-tracker.settings.maxVisibleCards.hint"}}
+          </div>
+          <input type="number"
+                 name="settings.maxVisibleCards"
+                 value="{{maxVisibleCards}}"
+                 min="1" max="20" step="1"
+                 style="width:80px;">
+        </div>
+      </fieldset>
+    {{/if}}
   </div>
-  <input type="number"
-         name="settings.maxVisibleCards"
-         value="{{maxVisibleCards}}"
-         min="1" max="20" step="1"
-         style="width:80px;">
-</div>
 
-  </fieldset>
-{{/if}}
-
-  {{!-- Footer normal: Guardar / Cerrar --}}
+  {{!-- Footer --}}
   <footer style="flex:0 0 auto; display:flex; gap:8px; justify-content:center;
                  border-top:1px solid var(--color-border-light-primary);
                  padding:10px; background:var(--color-bg-primary); z-index:2;">

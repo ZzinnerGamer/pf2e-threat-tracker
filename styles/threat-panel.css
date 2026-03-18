@@ -1,71 +1,74 @@
-  :root {
-    --tt-radius: 12px;
-    --tt-gap: 8px;
-    --tt-pad: 10px;
-    --tt-border: 1px solid rgba(255,255,255,0.12);
-    --tt-shadow: 0 6px 22px rgba(0,0,0,0.35);
-    --tt-font: 12px/1.3 var(--font-primary);
-  }
+/* ═══════════════════════════════════════════════════════
+   PF2e Threat Tracker v2.0.0 — Stylesheet
+   ═══════════════════════════════════════════════════════ */
 
-  @font-face {
-    font-family: "Noir Regular";
-    src: url("../assets/fonts/Noir_regular.otf") format("otf");
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-  }  @font-face {
-    font-family: "Alata Regular";
-    src: url("../assets/fonts/Alata-Regular.ttf") format("ttf");
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-  }
+:root {
+  --tt-radius: 12px;
+  --tt-gap: 8px;
+  --tt-pad: 10px;
+  --tt-border: 1px solid rgba(255,255,255,0.12);
+  --tt-shadow: 0 6px 22px rgba(0,0,0,0.35);
+  --tt-font: 12px/1.3 var(--font-primary);
+}
 
-  /* Contenedor general */
-  #threat-tracker-panel {
-    position: absolute;
-    z-index: 100;
-    width: 280px;
-    max-height: 80vh;
-    display: flex;
-    flex-direction: column;
-    gap: var(--tt-gap);
-    border-radius: var(--tt-radius);
-    border: var(--tt-border);
-    box-shadow: var(--tt-shadow);
-    overflow: hidden;
-    font: var(--tt-font);
-    backdrop-filter: blur(2px);
-    user-select: none;
-  }
+/* ── Fonts ──────────────────────────────────────────── */
 
-  /* HEADER */
-  #threat-tracker-panel .tt-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--tt-gap);
-    padding: 8px 10px;
-    font-weight: 700;
-    cursor: move;
-    border-bottom: var(--tt-border);
-  }
-  #threat-tracker-panel .tt-header .tt-actions {
-    display: flex;
-    gap: 6px;
-  }
-  #threat-tracker-panel .tt-btn {
-    border: 1px solid rgba(255,255,255,0.2);
-    background: rgba(255,255,255,0.08);
-    color: inherit;
-    padding: 4px 6px;
-    border-radius: 8px;
-    cursor: pointer;
-  }
-  #threat-tracker-panel .tt-btn:hover { background: rgba(255,255,255,0.14); }
+@font-face {
+  font-family: "Noir Regular";
+  src: url("../assets/fonts/Noir_regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
 
-  /* CONFIGURACIÓN */
-  
+@font-face {
+  font-family: "Alata Regular";
+  src: url("../assets/fonts/Alata-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ═══════════════════════════════════════════════════════
+   Panel container
+   ═══════════════════════════════════════════════════════ */
+
+#threat-tracker-panel {
+  position: absolute;
+  z-index: 100;
+  width: 280px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  gap: var(--tt-gap);
+  border-radius: var(--tt-radius);
+  border: var(--tt-border);
+  box-shadow: var(--tt-shadow);
+  overflow: hidden;
+  font: var(--tt-font);
+  backdrop-filter: blur(2px);
+  user-select: none;
+  transition: opacity 0.2s ease;
+}
+
+/* ── Header ────────────────────────────────────────── */
+
+#threat-tracker-panel .tt-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tt-gap);
+  padding: 8px 10px;
+  font-weight: 700;
+  cursor: move;
+  border-bottom: var(--tt-border);
+}
+
+#threat-tracker-panel .tt-header .tt-actions {
+  display: flex;
+  gap: 6px;
+}
+
 #threat-tracker-panel .tt-btn {
   position: relative;
   width: 26px;
@@ -73,120 +76,446 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.08);
+  color: inherit;
+  padding: 4px 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease;
 }
-  /* CONTENIDO */
-  #threat-tracker-panel .tt-body {
-    overflow: auto;
-    padding: var(--tt-pad);
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
 
-  /* CARD ENEMIGO */
-  .tt-card {
-    border: var(--tt-border);
-    border-radius: 10px;
-    padding: 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    background: rgba(0,0,0,0.15);
-  }
-  .tt-card .tt-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-weight: 700;
-    letter-spacing: .3px;
-  }
-  .tt-card .tt-title:hover {
-    background: rgba(255,255,255,0.12);
-  }
-  .tt-chip {
-    font-size: 10px;
-    padding: 2px 6px;
-    border-radius: 999px;
-    border: 1px solid rgba(255,255,255,0.2);
-    background: rgba(255,255,255,0.08);
-  }
+#threat-tracker-panel .tt-btn:hover {
+  background: rgba(255,255,255,0.14);
+}
 
-  /* LISTA DE AMENAZA */
-  .tt-title.tt-clickable { cursor: pointer; }
+/* ── Combat selector (multi-combat) ────────────────── */
 
-  .tt-card.is-dim   { opacity: 0.35; filter: grayscale(0.2); transition: opacity 120ms ease; }
-  .tt-card.is-focus { opacity: 1; }
+#threat-tracker-panel .tt-combat-selector {
+  display: flex;
+  gap: 4px;
+  padding: 4px 10px;
+  border-bottom: var(--tt-border);
+  overflow-x: auto;
+}
 
-  .tt-entry {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 6px;
-    align-items: center;
-  }
-  .tt-entry:hover {
-    background: rgba(255,255,255,0.12);
-  }
-  .tt-entry .tt-clickable { cursor: pointer; }
-  .tt-bar-wrap {
-    position: relative !important; 
-    isolation: isolate; 
-    grid-column: 1 / -1;
-    height: 8px;
-    border-radius: 999px;
-    border: 1px solid rgba(255,255,255,0.15);
-    overflow: hidden;
-    background: rgba(255,255,255,0.08);
-  }
-  .tt-bar {
-    position: relative;
-    z-index: 1;
-    height: 100%;
-    width: 0%;
-    transition: width .25s ease-out;
-    background: linear-gradient(90deg, rgba(255,120,120,.9), rgba(255,210,120,.9));
-  }
+#threat-tracker-panel .tt-combat-btn {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.05);
+  color: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease;
+}
 
-  /* TEMAS */
+#threat-tracker-panel .tt-combat-btn:hover {
+  background: rgba(255,255,255,0.12);
+}
 
-  /* --------- OSCURO ---------- */
-  #threat-tracker-panel.dark {
-    color: #fff;
-    background: rgba(20,22,30,.88);
-  }
+#threat-tracker-panel .tt-combat-btn.active {
+  background: rgba(100,150,255,0.2);
+  border-color: rgba(100,150,255,0.4);
+  font-weight: 700;
+}
 
-  /* --------- CLARO ---------- */
-    #threat-tracker-panel.white {
-    color: #000000;
-    background: rgba(182, 182, 182, 0.88);
-  }    
-  #threat-tracker-panel.white .tt-bar {
-    background: linear-gradient(90deg, rgba(107, 0, 0, 0.9), rgba(255, 0, 0, 0.9));
-  }
+/* ── Body ──────────────────────────────────────────── */
 
-  /* --------- FARGO ---------- */
-  #threat-tracker-panel.fargo {
-    border-radius: 0;
-    border: none;
-    box-shadow: none;
-    color: rgb(255, 255, 255);
-    background: url('../assets/panel/fargo.png') center/100% 100% no-repeat;
-    background-color: rgba(0, 0, 0, 0);
-    border-color: rgb(186, 138, 104);
-    font-family: 'Noir Regular';
-  }    
+#threat-tracker-panel .tt-body {
+  overflow: auto;
+  padding: var(--tt-pad);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   Cards
+   ═══════════════════════════════════════════════════════ */
+
+.tt-card {
+  border: var(--tt-border);
+  border-radius: 10px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(0,0,0,0.15);
+  transition: opacity 120ms ease, filter 120ms ease;
+}
+
+.tt-card .tt-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  border-radius: 6px;
+  padding: 2px 4px;
+  transition: background 0.12s ease;
+}
+
+.tt-card .tt-title:hover {
+  background: rgba(255,255,255,0.12);
+}
+
+.tt-chip {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.08);
+  flex-shrink: 0;
+}
+
+/* ── Focus / Dim states ────────────────────────────── */
+
+.tt-title.tt-clickable,
+.tt-entry-name.tt-clickable { cursor: pointer; }
+
+.tt-card.is-dim {
+  opacity: 0.35;
+  filter: grayscale(0.2);
+}
+
+.tt-card.is-focus {
+  opacity: 1;
+}
+
+/* ═══════════════════════════════════════════════════════
+   Threat entries & bars
+   ═══════════════════════════════════════════════════════ */
+
+.tt-entry {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 4px 6px;
+  align-items: center;
+  border-radius: 4px;
+  padding: 1px 4px;
+  transition: background 0.12s ease;
+}
+
+.tt-entry:hover {
+  background: rgba(255,255,255,0.12);
+}
+
+.tt-entry.tt-locked {
+  opacity: 0.7;
+  border-left: 2px solid rgba(255, 200, 0, 0.6);
+}
+
+.tt-entry-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* Position indicator colors on names */
+.tt-entry-name.tt-pos-1 { color: #ff7878; font-weight: 700; }
+.tt-entry-name.tt-pos-2 { color: #ffc878; }
+.tt-entry-name.tt-pos-3 { color: #ffe0a0; }
+
+.tt-entry-value {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  min-width: 28px;
+  text-align: right;
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 0 4px;
+  transition: background 0.12s ease;
+}
+
+.tt-entry-value:hover {
+  background: rgba(255,255,255,0.15);
+  outline: 1px dashed rgba(255,255,255,0.3);
+}
+
+/* Inline editing input */
+.tt-inline-input {
+  width: 100%;
+  background: rgba(0,0,0,0.4);
+  color: inherit;
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 4px;
+  padding: 1px 4px;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  outline: none;
+}
+
+.tt-inline-input:focus {
+  border-color: rgba(100,150,255,0.6);
+  box-shadow: 0 0 4px rgba(100,150,255,0.3);
+}
+
+/* Entry action buttons (lock, reset) */
+.tt-entry-actions {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.tt-entry:hover .tt-entry-actions {
+  opacity: 1;
+}
+
+.tt-btn-micro {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: rgba(255,255,255,0.06);
+  color: inherit;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 9px;
+  padding: 0;
+  opacity: 0.6;
+  transition: opacity 0.1s, background 0.1s;
+}
+
+.tt-btn-micro:hover {
+  opacity: 1;
+  background: rgba(255,255,255,0.15);
+}
+
+.tt-btn-micro.tt-active {
+  opacity: 1;
+  color: #ffc800;
+}
+
+.tt-reset-all {
+  margin-left: auto;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.tt-card .tt-title:hover .tt-reset-all {
+  opacity: 0.6;
+}
+
+.tt-reset-all:hover {
+  opacity: 1 !important;
+  color: #ff6060;
+}
+
+.tt-bar-wrap {
+  position: relative !important;
+  isolation: isolate;
+  grid-column: 1 / -1;
+  height: 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.15);
+  overflow: hidden;
+  background: rgba(255,255,255,0.08);
+}
+
+.tt-bar {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  width: 0%;
+  transition: width 0.25s ease-out;
+  background: linear-gradient(90deg, rgba(255,120,120,.9), rgba(255,210,120,.9));
+}
+
+/* Position-colored bars */
+.tt-bar.tt-bar-tt-pos-1 {
+  background: linear-gradient(90deg, rgba(255,80,80,.9), rgba(255,140,80,.9));
+}
+.tt-bar.tt-bar-tt-pos-2 {
+  background: linear-gradient(90deg, rgba(255,160,80,.9), rgba(255,200,100,.9));
+}
+.tt-bar.tt-bar-tt-pos-3 {
+  background: linear-gradient(90deg, rgba(255,210,120,.8), rgba(255,230,160,.8));
+}
+
+/* ═══════════════════════════════════════════════════════
+   Aggro shift alert
+   ═══════════════════════════════════════════════════════ */
+
+.tt-aggro-alert {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: rgba(255, 80, 80, 0.15);
+  border: 1px solid rgba(255, 80, 80, 0.3);
+  border-radius: 6px;
+  font-size: 11px;
+  animation: tt-alert-in 0.3s ease-out;
+  margin: 0 var(--tt-pad);
+}
+
+.tt-aggro-alert i {
+  color: #ff7878;
+  flex-shrink: 0;
+}
+
+.tt-aggro-alert.tt-alert-fade {
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+@keyframes tt-alert-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══════════════════════════════════════════════════════
+   Pause active state
+   ═══════════════════════════════════════════════════════ */
+
+#threat-tracker-panel .tt-btn.tt-active {
+  background: rgba(255, 200, 0, 0.2);
+  border-color: rgba(255, 200, 0, 0.4);
+  color: #ffc800;
+}
+
+/* ═══════════════════════════════════════════════════════
+   Effect dialog styles (injected if not present)
+   ═══════════════════════════════════════════════════════ */
+
+.item-row {
+  display: grid;
+  grid-template-columns: 40px 1fr 80px 120px 120px;
+  height: 40px;
+  box-sizing: border-box;
+  align-items: center;
+  gap: 0px;
+  padding: 4px 0;
+  border-bottom: 1px solid #6868684d;
+  min-height: 50px;
+}
+
+.item-row img {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+}
+
+.item-row .item-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.item-row input[type=number] {
+  width: 60px;
+  min-width: 60px;
+  max-width: 60px;
+  text-align: center;
+}
+
+.item-row select {
+  width: 120px;
+  min-width: 120px;
+  max-width: 120px;
+  line-height: 1.2;
+  margin: 0;
+}
+
+/* ═══════════════════════════════════════════════════════
+   THEMES
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Dark (default) ────────────────────────────────── */
+#threat-tracker-panel.dark {
+  color: #fff;
+  background: rgba(20,22,30,.88);
+}
+
+/* ── White ──────────────────────────────────────────── */
+#threat-tracker-panel.white {
+  color: #000;
+  background: rgba(182,182,182,0.88);
+}
+#threat-tracker-panel.white .tt-bar {
+  background: linear-gradient(90deg, rgba(107,0,0,0.9), rgba(255,0,0,0.9));
+}
+
+/* ── Blue Neon ─────────────────────────────────────── */
+#threat-tracker-panel.blueNeon {
+  color: #e8f7ff;
+  background: rgba(10,12,26,.9);
+  border-color: rgba(0,255,200,0.25);
+  box-shadow: 0 0 18px rgba(0,255,200,0.25);
+}
+#threat-tracker-panel.blueNeon .tt-bar {
+  background: linear-gradient(90deg, rgba(0,255,200,.9), rgba(0,120,255,.9));
+}
+
+/* ── Red Neon ──────────────────────────────────────── */
+#threat-tracker-panel.redNeon {
+  color: #e8f7ff;
+  background: rgba(26,10,10,0.9);
+  border-color: rgba(255,0,0,0.25);
+  box-shadow: 0 0 18px rgba(255,0,0,0.25);
+}
+#threat-tracker-panel.redNeon .tt-bar {
+  background: linear-gradient(90deg, rgba(255,0,106,0.9), rgba(255,0,0,0.9));
+}
+
+/* ── Dark Geo Black ────────────────────────────────── */
+#threat-tracker-panel.darkGeoBlack {
+  color: #fff;
+  background: #161312 url('../assets/panel/darkGeoBlack.png') center/cover no-repeat;
+  border-color: #1a1614;
+}
+#threat-tracker-panel.darkGeoBlack .tt-bar {
+  background: linear-gradient(90deg, #614c1e, #b16a00);
+}
+
+/* ── Dark Geo White ────────────────────────────────── */
+#threat-tracker-panel.darkGeoWhite {
+  color: #fff;
+  background: url('../assets/panel/darkGeoWhite.png') center/cover no-repeat;
+  border-color: #64605e;
+}
+#threat-tracker-panel.darkGeoWhite .tt-bar {
+  background: linear-gradient(90deg, #222, #b6b6b6);
+}
+
+/* ── Invisible ─────────────────────────────────────── */
+#threat-tracker-panel.invisible {
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* ── Fargo ──────────────────────────────────────────── */
+#threat-tracker-panel.fargo {
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+  color: #fff;
+  background: url('../assets/panel/fargo.png') center/100% 100% no-repeat;
+  background-color: transparent;
+  border-color: rgb(186,138,104);
+  font-family: 'Noir Regular';
+}
 #threat-tracker-panel.fargo .tt-bar-wrap {
   background: url('../assets/bars/fargoBG.png') center/cover no-repeat;
   height: 10px;
-  border-radius: 0px;
-  border: 0px solid rgba(255,255,255,0.15);
+  border-radius: 0;
+  border: none;
 }
 #threat-tracker-panel.fargo .tt-bar-wrap::after {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 2;
-  background: url('../assets/bars/fargoTOP.png') left;
-  background-repeat: no-repeat;
+  background: url('../assets/bars/fargoTOP.png') left no-repeat;
   background-size: 100% 100%;
 }
 #threat-tracker-panel.fargo .tt-bar {
@@ -194,187 +523,144 @@
   z-index: 1;
   background-size: auto 190%;
 }
-#threat-tracker-panel.fargo .tt-card { 
+#threat-tracker-panel.fargo .tt-card {
   background: url('../assets/panel/fargoCard.png') center/cover no-repeat;
   background-size: 105% 103%;
-  background-color: rgba(0, 0, 0, 0);
-  border-color: rgba(186, 138, 104, 0);
-  border-radius: 0px;
+  background-color: transparent;
+  border-color: transparent;
+  border-radius: 0;
 }
-#threat-tracker-panel.fargo .tt-btn { 
+#threat-tracker-panel.fargo .tt-btn {
   background: url('../assets/buttons/fargoButton.png') center/cover no-repeat;
-  background-color: rgba(0, 0, 0, 0);
-  border-color: rgba(186, 138, 104, 0);
+  background-color: transparent;
+  border-color: transparent;
 }
-#threat-tracker-panel.fargo .tt-config i { 
-  display: none;
-}
+#threat-tracker-panel.fargo .tt-config i { display: none; }
 #threat-tracker-panel.fargo .tt-config::before {
   content: "";
   position: relative;
-  inset: 0;
   background: url('../assets/icons/fargoSettings.png') center/contain no-repeat;
   pointer-events: none;
   width: 15px;
   height: 15px;
 }
-  /* --------- PRO FANTASY ---------- */
 
-  #threat-tracker-panel.proFantasy {
-    position: absolute;
-    overflow: visible;
-    border-radius: 0;
-    border: none;
-    box-shadow: none;
-    background: url('../assets/panel/proFantasy.png') center/100% 100% no-repeat;
-    background-color: transparent;
-    border-color: rgb(186, 138, 104);
-    font-family: 'Alata Regular';
-    
-  --pf-frame-outset-top:    10px;  /* marco sale por arriba */
-  --pf-frame-outset-right:  10px;  /* marco sale a la derecha */
-  --pf-frame-outset-bottom: 10px;  /* marco sale por abajo */
-  --pf-frame-outset-left:   10px;  /* marco sale a la izquierda */
+/* ── Pro Fantasy ────────────────────────────────────── */
+#threat-tracker-panel.proFantasy {
+  position: absolute;
+  overflow: visible;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+  background: url('../assets/panel/proFantasy.png') center/100% 100% no-repeat;
+  background-color: transparent;
+  font-family: 'Alata Regular';
 
-  --pf-side-left-width:   95px;  /* ancho PNG adorno izquierdo */
-  --pf-side-right-width:  95px;  /* ancho PNG adorno derecho  */
-  --pf-side-height:      130%;   /* alto relativo de adornos laterales */
-  --pf-side-left-outset:  95px;  /* cuánto “sale” por fuera a la izq. */
-  --pf-side-right-outset: 95px;  /* cuánto “sale” por fuera a la dcha. */
-
-  }    
-
-  #threat-tracker-panel.proFantasy::before {
-    content: "";
-    position: absolute;
-    /* ⬇️ expandimos el pseudo-elemento más allá del panel */
-    top:    calc(-1 * var(--pf-frame-outset-top));
-    right:  calc(-1 * var(--pf-frame-outset-right));
-    bottom: calc(-1 * var(--pf-frame-outset-bottom));
-    left:   calc(-1 * var(--pf-frame-outset-left));
-    z-index: 3;               /* pon 2 si lo quieres por debajo del contenido */
-    pointer-events: none;     /* no bloquea clicks/drag del header */
-    background: url('../assets/panel/proFantasydecoFrame2.png') center / 100% 100% no-repeat; 
-  }
-
-  #threat-tracker-panel.proFantasy::after {
-    content: "";
-    position: absolute;
-    top: 50%;
-    /* ⬇️ el contenedor de los dos adornos se estira hacia fuera */
-    left:  calc(-1 * var(--pf-side-left-outset));
-    right: calc(-1 * var(--pf-side-right-outset));
-    height: var(--pf-side-height);
-    transform: translateY(-50%);
-    z-index: 2;               /* debajo del marco, encima del fondo del panel */
-    pointer-events: none;
-
-    background-image:
-      url('../assets/panel/proFantasyDecoLeft.png'),
-      url('../assets/panel/proFantasyDecoRight.png');
-    background-repeat:
-      no-repeat,
-      no-repeat;
-    background-position:
-      left center,
-      right center;
-    background-size:
-      var(--pf-side-left-width)  auto,
-      var(--pf-side-right-width) auto;
-  }
-
-  #threat-tracker-panel.proFantasy .tt-header .tt-title {
-    position: relative;
-    left: 25%;
-  }
-
-#threat-tracker-panel.proFantasy .tt-btn { 
+  --pf-frame-outset-top:    10px;
+  --pf-frame-outset-right:  10px;
+  --pf-frame-outset-bottom: 10px;
+  --pf-frame-outset-left:   10px;
+  --pf-side-left-width:   95px;
+  --pf-side-right-width:  95px;
+  --pf-side-height:      130%;
+  --pf-side-left-outset:  95px;
+  --pf-side-right-outset: 95px;
+}
+#threat-tracker-panel.proFantasy::before {
+  content: "";
+  position: absolute;
+  top:    calc(-1 * var(--pf-frame-outset-top));
+  right:  calc(-1 * var(--pf-frame-outset-right));
+  bottom: calc(-1 * var(--pf-frame-outset-bottom));
+  left:   calc(-1 * var(--pf-frame-outset-left));
+  z-index: 3;
+  pointer-events: none;
+  background: url('../assets/panel/proFantasyDecoFrame2.png') center / 100% 100% no-repeat;
+}
+#threat-tracker-panel.proFantasy::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left:  calc(-1 * var(--pf-side-left-outset));
+  right: calc(-1 * var(--pf-side-right-outset));
+  height: var(--pf-side-height);
+  transform: translateY(-50%);
+  z-index: 2;
+  pointer-events: none;
+  background-image:
+    url('../assets/panel/proFantasyDecoLeft.png'),
+    url('../assets/panel/proFantasyDecoRight.png');
+  background-repeat: no-repeat, no-repeat;
+  background-position: left center, right center;
+  background-size:
+    var(--pf-side-left-width) auto,
+    var(--pf-side-right-width) auto;
+}
+#threat-tracker-panel.proFantasy .tt-header .tt-title {
+  position: relative;
+  left: 25%;
+}
+#threat-tracker-panel.proFantasy .tt-btn {
   background: url('../assets/buttons/proFantasyButton.png') center/cover no-repeat;
   background-color: transparent;
   border-color: transparent;
 }
-#threat-tracker-panel.proFantasy .tt-config i { 
-  display: none;
-}
+#threat-tracker-panel.proFantasy .tt-config i { display: none; }
 #threat-tracker-panel.proFantasy .tt-config::before {
   content: "";
   position: relative;
-  inset: 0;
   background: url('../assets/icons/proFantasySettings.png') center/contain no-repeat;
   pointer-events: none;
   width: 15px;
   height: 15px;
 }
-#threat-tracker-panel.proFantasy .tt-minimize i { 
-  display: none;
-}
+#threat-tracker-panel.proFantasy .tt-minimize i { display: none; }
 #threat-tracker-panel.proFantasy .tt-minimize::before {
   content: "";
   position: relative;
-  inset: 0;
   background: url('../assets/icons/proFantasyMinimize.png') center/contain no-repeat;
   pointer-events: none;
   width: 15px;
   height: 15px;
 }
-
 #threat-tracker-panel.proFantasy .tt-bar-wrap {
   position: relative;
   overflow: visible;
   height: 6px;
   background-color: transparent;
-  border: 0px;
-  border-color: transparent;
+  border: none;
 }
 #threat-tracker-panel.proFantasy .tt-bar-wrap::after {
   content: "";
   position: absolute;
   z-index: 3;
   pointer-events: none;
-
-  --pf-height: 10px;   /* alto natural del overlay */
-  --pf-cap-l: -5px;    /* ancho del extremo izquierdo */
-  --pf-cap-r: -5px;    /* ancho del extremo derecho */
-  
-  top: -60%;
+  --pf-height: 10px;
+  --pf-cap-l: -5px;
+  --pf-cap-r: -5px;
+  top: 50%;
   height: var(--pf-height);
   left: calc(-1 * var(--pf-cap-l));
   right: calc(-1 * var(--pf-cap-r));
   transform: translateY(-50%);
-
   background-image:
     url('../assets/bars/proFantasyBarStart.png'),
     url('../assets/bars/proFantasyBarEnd.png'),
     url('../assets/bars/proFantasyBar.png');
-
-  background-repeat:
-    no-repeat,
-    no-repeat,
-    repeat-x;
-
+  background-repeat: no-repeat, no-repeat, repeat-x;
   background-position:
     left center,
     right center,
     left calc(var(--pf-cap-l)) center;
-
-  background-size:
-    auto 100%,
-    auto 100%,
-    auto 100%;
-  --pf-scaleY: 1;
-  --pf-offsetY: 0px;
-
-  transform-origin: center;
-  transform: translateY(var(--pf-offsetY)) scaleY(var(--pf-scaleY));
+  background-size: auto 100%, auto 100%, auto 100%;
 }
 #threat-tracker-panel.proFantasy .tt-bar {
   height: 100%;
   background: url('../assets/bars/proFantasyFG.png') center / 90% 100% no-repeat;
-  transition: width .25s ease-out;
+  transition: width 0.25s ease-out;
   z-index: 1;
 }
-
-#threat-tracker-panel.proFantasy .tt-card { 
+#threat-tracker-panel.proFantasy .tt-card {
   background:
     url('../assets/panel/proFantasyDecoLine.png') center / 100% 100% no-repeat,
     url('../assets/panel/proFantasyInsideBG.png') center / 100% 100% no-repeat,
@@ -382,36 +668,17 @@
   background-size: 100% 100%;
   background-color: transparent;
   border-color: transparent;
-  border-radius: 0px;
+  border-radius: 0;
 }
-  /* --------- DARK GEO BLACK ---------- */
-  #threat-tracker-panel.darkGeoBlack {
-    color: rgb(255, 255, 255);
-    background:  #161312 url('../assets/panel/darkGeoBlack.png') center/cover no-repeat;
-    border-color: #1a1614;
-  }        
-  #threat-tracker-panel.darkGeoBlack .tt-bar {
-    background: linear-gradient(90deg, #614c1e, #b16a00);
-  } 
 
-  /* --------- DARK GEO WHITE ---------- */
-  #threat-tracker-panel.darkGeoWhite {
-    color: rgb(255, 255, 255);
-    background:  url('../assets/panel/darkGeoWhite.png') center/cover no-repeat;
-    border-color: #64605e;
-  }        
-  #threat-tracker-panel.darkGeoWhite .tt-bar {
-    background: linear-gradient(90deg, #222222, #b6b6b6);
-  } 
-
-  /* --------- RPG GAME ---------- */
-  #threat-tracker-panel.rpgGame {
-    color: #b1b8bc;
-    border: none;
-    box-shadow: none;
-    background: url('../assets/panel/rpgGame.png') center/100% 100% no-repeat;
-    font-family: 'Vollkorn';
-  }
+/* ── RPG Game ──────────────────────────────────────── */
+#threat-tracker-panel.rpgGame {
+  color: #b1b8bc;
+  border: none;
+  box-shadow: none;
+  background: url('../assets/panel/rpgGame.png') center/100% 100% no-repeat;
+  font-family: 'Vollkorn';
+}
 #threat-tracker-panel.rpgGame .tt-header {
   background: url('../assets/panel/rpgGameTop.png') center/100% 100% no-repeat;
 }
@@ -422,68 +689,38 @@
   background: url('../assets/bars/rpgGameFG.png') center/95% 30% no-repeat;
   z-index: 1;
 }
-#threat-tracker-panel.rpgGame .tt-btn { 
+#threat-tracker-panel.rpgGame .tt-btn {
   background: url('../assets/buttons/rpgGameButton.png') center/120% 95% no-repeat;
-  background-color: rgba(0, 0, 0, 0);
-  border-color: rgba(186, 138, 104, 0);
+  background-color: transparent;
+  border-color: transparent;
 }
 
-  #threat-tracker-panel.blueNeon {
-    color: #e8f7ff;
-    background: rgba(10,12,26,.9);
-    border-color: rgba(0,255,200,0.25);
-    box-shadow: 0 0 18px rgba(0,255,200,0.25);
-  }
-  #threat-tracker-panel.blueNeon .tt-bar {
-    background: linear-gradient(90deg, rgba(0,255,200,.9), rgba(0,120,255,.9));
-  }
-
-  #threat-tracker-panel.redNeon {
-    color: #e8f7ff;
-    background: rgba(26, 10, 10, 0.9);
-    border-color: rgba(255, 0, 0, 0.25);
-    box-shadow: 0 0 18px rgba(255, 0, 0, 0.25);
-  }
-  #threat-tracker-panel.redNeon .tt-bar {
-    background: linear-gradient(90deg, rgba(255, 0, 106, 0.9), rgba(255, 0, 0, 0.9));
-  }
-
+/* ── Sci-Fi Blue ───────────────────────────────────── */
 #threat-tracker-panel.sciFiBlue {
-    border-radius: 0;
-    border: none;
-    box-shadow: none;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
   background: url('../assets/panel/sciFiBlue.png') center/100% 100% no-repeat;
-  background-color: rgba(0, 0, 0, 0);
+  background-color: transparent;
 }
-
 #threat-tracker-panel.sciFiBlue .tt-bar-wrap {
-  background: url('../assets/bars/sciFiblueBG.png') center/100% 150 no-repeat;
+  background: url('../assets/bars/sciFiblueBG.png') center/100% 150% no-repeat;
 }
 #threat-tracker-panel.sciFiBlue .tt-bar {
   background: url('../assets/bars/sciFiblueFG.png') center/97% 30% no-repeat;
 }
 
+/* ── Sci-Fi Red ────────────────────────────────────── */
 #threat-tracker-panel.sciFiRed {
-    border-radius: 0;
-    border: none;
-    box-shadow: none;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
   background: url('../assets/panel/sciFiRed.png') center/100% 100% no-repeat;
-  background-color: rgba(0, 0, 0, 0);
+  background-color: transparent;
 }
-
 #threat-tracker-panel.sciFiRed .tt-bar-wrap {
   background: url('../assets/bars/sciFiRedBG.png') center/cover no-repeat;
 }
 #threat-tracker-panel.sciFiRed .tt-bar {
   background: url('../assets/bars/sciFiRedFG.png') center/cover no-repeat;
-}
-
-#threat-tracker-panel.invisible {
-  background-color: transparent;
-  border: transparent;
-  border-color: transparent;
-  border-radius: 0;
-  --tt-shadow: transparent;
-  --tt-border: transparent;
-  background: none;
 }
