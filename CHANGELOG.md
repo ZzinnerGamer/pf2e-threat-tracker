@@ -48,7 +48,7 @@ Key improvements:
 - **`deleteItem` hook** incorrectly passed a second argument to `unsetFlag`.
 
 
-- And othes minor things that bothered me really much.
+- And other minor things that bothered me really much.
 
 
 ---
