@@ -1,5 +1,94 @@
 # CHANGELOG
 
+# [2.0.0] - 2026-X-X
+
+**This is a complete rewrite of PF2e Threat Tracker.** The entire codebase has been rebuilt from the ground up for Foundry VTT v13+ and PF2e System 7.11.3., with a new modular architecture, extensive bug fixes, and major new features.
+
+---
+
+### Breaking Changes
+
+- **Minimum Foundry version is now v13.** All deprecated v12 APIs have been replaced with their v13 equivalents.
+- **Minimum PF2e System version is 7.11.3.** Movement data now reads from `system.movement.speeds` (with fallback to the legacy `system.attributes.speed` path).
+- **Settings storage has been restructured.** Per-skill-action individual settings (`globalSkillActionValue.balance`, etc.) have been replaced with a single `globalSkillActionOverrides` Object setting. This means custom skill values from v1.x will need to be re-entered. All other settings are preserved.
+
+---
+
+### Architecture
+
+The original codebase (8 files, heavy coupling, duplicated data, mixed concerns) has been restructured.
+
+Key improvements:
+- **Single entry point** (`scripts/main.js`) instead of 5 separate `esmodules` entries.
+- **No circular dependencies** — the settings menu shim uses lazy dynamic imports.
+- **No duplicated data** — `skillActionsData` exists in exactly one file.
+- **No global pollution** — removed `globalThis._skillActionsData`.
+
+---
+
+### Bug Fixes
+
+#### Critical
+- **`handleThreatFromEffect` was completely broken.** The logging code used `logBlock =` (reassignment) instead of `logBlock +=` (concatenation), and used template literals with commas instead of `${}` interpolation. The function never produced correct output. Fully rewritten.
+- **Undefined variable `progress`** was referenced in `_updateFloatingPanel` (`panel.style.setProperty('--p', ...)`) causing a ReferenceError. Removed.
+- **`hasSkillCheck` Set compared incorrectly** — `typeof o === hasSkillCheck` compared a string type against a Set object, always returning false. Fixed.
+- **Off-by-one in token selection** — `still[still.length - 0]` always accessed the last+1 element (undefined). Fixed to `still.length - 1`.
+- **`resolveTargets` returned empty arrays** — PF2e 7.5+ passes full token document objects in `context.targets` where `.id` is undefined (they use `._id`). Now handles all formats: string IDs, objects with `.id`, `._id`, or nested `.token.id`.
+- **Stale `ignoreThreat` flags** persisted across combats, causing enemies to permanently stop receiving threat. Now auto-detects and clears stale flags by re-evaluating actual dead/defeated state.
+
+#### Settings & API
+- **`bon-mot` and other unregistered skill actions crashed** with `"X is not a registered game setting"`. Replaced ~60 individual per-slug settings with a single `globalSkillActionOverrides` Object that accepts any slug dynamically.
+- **Compendium items couldn't store threat values** (read-only). Added `itemThreatOverrides` setting as a global key-value store for compendium item configurations.
+- **`unsetFlag` called with wrong arguments** in the `deleteItem` hook — passed a second argument that `unsetFlag` doesn't accept. Fixed.
+- **`applyPreset` received wrong parameters** — called with the JSON path but the function signature expected `(presetPath, presetName, description)` where `presetName` and `description` were never passed. Fixed.
+
+#### Hooks
+- **`deleteCombat` hook was registered twice**, causing double cleanup.
+- **`createItem` hook was registered twice** with conflicting logic for condition handling and effect-based threat. Merged into a single handler.
+- **`deleteItem` hook** incorrectly passed a second argument to `unsetFlag`.
+
+
+- And othes minor things that bothered me really much.
+
+
+---
+
+### New Features
+
+#### GM Control Panel
+- **Inline threat editing** — Click any threat value in the panel to edit it directly. Enter to confirm, Escape to cancel.
+- **Undo system** — Button in panel header (+ Ctrl+Z keyboard shortcut). In-memory stack of 50 operations. Each `applyThreat` call auto-saves a snapshot before modifying.
+- **Threat lock** — Lock icon per entry. Locked entries are immune to automatic threat calculation — only manual edits can change them. Persists across reloads (stored in the threat table).
+- **Global pause** — Play/pause button in panel header. Freezes all automatic threat calculation without losing data. Visual indicator when paused.
+- **Reset controls** — Per-entry ✕ button to clear a single source's threat. Trash icon on card titles to reset all threat for an enemy.
+- **Top 5 display** — Panel now shows top 5 threat entries per enemy instead of top 3.
+
+#### Aggro Intelligence
+- **Aggro shift alerts** — When the #1 threat source changes on an enemy, an animated banner appears in the panel: "Dragon: Valeros → Kyra". Auto-dismisses after 4 seconds.
+- **Position indicators** — Threat entries are color-coded by position: #1 red, #2 orange, #3 yellow. Bars also use position-specific gradients.
+
+#### Auto-Generate Defaults
+- **Heuristic threat value generator** — Analyses items from all compendiums and assigns threat values based on 159 PF2e traits, spell rank, action cost, damage presence, area of effect, duration, and item category.
+- **Effect-to-source correlation** — For effects (which typically have few traits or even none), the system attempts to find the source item by: parsing `@UUID` references in descriptions, matching "Granted by X" / "from the X spell" text patterns, stripping "Effect:" prefixes and searching by name, and falling back to keyword-based name heuristics.
+- **Performance optimised** — Uses enriched compendium indices for non-effects (no full document loads). Only loads full documents for effects that need description parsing. Processes in batches of 200 with event loop yields to keep the UI responsive.
+- **Inline progress bar** — Shows progress directly inside the dialog with a real progress bar, percentage, and item counter.
+
+#### Multi-Combat Support
+- **Combat selector** — When multiple combats are active, a selector row appears below the panel header allowing the GM to switch between them.
+
+#### Threat History
+- **Per-round history log** — New clock button in the panel header opens a dialog showing aggregated threat events per round for the active combat. Shows source → enemy with total amounts, color-coded positive/negative.
+
+#### Configuration Export/Import
+- **Export** — Downloads the complete threat configuration (base settings, skill overrides, item overrides, effect data) as a timestamped JSON file.
+- **Import** — Upload a JSON configuration file. Merges with existing settings (doesn't overwrite unless conflicting).
+
+#### Dynamic Skill Action Support
+- Any PF2e skill action slug is now supported dynamically — no need to pre-register each one. The system uses a cascade: actor flag → global override → auto-defaults heuristic (with per-slug base values for all standard PF2e actions) → generic formula.
+
+#### Compendium Item Overrides
+- Custom threat values for compendium items (which are read-only and can't have flags) are stored in a dedicated `itemThreatOverrides` world setting. The system checks item flags first (for world items), then falls back to the override store.
+
 # [1.4.1] - 2025-10-28
 
 * Fix nonGM message errors on apply death/unconscious
