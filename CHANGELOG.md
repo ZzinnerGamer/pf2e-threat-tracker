@@ -2,7 +2,7 @@
 
 # [2.0.0] - 2026-X-X
 
-**This is a complete rewrite of PF2e Threat Tracker.** The entire codebase has been rebuilt from the ground up for Foundry VTT v13+ and PF2e System 7.11.3., with a new modular architecture, extensive bug fixes, and major new features.
+**This is a complete rewrite of PF2e Threat Tracker.** The entire codebase has been rebuilt from the ground up for Foundry VTT v13+ and PF2e System 7.11.3, with a new modular architecture, extensive bug fixes, and major new features.
 
 ---
 
@@ -57,14 +57,26 @@ Key improvements:
 
 #### GM Control Panel
 - **Inline threat editing** — Click any threat value in the panel to edit it directly. Enter to confirm, Escape to cancel.
+<img width="316" height="220" alt="imagen" src="https://github.com/user-attachments/assets/27d92765-fc8e-47ea-97b3-896c76b5c877" />
+
 - **Undo system** — Button in panel header (+ Ctrl+Z keyboard shortcut). In-memory stack of 50 operations. Each `applyThreat` call auto-saves a snapshot before modifying.
+<img width="316" height="220" alt="imagen" src="https://github.com/user-attachments/assets/47ed320d-0a20-4938-beeb-730a1b455907" />
+
 - **Threat lock** — Lock icon per entry. Locked entries are immune to automatic threat calculation — only manual edits can change them. Persists across reloads (stored in the threat table).
+<img width="331" height="220" alt="imagen" src="https://github.com/user-attachments/assets/fc122f39-3d4d-4c44-bd25-6a82f7b34c34" />
+
 - **Global pause** — Play/pause button in panel header. Freezes all automatic threat calculation without losing data. Visual indicator when paused.
+<img width="331" height="220" alt="imagen" src="https://github.com/user-attachments/assets/f3d6b464-2cce-40ae-bbb6-c6d325713eff" />
+
 - **Reset controls** — Per-entry ✕ button to clear a single source's threat. Trash icon on card titles to reset all threat for an enemy.
+<img width="376" height="220" alt="imagen" src="https://github.com/user-attachments/assets/40e1a16c-a2df-4734-b34c-c7fb86957545" /> <img width="440" height="220" alt="imagen" src="https://github.com/user-attachments/assets/aaf5b30e-539a-4c52-b770-766545d91c86" />
+
 - **Top 5 display** — Panel now shows top 5 threat entries per enemy instead of top 3.
 
 #### Aggro Intelligence
 - **Aggro shift alerts** — When the #1 threat source changes on an enemy, an animated banner appears in the panel: "Dragon: Valeros → Kyra". Auto-dismisses after 4 seconds.
+<img width="301" height="270" alt="imagen" src="https://github.com/user-attachments/assets/c1762c62-c4ef-4425-be46-cd3b069324d9" />
+
 - **Position indicators** — Threat entries are color-coded by position: #1 red, #2 orange, #3 yellow. Bars also use position-specific gradients.
 
 #### Auto-Generate Defaults
@@ -72,12 +84,15 @@ Key improvements:
 - **Effect-to-source correlation** — For effects (which typically have few traits or even none), the system attempts to find the source item by: parsing `@UUID` references in descriptions, matching "Granted by X" / "from the X spell" text patterns, stripping "Effect:" prefixes and searching by name, and falling back to keyword-based name heuristics.
 - **Performance optimised** — Uses enriched compendium indices for non-effects (no full document loads). Only loads full documents for effects that need description parsing. Processes in batches of 200 with event loop yields to keep the UI responsive.
 - **Inline progress bar** — Shows progress directly inside the dialog with a real progress bar, percentage, and item counter.
+<img width="842" height="658" alt="imagen" src="https://github.com/user-attachments/assets/132358f6-d5bc-437d-9c79-dfac3c161a43" />
 
 #### Multi-Combat Support
 - **Combat selector** — When multiple combats are active, a selector row appears below the panel header allowing the GM to switch between them.
 
 #### Threat History
 - **Per-round history log** — New clock button in the panel header opens a dialog showing aggregated threat events per round for the active combat. Shows source → enemy with total amounts, color-coded positive/negative.
+<img width="642" height="255" alt="imagen" src="https://github.com/user-attachments/assets/16469b68-542b-4900-8ce8-1403c8d21d00" />
+
 
 #### Configuration Export/Import
 - **Export** — Downloads the complete threat configuration (base settings, skill overrides, item overrides, effect data) as a timestamped JSON file.
