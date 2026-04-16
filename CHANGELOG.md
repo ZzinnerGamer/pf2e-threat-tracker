@@ -1,6 +1,12 @@
 # CHANGELOG
 
-# [2.0.0] - 2026-X-X
+# [2.0.1]
+
+- Refactor combat selector rendering and event handling
+- Ensure to remove threat tracker panel when no combats are active
+- v14 compatibility check
+
+# [2.0.0]
 
 **This is a complete rewrite of PF2e Threat Tracker.** The entire codebase has been rebuilt from the ground up for Foundry VTT v13+ and PF2e System 7.11.3, with a new modular architecture, extensive bug fixes, and major new features.
 
@@ -104,11 +110,11 @@ Key improvements:
 #### Compendium Item Overrides
 - Custom threat values for compendium items (which are read-only and can't have flags) are stored in a dedicated `itemThreatOverrides` world setting. The system checks item flags first (for world items), then falls back to the override store.
 
-# [1.4.1] - 2025-10-28
+# [1.4.1]
 
 * Fix nonGM message errors on apply death/unconscious
 
-# [1.4.0] - 2025-9-13
+# [1.4.0]
 
 ## Added
 
@@ -122,7 +128,7 @@ Key improvements:
 * Sequencer effect type will not save its visual configuration, the configuration itself was saved but visually, reopening the menu, the setting was set on `Marker`.
 * Some typos in code
 
-# [1.3.1] - 2025-9-9
+# [1.3.1]
 
 ## Added
 * Moar FR localization [@rectulo]
@@ -131,7 +137,7 @@ Key improvements:
 ## Fixed
 * Menu opening on v12
 
-# [1.3.0] - 2025-9-7
+# [1.3.0]
 
 ## Added
 * New Themes
@@ -146,13 +152,13 @@ Key improvements:
   * This value option is percentual reduction of thre own threat value if a ally PC/NPC get the Unconscious condition
 <img width="645" height="118" alt="image" src="https://github.com/user-attachments/assets/e6e77691-98bb-4c65-bce0-e4296f10a1ce" />
 
-# [1.2.1] - 2025-9-6
+# [1.2.1]
 
 ## Added
 * Max visible threat cards on the threat panel
 * Highlight selected token own threat card and reduce visibility of others
 
-# [1.2.0] - 2025-9-5
+# [1.2.0]
 
 ## Added
 * Robust detection of “dead/defeated” by combining PF2e conditions (`dead`, `unconscious`) and `defeated` from the Combat Tracker.
@@ -169,11 +175,11 @@ Key improvements:
 * Displaying/dragging **ignored/defeated** tokens is avoided; automatic cleanup of their Threat Table.
 * Ensure Threat Panel clears all tokens flags after every combat encounter.
 
-# [1.1.1] - 2025-8-30
+# [1.1.1]
 
 Fixed logging
 
-# [1.1.0] - 2025-8-30
+# [1.1.0]
 
 * Remade IWR (Immunity/Weakness/Resistance) calculation
 * Added IWR Toggle on the settings menu
@@ -183,7 +189,7 @@ Fixed logging
 * Reduced logging
 * Expanded localization
 
-# [1.0.0] - 2025-8-29
+# [1.0.0]
 
 ## 🚀 Main changes
 
@@ -233,21 +239,21 @@ This makes bugs easier to locate and future development faster.
 * Major code refactoring.
 * Old JSON files removed and replaced with presets and dynamic menus.
  
-## [Beta5.1.1] - 2025-8-15
+## [Beta5.1.1]
 
 * Update compatibility with [Cleaner Sheet Title Bar](https://github.com/MiahNelah/cleaner-sheet-title-bar) module
 
-## [Beta5.1] - 2025-8-11
+## [Beta5.1]
 
 ### Fixed
 * Attacks were not applying threat correctly
 
-## [Beta5] - 2025-8-11
+## [Beta5]
 
 ### Fixed
 * Attacks were not applying threat correctly
 
-## [Beta5] - 2025-8-11
+## [Beta5]
 
 ### ✨ Gameplay Improvements
 
@@ -271,7 +277,7 @@ This makes bugs easier to locate and future development faster.
 * Resolves cases where threat was applied twice for the same event.
 * Added missing localization
 
-## [Beta4] - 2025-8-7
+## [Beta4]
 ### Taunts
 ✅ New taunt threat calculation based on:
 - Action-relevant traits
@@ -297,7 +303,7 @@ This makes bugs easier to locate and future development faster.
 # Fixed
 - NonGMs cannot update threat menu, how could i didnt get this before? i dont know
 
-## [Beta3] - 2025-8-2
+## [Beta3]
 
 New Features
 * Non-offensive spells now generates threat plus spells generate threat to all creatures in combat
@@ -308,11 +314,11 @@ Fixed
 * Floating Panel position configuration
 * Vulnerabilities by trait option now shows the document
 
-## [Beta2.1] - 2025-8-1
+## [Beta2.1]
 * Automated Releases by @ChasarooniZ in https://github.com/ZzinnerGamer/pf2e-threat-tracker/pull/1
 * Actually support for non skill actions
 
-## [beta2] - 2025-8-1
+## [beta2]
 UPDATE YAY
 
 Now we have this:
@@ -339,5 +345,5 @@ BATTLECRY! IS OUT AND GUARDIAN IS COMPATIBLE WITH THIS WOOOHOOO
 - Add Guardian class actions
 
 
-## [beta1] - 2025-7-29
+## [beta1]
 Initial release
