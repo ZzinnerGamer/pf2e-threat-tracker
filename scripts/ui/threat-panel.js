@@ -84,7 +84,11 @@ function getActiveCombat() {
 }
 
 function renderCombatSelector(panel) {
-  const combats = game.combats.contents.filter(c => c.started);
+  // Only show selector if there are 2+ active combats with combatants
+  const combats = game.combats.contents.filter(c =>
+    c.started && c.combatants?.size > 0
+  );
+
   if (combats.length <= 1) {
     panel.querySelector('.tt-combat-selector')?.remove();
     return;
@@ -103,16 +107,20 @@ function renderCombatSelector(panel) {
   selector.innerHTML = combats.map(c => {
     const label = c.combatants.map(cb => cb.name).slice(0, 3).join(', ');
     const isActive = c.id === active?.id;
-    return `<button class="tt-combat-btn ${isActive ? 'active' : ''}" data-combat-id="${c.id}"
+    return `<button type="button" class="tt-combat-btn ${isActive ? 'active' : ''}" data-combat-id="${c.id}"
               title="Round ${c.round ?? 0}">
               ${label.length > 20 ? label.slice(0, 20) + '…' : label}
             </button>`;
   }).join('');
 
   selector.querySelectorAll('.tt-combat-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation(); // Prevent bubbling to header drag handler
       const combat = game.combats.get(btn.dataset.combatId);
-      if (combat) combat.activate();
+      if (combat && combat.id !== game.combats.active?.id) {
+        combat.activate();
+      }
     });
   });
 }
@@ -193,7 +201,15 @@ export async function updateFloatingPanel() {
     const combat = getActiveCombat();
     let panel = document.getElementById(PANEL_ID);
 
-    if (!combat) { panel?.remove(); return; }
+    if (!combat) {
+      // No active combat — show empty state but don't destroy the panel
+      // The panel will be destroyed by the deleteCombat hook instead
+      if (panel) {
+        const body = panel.querySelector('.tt-body');
+        if (body) body.innerHTML = '<div style="padding:8px; opacity:0.5; text-align:center; font-size:11px;">No active combat</div>';
+      }
+      return;
+    }
 
     const savedPos = {
       left: Number(getSetting('xFactor') ?? 120),
