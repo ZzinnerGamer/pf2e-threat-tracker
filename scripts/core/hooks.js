@@ -126,6 +126,12 @@ export function registerHooks() {
     }
     // Clean up threat history for this combat
     await clearCombatThreatHistory(combat.id);
+
+    // If no combats remain, remove the panel entirely
+    const remaining = game.combats.contents.filter(c => c.started && c.combatants?.size > 0);
+    if (remaining.length === 0) {
+      document.getElementById('threat-tracker-panel')?.remove();
+    }
     updatePanel();
   });
 
